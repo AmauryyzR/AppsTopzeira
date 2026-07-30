@@ -269,9 +269,22 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
     js = js.replace(reg, `(${pVal})`);
   }
 
-  // Convert caret exponents x^y -> __safePow(x, y)
-  js = js.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\)]+)/g, '__safePow($1, $2)');
-  js = js.replace(/([\w\.\)]+)\s*\^\s*([\w\.\)]+)/g, '__safePow($1, $2)');
+  // Convert caret and asterisk exponents (handling parens around base and/or exponent):
+  // e.g. 2^(x), (x+1)^(x-1), x^(a*x+b), 2**(x), (x+1)**(x-1)
+  const replaceExponents = (str: string): string => {
+    let prev = '';
+    let current = str;
+    while (prev !== current) {
+      prev = current;
+      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '__safePow(($1), ($3))');
+      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__safePow(($1), $3)');
+      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '__safePow($1, ($3))');
+      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__safePow($1, $3)');
+    }
+    return current;
+  };
+
+  js = replaceExponents(js);
 
   // Expand token placeholders for JS
   js = js.replace(/__EXP__\(([^)]+)\)/g, 'Math.exp($1)')
@@ -349,10 +362,20 @@ export function formatExpressionToLatex(rawInput: string): string {
   s = s.replace(/\blog10\(([^)]+)\)/g, '\\log_{10}\\left($1\\right)');
 
   // 4. Caret or asterisk exponents x**(expr) or x^(expr) -> x^{expr}
-  s = s.replace(/([\w\.\)]+)\s*\*\*\s*\(([^)]+)\)/g, '$1^{$2}');
-  s = s.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\_]+)/g, '$1^{$2}');
-  s = s.replace(/([\w\.\)]+)\s*\^\s*\(([^)]+)\)/g, '$1^{$2}');
-  s = s.replace(/([\w\.\)]+)\s*\^\s*([\w\.\_]+)/g, '$1^{$2}');
+  const replaceLatexExponents = (str: string): string => {
+    let prev = '';
+    let current = str;
+    while (prev !== current) {
+      prev = current;
+      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '\\left($1\\right)^{$3}');
+      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '\\left($1\\right)^{$3}');
+      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '$1^{$3}');
+      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '$1^{$3}');
+    }
+    return current;
+  };
+
+  s = replaceLatexExponents(s);
 
   // 5. Portuguese trig & standard math functions
   s = s
