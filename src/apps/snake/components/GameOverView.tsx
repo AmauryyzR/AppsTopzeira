@@ -25,7 +25,7 @@ export default function GameOverView({ score, mode, onRetry, onMenu }: GameOverP
   };
 
   return (
-    <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-50">
+    <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center z-50 p-6 pb-20 overflow-y-auto custom-scrollbar">
       <div className="text-center mb-12 animate-in slide-in-from-bottom-8 duration-500 fade-in">
         <h2 className="text-6xl font-black text-red-500 tracking-widest mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
           GAME OVER

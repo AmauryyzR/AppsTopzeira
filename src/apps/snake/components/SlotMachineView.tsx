@@ -406,7 +406,7 @@ export default function SlotMachineView({ onBack, onNavigate }: SlotMachineProps
   const reelDuration = [1.3, 1.65, 2.0];
 
   return (
-    <div className="w-full h-full relative overflow-y-auto overflow-x-hidden flex flex-col items-center bg-slate-950 px-4 py-8 select-none">
+    <div className="w-full h-full relative overflow-y-auto overflow-x-hidden flex flex-col items-center bg-slate-950 px-4 py-6 pb-24 select-none custom-scrollbar">
 
       {/* Self-contained CSS stylesheet for the growing/glowing rainbow coin */}
       <style dangerouslySetInnerHTML={{

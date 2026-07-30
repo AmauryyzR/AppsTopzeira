@@ -18,7 +18,7 @@ export default function StatsView({ onBack }: StatsProps) {
         ← BACK
       </button>
 
-      <div className="mt-24 max-w-4xl w-full mx-auto flex-1 overflow-y-auto pb-12 custom-scrollbar">
+      <div className="mt-20 max-w-4xl w-full mx-auto flex-1 overflow-y-auto pb-24 custom-scrollbar">
         <h2 className="text-4xl font-black mb-8 tracking-tight text-center">STATISTICS</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

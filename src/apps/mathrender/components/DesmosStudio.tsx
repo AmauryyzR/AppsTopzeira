@@ -207,6 +207,46 @@ const CustomScaleModal: React.FC<CustomScaleModalProps> = ({ label, currentMin, 
     </div>
   );
 };
+// 2D Line-Rectangle Intersection Clipper (Preserves exact mathematical slope & anchor point)
+function clipLineToRect(
+  x0: number, y0: number, m: number,
+  minX: number, maxX: number, minY: number, maxY: number
+): { p1: [number, number]; p2: [number, number] } | null {
+  let dx = 1;
+  let dy = m;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-12) return null;
+  dx /= len;
+  dy /= len;
+
+  let tMin = -1e9;
+  let tMax = 1e9;
+
+  if (Math.abs(dx) > 1e-12) {
+    const t1 = (minX - x0) / dx;
+    const t2 = (maxX - x0) / dx;
+    tMin = Math.max(tMin, Math.min(t1, t2));
+    tMax = Math.min(tMax, Math.max(t1, t2));
+  } else if (x0 < minX || x0 > maxX) {
+    return null;
+  }
+
+  if (Math.abs(dy) > 1e-12) {
+    const t1 = (minY - y0) / dy;
+    const t2 = (maxY - y0) / dy;
+    tMin = Math.max(tMin, Math.min(t1, t2));
+    tMax = Math.min(tMax, Math.max(t1, t2));
+  } else if (y0 < minY || y0 > maxY) {
+    return null;
+  }
+
+  if (tMin >= tMax) return null;
+
+  return {
+    p1: [x0 + tMin * dx, y0 + tMin * dy],
+    p2: [x0 + tMax * dx, y0 + tMax * dy],
+  };
+}
 
 // Robust Parentheses-Aware Power Operator Converter (^ or **)
 export function convertPowOperators(input: string): string {
@@ -973,29 +1013,33 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
         const y0 = evalFn(x0);
 
         if (!isNaN(y0) && isFinite(y0)) {
-          const h = Math.max(Math.abs(x0) * 1e-7, 1e-8);
+          const h = Math.max(Math.abs(x0) * 1e-6, 1e-7);
           const yPlus = evalFn(x0 + h);
           const yMinus = evalFn(x0 - h);
           const slope = (yPlus - yMinus) / (2 * h);
 
           if (isFinite(slope)) {
-            const span = xSpan;
-            const x1 = x0 - span;
-            const y1 = y0 - slope * span;
-            const x2 = x0 + span;
-            const y2 = y0 + slope * span;
+            const minXBound = xMin - xSpan;
+            const maxXBound = xMax + xSpan;
+            const minYWorld = yMin - 2 * ySpan;
+            const maxYWorld = yMax + 2 * ySpan;
 
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#f43f5e';
-            ctx.beginPath();
-            ctx.moveTo(toScreenX(x1), Math.max(minYBound, Math.min(maxYBound, toScreenY(y1))));
-            ctx.lineTo(toScreenX(x2), Math.max(minYBound, Math.min(maxYBound, toScreenY(y2))));
-            ctx.stroke();
+            const clipped = clipLineToRect(x0, y0, slope, minXBound, maxXBound, minYWorld, maxYWorld);
+
+            if (clipped) {
+              const [p1, p2] = [clipped.p1, clipped.p2];
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = '#f43f5e';
+              ctx.beginPath();
+              ctx.moveTo(toScreenX(p1[0]), toScreenY(p1[1]));
+              ctx.lineTo(toScreenX(p2[0]), toScreenY(p2[1]));
+              ctx.stroke();
+            }
 
             // Point (x0, y0)
             const dotSx = toScreenX(x0);
             const dotSy = toScreenY(y0);
-            if (dotSx >= 0 && dotSx <= width && dotSy >= 0 && dotSy <= height) {
+            if (dotSx >= -20 && dotSx <= width + 20 && dotSy >= -20 && dotSy <= height + 20) {
               ctx.fillStyle = '#f43f5e';
               ctx.beginPath();
               ctx.arc(dotSx, dotSy, 6, 0, Math.PI * 2);

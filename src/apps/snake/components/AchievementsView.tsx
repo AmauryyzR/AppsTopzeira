@@ -20,7 +20,7 @@ export default function AchievementsView({ onBack }: AchievementsProps) {
         ← BACK
       </button>
 
-      <div className="mt-24 max-w-5xl w-full mx-auto flex-1 overflow-y-auto pb-12 custom-scrollbar px-4">
+      <div className="mt-20 max-w-5xl w-full mx-auto flex-1 overflow-y-auto pb-24 custom-scrollbar px-4">
         <h2 className="text-4xl font-black mb-2 tracking-tight text-center">ACHIEVEMENTS</h2>
         <div className="text-center text-slate-400 font-mono mb-8 font-bold">
            {unlocked.length} / {ACHIEVEMENTS.length}

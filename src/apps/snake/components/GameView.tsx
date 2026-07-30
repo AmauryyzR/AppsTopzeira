@@ -186,26 +186,26 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-950 p-4" ref={containerRef}>
+    <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-950 p-2 sm:p-4 overflow-hidden" ref={containerRef}>
 
       {/* HUD */}
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-start text-white pointer-events-none z-10">
-        <div className="flex flex-col gap-1 bg-slate-900/50 backdrop-blur-md p-3 rounded-xl border border-slate-700/50">
-          <div className="text-sm text-slate-400 font-medium tracking-wider">SCORE</div>
-          <div className="text-3xl font-bold font-mono tracking-tighter text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
+      <div className="absolute top-2 left-3 right-3 sm:top-3 sm:left-4 sm:right-4 flex justify-between items-start text-white pointer-events-none z-10">
+        <div className="flex flex-col gap-0.5 bg-slate-900/60 backdrop-blur-md p-2 px-3 rounded-xl border border-slate-700/50">
+          <div className="text-[10px] sm:text-xs text-slate-400 font-medium tracking-wider">SCORE</div>
+          <div className="text-xl sm:text-3xl font-bold font-mono tracking-tighter text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
             {score.toLocaleString()}
           </div>
           {multiplier > 1 && (
-            <div className="text-amber-400 font-bold text-sm animate-pulse">
+            <div className="text-amber-400 font-bold text-[10px] sm:text-xs animate-pulse">
               {multiplier}x COMBO
             </div>
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-1.5">
           {mode === GameMode.TIME_ATTACK && (
             <div className={cn(
-              "bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/50 text-2xl font-mono font-bold",
+              "bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/50 text-lg sm:text-2xl font-mono font-bold",
               timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-sky-400"
             )}>
               {timeLeft}s
@@ -213,11 +213,11 @@ export default function GameView({ mode, onStateChange }: GameProps) {
           )}
 
           {mode === GameMode.COIN_FEVER && (
-            <div className="flex flex-col items-end gap-1.5 animate-in slide-in-from-top duration-300">
-              <div className="bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/50 text-2xl font-mono font-bold text-sky-400">
+            <div className="flex flex-col items-end gap-1 animate-in slide-in-from-top duration-300">
+              <div className="bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/50 text-lg sm:text-2xl font-mono font-bold text-sky-400">
                 {survivalTime}s
               </div>
-              <div className="bg-slate-900/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-amber-500/30 text-xs font-bold text-amber-400 animate-pulse tracking-wider">
+              <div className="bg-slate-900/60 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-500/30 text-[10px] sm:text-xs font-bold text-amber-400 animate-pulse tracking-wider">
                 COIN VALUE: {coinValue}x
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
 
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className="pointer-events-auto bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-colors border border-slate-700"
+            className="pointer-events-auto bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition-colors border border-slate-700 cursor-pointer"
           >
             {isPaused ? '▶' : '⏸'}
           </button>
@@ -233,8 +233,11 @@ export default function GameView({ mode, onStateChange }: GameProps) {
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 w-full min-h-0 flex items-center justify-center mt-20 mb-4 px-4">
-        <div className="relative rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-slate-800 bg-slate-900 flex items-center justify-center" style={{ width: '100%', maxWidth: '800px', aspectRatio: '1/1', maxHeight: 'calc(100vh - 120px)' }}>
+      <div className="flex-1 w-full min-h-0 flex items-center justify-center mt-12 sm:mt-14 mb-4 pb-2 px-2 sm:px-4">
+        <div 
+          className="relative rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-slate-800 bg-slate-900 flex items-center justify-center" 
+          style={{ width: '100%', maxWidth: '750px', aspectRatio: '1/1', maxHeight: 'calc(100% - 64px)' }}
+        >
           <canvas ref={canvasRef} className="block w-full h-full" />
 
           {isPaused && (
@@ -258,7 +261,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
       </div>
 
       {/* Mobile controls hint */}
-      <div className="absolute bottom-6 text-slate-500 text-sm md:hidden pointer-events-none">
+      <div className="absolute bottom-3 text-slate-500 text-xs md:hidden pointer-events-none">
         Swipe to move
       </div>
     </div>

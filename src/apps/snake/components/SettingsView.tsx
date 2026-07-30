@@ -141,7 +141,7 @@ export default function SettingsView({ onBack }: SettingsProps) {
   };
 
   return (
-    <div className="w-full h-full overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start md:justify-center bg-slate-950 py-20 px-6 relative custom-scrollbar">
+    <div className="w-full h-full overflow-y-auto overflow-x-hidden flex flex-col items-center justify-start sm:justify-center bg-slate-950 py-12 px-6 pb-24 relative custom-scrollbar">
       <button
         onClick={() => { audioManager.playClick(); onBack(); }}
         className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 font-bold transition-colors"

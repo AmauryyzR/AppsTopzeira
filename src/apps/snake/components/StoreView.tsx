@@ -57,7 +57,7 @@ export default function StoreView({ onBack }: StoreProps) {
         ← BACK
       </button>
 
-      <div className="mt-24 max-w-6xl w-full mx-auto flex-1 overflow-y-auto pb-12 pr-4 custom-scrollbar">
+      <div className="mt-20 max-w-6xl w-full mx-auto flex-1 overflow-y-auto pb-24 pr-4 custom-scrollbar">
         <h2 className="text-4xl font-black text-white mb-8 tracking-tight text-center md:text-left">ARMORY</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
