@@ -60,18 +60,18 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 sm:p-4 shadow-xl backdrop-blur-md grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:justify-between gap-3">
       {/* Scene Selector */}
-      <div className="flex items-center gap-2">
-        <div className="p-2 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400">
+      <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+        <div className="p-2 bg-sky-500/10 border border-sky-500/20 rounded-xl text-sky-400 hidden sm:block">
           <Layers className="w-4 h-4" />
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cena Manim</span>
           <select
             value={selectedScene}
             onChange={(e) => onSceneChange(e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-sky-300 font-semibold text-xs py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-sky-500 cursor-pointer min-w-[140px]"
+            className="bg-slate-950 border border-slate-700 text-sky-300 font-semibold text-xs py-2 px-2.5 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer w-full"
           >
             {scenes.length > 0 ? (
               scenes.map((s) => (
@@ -86,19 +86,19 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
 
       {/* Resolution & Quality Presets */}
       <div className="flex items-center gap-2">
-        <div className="p-2 bg-slate-800 rounded-xl text-slate-300">
+        <div className="p-2 bg-slate-800 rounded-xl text-slate-300 hidden sm:block">
           <Monitor className="w-4 h-4" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Preset de Qualidade</span>
+        <div className="flex flex-col w-full">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Qualidade</span>
           <select
             value={presets.quality}
             onChange={(e) => updatePreset('quality', e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-sky-500 cursor-pointer"
+            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-2 px-2.5 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer w-full"
           >
-            <option value="qk">4K Ultra HD (2160p)</option>
-            <option value="qh">Full HD (1080p60)</option>
-            <option value="qm">HD (720p30)</option>
+            <option value="qk">4K Ultra (2160p)</option>
+            <option value="qh">Full HD (1080p)</option>
+            <option value="qm">HD (720p)</option>
             <option value="ql">Rascunho (480p)</option>
           </select>
         </div>
@@ -106,12 +106,12 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
 
       {/* Frame Rate FPS */}
       <div className="flex items-center gap-2">
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taxa FPS</span>
           <select
             value={presets.fps}
             onChange={(e) => updatePreset('fps', parseInt(e.target.value))}
-            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-sky-500 cursor-pointer"
+            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-2 px-2.5 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer w-full"
           >
             <option value={60}>60 FPS</option>
             <option value={30}>30 FPS</option>
@@ -123,12 +123,12 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
 
       {/* Format (MP4 / WebM / GIF) */}
       <div className="flex items-center gap-2">
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Formato</span>
           <select
             value={presets.format}
             onChange={(e) => updatePreset('format', e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-sky-500 cursor-pointer"
+            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-2 px-2.5 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer w-full"
           >
             <option value="mp4">Vídeo MP4</option>
             <option value="webm">Vídeo WebM</option>
@@ -139,15 +139,15 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
 
       {/* Aspect Ratio */}
       <div className="flex items-center gap-2">
-        <div className="flex flex-col">
+        <div className="flex flex-col w-full">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Proporção</span>
           <select
             value={presets.aspectRatio}
             onChange={(e) => updatePreset('aspectRatio', e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-sky-500 cursor-pointer"
+            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs py-2 px-2.5 rounded-xl focus:outline-none focus:border-sky-500 cursor-pointer w-full"
           >
-            <option value="16:9">16:9 (YouTube / Padrao)</option>
-            <option value="9:16">9:16 (Shorts / Reels)</option>
+            <option value="16:9">16:9 (YouTube)</option>
+            <option value="9:16">9:16 (Shorts/Reels)</option>
             <option value="1:1">1:1 (Quadrado)</option>
             <option value="4:3">4:3 (Clássico)</option>
           </select>
@@ -155,8 +155,8 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
       </div>
 
       {/* Transparency / Color */}
-      <div className="flex items-center gap-3 border-l border-slate-800 pl-3">
-        <label className="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+      <div className="flex items-center gap-2 border-slate-800 lg:border-l lg:pl-3 col-span-2 sm:col-span-1 justify-center sm:justify-start">
+        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer py-1">
           <input
             type="checkbox"
             checked={presets.transparent}
@@ -171,7 +171,7 @@ export const PresetControls: React.FC<PresetControlsProps> = ({
       <button
         onClick={onStartRender}
         disabled={isRendering}
-        className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg transition-all transform active:scale-95 ${
+        className={`col-span-2 sm:col-span-3 lg:col-span-1 w-full lg:w-auto px-5 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all transform active:scale-95 ${
           isRendering
             ? 'bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700'
             : 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-sky-500/25 hover:-translate-y-0.5'

@@ -892,7 +892,7 @@ ${animationBlock}
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6 min-h-[calc(100vh-5rem)] relative">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 p-2 sm:p-6 min-h-[calc(100vh-5rem)] relative">
       {/* Render Custom Scale Range Modal [ C ] if active */}
       {scaleModal && (
         <CustomScaleModal
@@ -905,7 +905,7 @@ ${animationBlock}
       )}
 
       {/* Left GeoGebra Sidebar Panel */}
-      <div className="w-full lg:w-96 flex flex-col gap-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-md">
+      <div className="w-full lg:w-96 flex flex-col gap-4 sm:gap-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-xl backdrop-blur-md">
         {/* Brand Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sky-400">
@@ -1300,46 +1300,46 @@ ${animationBlock}
       </div>
 
       {/* Right Canvas Display & Keypad Panel */}
-      <div className="flex-1 flex flex-col gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl backdrop-blur-md">
+      <div className="flex-1 flex flex-col gap-3 sm:gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 sm:p-5 shadow-xl backdrop-blur-md">
         {/* Canvas Toolbar */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-sky-400 animate-pulse"></div>
-            <span className="text-sm font-bold text-slate-200">Plano Cartesiano GeoGebra</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-sky-400 animate-pulse flex-shrink-0"></div>
+            <span className="text-xs sm:text-sm font-bold text-slate-200 truncate">Plano Cartesiano GeoGebra</span>
             {hoverCoords && (
-              <span className="text-xs bg-slate-800 text-sky-400 font-mono px-2 py-0.5 rounded-md border border-slate-700">
+              <span className="text-[10px] sm:text-xs bg-slate-800 text-sky-400 font-mono px-2 py-0.5 rounded-md border border-slate-700 hidden sm:inline">
                 x: {hoverCoords.x.toFixed(2)}, y: {hoverCoords.y.toFixed(2)}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => setZoomScale((prev) => prev * 1.25)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
+              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
               title="Zoom In (Sem Limites)"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => setZoomScale((prev) => prev * 0.8)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
+              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
               title="Zoom Out (Sem Limites)"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={resetView}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
+              className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all border border-slate-700"
               title="Resetar Câmera & Zoom"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
 
         {/* Interactive GeoGebra Canvas Viewport */}
-        <div ref={containerRef} className="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[420px]">
+        <div ref={containerRef} className="relative flex-1 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[260px] sm:min-h-[380px] lg:min-h-[440px]">
           <canvas
             ref={canvasRef}
             width={canvasDimensions.width}

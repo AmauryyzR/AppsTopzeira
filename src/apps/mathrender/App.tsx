@@ -308,95 +308,94 @@ export function MathRenderApp() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-white flex flex-col">
       {/* Navigation Header */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md px-6 py-3 flex items-center justify-between">
-        {/* Brand & Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-            <Sparkles className="w-5 h-5 text-white" />
+      <header className="sticky top-0 z-40 bg-slate-900/95 border-b border-slate-800 backdrop-blur-md px-3 py-2.5 sm:px-6 sm:py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {/* Top Row on Mobile: Brand & Status Pill */}
+        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/20 flex-shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-sm sm:text-lg text-white tracking-tight flex items-center gap-1.5">
+                AppManim Render <span className="text-[9px] sm:text-[10px] uppercase font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30 px-1.5 py-0.5 rounded-full">Studio Web</span>
+              </h1>
+              <p className="text-[10px] sm:text-xs text-slate-400 hidden sm:block">Renderizador de Animações Matemáticas Manim em Vídeo HD/4K</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-extrabold text-lg text-white tracking-tight flex items-center gap-2">
-              AppManim Render <span className="text-[10px] uppercase font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded-full">Studio Web</span>
-            </h1>
-            <p className="text-xs text-slate-400">Renderizador de Animações Matemáticas Manim em Vídeo HD/4K</p>
-          </div>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
-          <button
-            onClick={() => setActiveTab('studio')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'studio'
-                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Film className="w-4 h-4" />
-            Estúdio Manim
-          </button>
-
-          <button
-            onClick={() => setActiveTab('desmos')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'desmos'
-                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            Gráfico GeoGebra 2D
-          </button>
-
-          <button
-            onClick={() => setActiveTab('gallery')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
-              activeTab === 'gallery'
-                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            Templates & Fórmulas
-          </button>
-        </div>
-
-        {/* Backend Status Indicator & Config Button */}
-        <div className="flex items-center gap-3">
+          {/* Backend Status Indicator & Config Button (Compact on Mobile) */}
           <button
             onClick={() => setIsServerModalOpen(true)}
-            className={`cursor-pointer px-3.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all shadow-sm ${
+            className={`cursor-pointer px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm flex-shrink-0 ${
               backendOnline
                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
                 : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
             }`}
             title="Gerenciar conexão do servidor Python Manim"
           >
-            <div className={`w-2 h-2 rounded-full ${backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            {backendOnline ? 'Servidor Python Conectado' : 'Servidor Python Off-line'}
-            <Settings className="w-3.5 h-3.5 ml-1 text-slate-400" />
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${backendOnline ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span className="hidden sm:inline">{backendOnline ? 'Servidor Python Conectado' : 'Servidor Python Off-line'}</span>
+            <span className="sm:hidden">{backendOnline ? 'Conectado' : 'Off-line'}</span>
+            <Settings className="w-3.5 h-3.5 ml-0.5 text-slate-400" />
+          </button>
+        </div>
+
+        {/* Bottom Row on Mobile: Navigation Tabs */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl sm:rounded-2xl border border-slate-800 shadow-inner w-full md:w-auto overflow-x-auto no-scrollbar justify-between sm:justify-start">
+          <button
+            onClick={() => setActiveTab('studio')}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition-all flex-1 sm:flex-initial whitespace-nowrap ${
+              activeTab === 'studio'
+                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Estúdio Manim
+          </button>
+
+          <button
+            onClick={() => setActiveTab('desmos')}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition-all flex-1 sm:flex-initial whitespace-nowrap ${
+              activeTab === 'desmos'
+                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Gráfico GeoGebra 2D
+          </button>
+
+          <button
+            onClick={() => setActiveTab('gallery')}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition-all flex-1 sm:flex-initial whitespace-nowrap ${
+              activeTab === 'gallery'
+                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Templates & Fórmulas
           </button>
         </div>
       </header>
 
       {/* Backend Notice Banner if offline */}
       {!backendOnline && !backendChecking && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center justify-between text-xs text-amber-300">
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-3 py-2 sm:px-6 sm:py-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-amber-300 gap-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
             <span>
-              O servidor backend de renderização em Python está off-line. Inicie <code className="bg-slate-900 px-2 py-0.5 rounded text-amber-200 font-mono">python appmanimrender/server/server.py</code> localmente ou configure uma URL na nuvem.
+              O servidor backend de renderização em Python está off-line.
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsServerModalOpen(true)}
-              className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1 rounded-lg border border-amber-500/30 font-semibold flex items-center gap-1.5 transition-colors"
-            >
-              <Server className="w-3.5 h-3.5" />
-              Configurar Servidor / Hospedagem
-            </button>
-          </div>
+          <button
+            onClick={() => setIsServerModalOpen(true)}
+            className="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-3 py-1 rounded-lg border border-amber-500/30 font-semibold flex items-center gap-1.5 transition-colors self-end sm:self-auto"
+          >
+            <Server className="w-3.5 h-3.5" />
+            Configurar Servidor
+          </button>
         </div>
       )}
 
@@ -412,7 +411,7 @@ export function MathRenderApp() {
       />
 
       {/* Main Workspace Layout */}
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-3 sm:p-6">
         {activeTab === 'studio' && (
           <div className="flex flex-col gap-6">
             {/* Presets Toolbar */}
