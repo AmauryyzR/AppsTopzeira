@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Production / Build
+dist
+build
+tsconfig.tsbuildinfo
+
+# Python & Renders
+__pycache__/
+*.py[cod]
+*$py.class
+appmanimrender/server/temp_renders/
+appmanimrender/media/
+appmanimrender/media_test/
+
+# System & IDE
+.DS_Store
+.vscode
+.idea
+*.log
