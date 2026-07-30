@@ -374,14 +374,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Maximized Overlay Modal (~75% - 80% Screen Size, Centered, Blurred Background, Close X Button & Full Video Controls) */}
+      {/* Maximized Overlay Modal (Giant Centered View 94vw x 88vh matching red rectangle, Blurred Background, Close X Button & Full Video Controls) */}
       {isMaximized && currentRender && (
         <div
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
           onClick={() => setIsMaximized(false)}
         >
           <div
-            className="relative w-[78vw] max-w-5xl h-[80vh] max-h-[820px] min-w-[300px] min-h-[360px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl shadow-sky-500/20 flex flex-col justify-between"
+            className="relative w-[94vw] max-w-[1400px] h-[88vh] max-h-[920px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-3 sm:p-5 shadow-2xl shadow-sky-500/20 flex flex-col justify-between"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header bar with scene title & Close X button */}
