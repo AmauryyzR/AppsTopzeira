@@ -147,37 +147,26 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               className="max-h-full max-w-full object-contain rounded-lg"
             />
           ) : (
-            <>
-              <video
-                ref={videoRef}
-                src={currentRender.videoUrl}
-                loop={isLooping}
-                autoPlay
-                onTimeUpdate={() => {
-                  if (videoRef.current) {
-                    setCurrentTime(videoRef.current.currentTime);
-                  }
-                }}
-                onLoadedMetadata={() => {
-                  if (videoRef.current) {
-                    setDuration(videoRef.current.duration || currentRender.durationSec || 0);
-                  }
-                }}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                className="max-h-full max-w-full object-contain rounded-lg cursor-pointer shadow-2xl"
-                onClick={togglePlay}
-              />
-              {/* YouTube style Maximize button on video overlay */}
-              <button
-                onClick={() => setIsMaximized(true)}
-                className="absolute top-3 right-3 z-10 p-2 bg-slate-900/80 hover:bg-sky-500 text-slate-300 hover:text-white rounded-xl backdrop-blur-md border border-slate-700 transition-all opacity-80 hover:opacity-100 shadow-lg flex items-center gap-1 text-xs font-semibold"
-                title="Maximizar Vídeo (75% da Tela)"
-              >
-                <Maximize2 className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">Maximizar</span>
-              </button>
-            </>
+            <video
+              ref={videoRef}
+              src={currentRender.videoUrl}
+              loop={isLooping}
+              autoPlay
+              onTimeUpdate={() => {
+                if (videoRef.current) {
+                  setCurrentTime(videoRef.current.currentTime);
+                }
+              }}
+              onLoadedMetadata={() => {
+                if (videoRef.current) {
+                  setDuration(videoRef.current.duration || currentRender.durationSec || 0);
+                }
+              }}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              className="max-h-full max-w-full object-contain rounded-lg cursor-pointer shadow-2xl"
+              onClick={togglePlay}
+            />
           )
         ) : (
           <div className="flex flex-col items-center justify-center p-8 text-center gap-3">
@@ -194,7 +183,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* Primary Download & Maximize Buttons */}
+      {/* Primary Download Button */}
       {currentRender && (
         <div className="flex items-center gap-3">
           <button
@@ -203,15 +192,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           >
             <Download className="w-5 h-5 stroke-[2.5]" />
             Baixar Mídia {currentRender.format.toUpperCase()}
-          </button>
-
-          <button
-            onClick={() => setIsMaximized(true)}
-            className="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all"
-            title="Maximizar Vídeo (75% - 80% da Tela)"
-          >
-            <Maximize2 className="w-5 h-5 stroke-[2.5]" />
-            <span className="hidden sm:inline">Maximizar</span>
           </button>
         </div>
       )}
