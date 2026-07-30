@@ -208,6 +208,150 @@ const CustomScaleModal: React.FC<CustomScaleModalProps> = ({ label, currentMin, 
   );
 };
 
+// Robust Parentheses-Aware Power Operator Converter (^ or **)
+export function convertPowOperators(input: string): string {
+  let s = input;
+  let safety = 0;
+  while (safety < 30) {
+    safety++;
+    const powMatch = s.match(/(?<!__safePow)\s*(\*\*|\^)/);
+    if (!powMatch || powMatch.index === undefined) break;
+
+    const opIdx = powMatch.index + powMatch[0].indexOf(powMatch[1]);
+    const opLen = powMatch[1].length;
+
+    // 1. Extract Exponent to the right of opIdx + opLen
+    let expStart = opIdx + opLen;
+    while (expStart < s.length && /\s/.test(s[expStart])) expStart++;
+
+    let expEnd = expStart;
+    if (s[expStart] === '(') {
+      let depth = 0;
+      for (let i = expStart; i < s.length; i++) {
+        if (s[i] === '(') depth++;
+        else if (s[i] === ')') depth--;
+        if (depth === 0) {
+          expEnd = i + 1;
+          break;
+        }
+      }
+    } else {
+      while (expEnd < s.length && /[a-zA-Z0-9\._]/.test(s[expEnd])) {
+        expEnd++;
+      }
+    }
+
+    const exponentStr = s.slice(expStart, expEnd);
+
+    // 2. Extract Base to the left of opIdx
+    let baseEnd = opIdx;
+    while (baseEnd > 0 && /\s/.test(s[baseEnd - 1])) baseEnd--;
+
+    let baseStart = baseEnd;
+    if (baseEnd > 0 && s[baseEnd - 1] === ')') {
+      let depth = 0;
+      for (let i = baseEnd - 1; i >= 0; i--) {
+        if (s[i] === ')') depth++;
+        else if (s[i] === '(') depth--;
+        if (depth === 0) {
+          baseStart = i;
+          break;
+        }
+      }
+    } else {
+      while (baseStart > 0 && /[a-zA-Z0-9\._]/.test(s[baseStart - 1])) {
+        baseStart--;
+      }
+    }
+
+    const baseStr = s.slice(baseStart, baseEnd);
+
+    if (!baseStr || !exponentStr) {
+      s = s.slice(0, opIdx) + '__POW_MARK__' + s.slice(opIdx + opLen);
+      continue;
+    }
+
+    const replacement = `__safePow(${baseStr}, ${exponentStr})`;
+    s = s.slice(0, baseStart) + replacement + s.slice(expEnd);
+  }
+
+  s = s.replace(/__POW_MARK__/g, '^');
+  return s;
+}
+
+// Convert expression string to clean LaTeX formula for Manim MathTex(r"...")
+export function convertLatexPowOperators(input: string): string {
+  let s = input;
+  let safety = 0;
+  while (safety < 30) {
+    safety++;
+    const powMatch = s.match(/\s*(\*\*|\^)/);
+    if (!powMatch || powMatch.index === undefined) break;
+
+    const opIdx = powMatch.index + powMatch[0].indexOf(powMatch[1]);
+    const opLen = powMatch[1].length;
+
+    // Extract Exponent
+    let expStart = opIdx + opLen;
+    while (expStart < s.length && /\s/.test(s[expStart])) expStart++;
+
+    let expEnd = expStart;
+    let expStr = '';
+    if (s[expStart] === '(') {
+      let depth = 0;
+      for (let i = expStart; i < s.length; i++) {
+        if (s[i] === '(') depth++;
+        else if (s[i] === ')') depth--;
+        if (depth === 0) {
+          expEnd = i + 1;
+          expStr = s.slice(expStart + 1, i);
+          break;
+        }
+      }
+    } else {
+      while (expEnd < s.length && /[a-zA-Z0-9\._\\]/.test(s[expEnd])) {
+        expEnd++;
+      }
+      expStr = s.slice(expStart, expEnd);
+    }
+
+    // Extract Base
+    let baseEnd = opIdx;
+    while (baseEnd > 0 && /\s/.test(s[baseEnd - 1])) baseEnd--;
+
+    let baseStart = baseEnd;
+    let baseStr = '';
+    if (baseEnd > 0 && s[baseEnd - 1] === ')') {
+      let depth = 0;
+      for (let i = baseEnd - 1; i >= 0; i--) {
+        if (s[i] === ')') depth++;
+        else if (s[i] === '(') depth--;
+        if (depth === 0) {
+          baseStart = i;
+          baseStr = `\\left(${s.slice(i + 1, baseEnd - 1)}\\right)`;
+          break;
+        }
+      }
+    } else {
+      while (baseStart > 0 && /[a-zA-Z0-9\._\\]/.test(s[baseStart - 1])) {
+        baseStart--;
+      }
+      baseStr = s.slice(baseStart, baseEnd);
+    }
+
+    if (!baseStr || !expStr) {
+      s = s.slice(0, opIdx) + '__LATEX_POW_MARK__' + s.slice(opIdx + opLen);
+      continue;
+    }
+
+    const replacement = `${baseStr}^{${expStr}}`;
+    s = s.slice(0, baseStart) + replacement + s.slice(expEnd);
+  }
+
+  s = s.replace(/__LATEX_POW_MARK__/g, '^');
+  return s;
+}
+
 // Smart Math Expression Parser (supports implicit multiplication, Euler constant e, pi, custom log/exp bases)
 export function parseMathExpression(rawInput: string, paramsMap: Record<string, number>): ParsedMath {
   if (!rawInput || !rawInput.trim()) {
@@ -229,28 +373,20 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
     .replace(/×/g, '*');
 
   // 2. Normalize Exponentials with Euler Constant e:
-  // e**(expr) or e^(expr) or exp(expr) -> __EXP__(expr)
   s = s.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, '__EXP__($2)');
   s = s.replace(/\be\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__EXP__($2)');
   s = s.replace(/\bexp\s*\(([^)]+)\)/g, '__EXP__($1)');
 
   // 3. Normalize Arbitrary Base Logarithms:
-  // log_b(x) or log_2(x) or log_a(x) -> __LOGBASE__(b, x)
   s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '__LOGBASE__($1, $2)');
-  // log(b, x) -> __LOGBASE__(b, x)
   s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '__LOGBASE__($1, $2)');
   s = s.replace(/\bln\s*\(([^)]+)\)/g, '__LN__($1)');
   s = s.replace(/\blog10\s*\(([^)]+)\)/g, '__LOG10__($1)');
   s = s.replace(/\blog\s*\(([^)]+)\)/g, '__LOG10__($1)');
 
   // 4. Robust Implicit Multiplication:
-  // A) Number followed by variable, constant, function, or opening paren:
   s = s.replace(/(\d)\s*([a-zA-Z\(π√])/g, '$1*$2');
-
-  // B) Closing paren followed by number, variable, function, or opening paren:
   s = s.replace(/(\))\s*([\d\w\(π√])/g, '$1*$2');
-
-  // C) Insert * between adjacent variables/parameters (e.g. ax -> a*x, bx -> b*x, ab -> a*b, 2e -> 2*e, e x -> e*x)
   s = s.replace(/\b([a-df-zA-DF-Z])(?![a-zA-Z0-9_])\s*([a-df-zA-DF-Z\(])\b/g, '$1*$2');
   s = s.replace(/\b([a-df-zA-DF-Z])\s*([xye\(π])/g, (match, p1, p2) => {
     if ((p1 + p2).toLowerCase() === 'pi') return p1 + p2;
@@ -269,22 +405,8 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
     js = js.replace(reg, `(${pVal})`);
   }
 
-  // Convert caret and asterisk exponents (handling parens around base and/or exponent):
-  // e.g. 2^(x), (x+1)^(x-1), x^(a*x+b), 2**(x), (x+1)**(x-1)
-  const replaceExponents = (str: string): string => {
-    let prev = '';
-    let current = str;
-    while (prev !== current) {
-      prev = current;
-      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '__safePow(($1), ($3))');
-      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__safePow(($1), $3)');
-      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '__safePow($1, ($3))');
-      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__safePow($1, $3)');
-    }
-    return current;
-  };
-
-  js = replaceExponents(js);
+  // Convert caret and asterisk exponents with balanced parenthesis scanner (immune to nested parens!)
+  js = convertPowOperators(js);
 
   // Expand token placeholders for JS
   js = js.replace(/__EXP__\(([^)]+)\)/g, 'Math.exp($1)')
@@ -341,7 +463,6 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   }
 }
 
-// Convert expression string to clean LaTeX formula for Manim MathTex(r"...")
 export function formatExpressionToLatex(rawInput: string): string {
   if (!rawInput || !rawInput.trim()) return '0';
 
@@ -351,31 +472,18 @@ export function formatExpressionToLatex(rawInput: string): string {
   s = s.replace(/π/g, '\\pi')
        .replace(/÷/g, '\\div');
 
-  // 2. Exponentiation of Euler's constant: e**(expr) or e^(expr) or exp(expr) -> e^{expr}
+  // 2. Exponentiation of Euler's constant
   s = s.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'e^{$2}');
   s = s.replace(/\be\s*(\*\*|\^)\s*([\w\.\_]+)/g, 'e^{$2}');
   s = s.replace(/\bexp\(([^)]+)\)/g, 'e^{\\left($1\\right)}');
 
-  // 3. Custom base logarithms: log_b(x) or log(b, x) -> \log_{b}\left(x\right)
+  // 3. Custom base logarithms
   s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '\\log_{$1}\\left($2\\right)');
   s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '\\log_{$1}\\left($2\\right)');
   s = s.replace(/\blog10\(([^)]+)\)/g, '\\log_{10}\\left($1\\right)');
 
-  // 4. Caret or asterisk exponents x**(expr) or x^(expr) -> x^{expr}
-  const replaceLatexExponents = (str: string): string => {
-    let prev = '';
-    let current = str;
-    while (prev !== current) {
-      prev = current;
-      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '\\left($1\\right)^{$3}');
-      current = current.replace(/\(([^()]+)\)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '\\left($1\\right)^{$3}');
-      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*\(([^()]+)\)/g, '$1^{$3}');
-      current = current.replace(/([a-zA-Z0-9\._]+)\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '$1^{$3}');
-    }
-    return current;
-  };
-
-  s = replaceLatexExponents(s);
+  // 4. Caret or asterisk exponents with balanced parenthesis converter
+  s = convertLatexPowOperators(s);
 
   // 5. Portuguese trig & standard math functions
   s = s
