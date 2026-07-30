@@ -30,6 +30,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const maximizedVideoRef = useRef<HTMLVideoElement | null>(null);
+  const historyScrollRef = useRef<HTMLDivElement | null>(null);
   
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
@@ -43,6 +44,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setCurrentTime(0);
     setDuration(currentRender?.durationSec || 0);
   }, [currentRender?.videoUrl]);
+
+  // Convert vertical mouse wheel scrolling to horizontal scroll for session history & prevent page scroll
+  useEffect(() => {
+    const el = historyScrollRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY;
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, [history.length]);
 
   // Handle ESC key to exit maximized mode
   useEffect(() => {
@@ -336,7 +355,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Histórico da Sessão ({history.length})
           </span>
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+          <div ref={historyScrollRef} className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
             {history.map((item) => (
               <button
                 key={item.renderId}
