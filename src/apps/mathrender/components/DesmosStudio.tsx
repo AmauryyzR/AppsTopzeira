@@ -852,7 +852,6 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
       const paramsToTrack = animatedParamsList.length > 0 ? animatedParamsList : [params[0]];
 
       const trackerInits = paramsToTrack.map(p => `        ${p.name}_tracker = ValueTracker(${formatParamValue(p.value)})`).join('\n');
-      const paramArgs = paramsToTrack.map(p => `${p.name}=${p.name}_tracker.get_value()`).join(', ');
 
       // Build python lambda with trackers
       let pyLambdaExpr = pyExpr;
@@ -862,6 +861,9 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
       }
 
       const animateCalls = paramsToTrack.map(p => `${p.name}_tracker.animate.set_value(${formatParamValue(p.animTarget)})`).join(',\n            ');
+
+      // Build live parameter value label for upper right (UR) corner
+      const paramLatexParts = paramsToTrack.map(p => `${p.name} = {${p.name}_tracker.get_value():.2f}`).join(', \\\\quad ');
 
       animationBlock = `        # 3. Animação Paramétrica dos Parâmetros (${paramsToTrack.map(p => p.name).join(', ')})
 ${trackerInits}
@@ -873,10 +875,18 @@ ${trackerInits}
             x_range=[${formattedXMin}, ${formattedXMax}]
         ))
 
+        # Rótulo em LaTeX da fórmula no canto superior esquerdo (UL)
         graph_label = MathTex(r"f(x) = ${latexExpr}", font_size=28, color=${animColor}).to_corner(UL)
 
+        # Rótulo animado em tempo real com o valor dos parâmetros no canto superior direito (UR)
+        param_label = always_redraw(lambda: MathTex(
+            rf"${paramLatexParts}",
+            font_size=28,
+            color=${animColor}
+        ).to_corner(UR))
+
         self.play(Create(axes), Write(axes_labels), run_time=1.5)
-        self.play(Create(graph), Write(graph_label), run_time=1.5)
+        self.play(Create(graph), Write(graph_label), Write(param_label), run_time=1.5)
 
         # Animação conjunta dos parâmetros selecionados
         self.play(
@@ -1281,28 +1291,63 @@ ${animationBlock}
           {animMode === 'parametric' && (
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col gap-2.5 text-xs">
               <span className="font-bold text-slate-300 uppercase text-[10px] tracking-wider">
-                Selecione os Parâmetros para Variar:
+                Configuração da Variação dos Parâmetros:
               </span>
               {params.map(p => (
-                <div key={p.id} className="flex items-center justify-between bg-slate-900/60 p-2 rounded-lg border border-slate-800">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-200 font-mono">
-                    <input
-                      type="checkbox"
-                      checked={p.isAnimated}
-                      onChange={(e) => updateParam(p.id, { isAnimated: e.target.checked })}
-                      className="w-4 h-4 rounded accent-sky-500"
-                    />
-                    Parâmetro <strong className="text-sky-400">{p.name}</strong>
-                  </label>
-                  {p.isAnimated && (
-                    <div className="flex items-center gap-1 text-[11px]">
-                      <span className="text-slate-400">Até:</span>
+                <div key={p.id} className="flex flex-col gap-2 bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer text-slate-200 font-mono">
                       <input
-                        type="number"
+                        type="checkbox"
+                        checked={p.isAnimated}
+                        onChange={(e) => updateParam(p.id, { isAnimated: e.target.checked })}
+                        className="w-4 h-4 rounded accent-sky-500"
+                      />
+                      Parâmetro <strong className="text-sky-400">{p.name}</strong>
+                    </label>
+                    {p.isAnimated && (
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="text-slate-400">
+                          De <strong className="text-sky-300 font-mono">{formatParamValue(p.value)}</strong> até <strong className="text-sky-400 font-mono">{formatParamValue(p.animTarget)}</strong>
+                        </span>
+                        <button
+                          onClick={() => setScaleModal({
+                            label: `Alvo do Parâmetro ${p.name}`,
+                            currentMin: Math.min(p.value, p.animTarget) - 5,
+                            currentMax: Math.max(p.value, p.animTarget) + 5,
+                            onConfirm: (min, max) => {
+                              updateParam(p.id, { animTarget: (min + max) / 2 });
+                            }
+                          })}
+                          className="w-5 h-5 rounded bg-slate-800 hover:bg-sky-500 hover:text-white text-sky-400 font-mono font-extrabold text-[10px] flex items-center justify-center border border-slate-700 transition-all cursor-pointer shadow-sm"
+                          title={`Customizar Limites da Variação do Alvo [C]`}
+                        >
+                          C
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {p.isAnimated && (
+                    <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-800/80">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Valor Alvo da Animação ({p.name}):</span>
+                        <input
+                          type="number"
+                          step="any"
+                          value={p.animTarget}
+                          onChange={(e) => updateParam(p.id, { animTarget: parseFloat(e.target.value) || 0 })}
+                          className="w-20 bg-slate-950 border border-slate-700 text-sky-300 font-mono text-xs px-1.5 py-0.5 rounded focus:outline-none focus:border-sky-500 text-right font-bold"
+                        />
+                      </div>
+                      <input
+                        type="range"
+                        min={p.min}
+                        max={p.max}
                         step="any"
                         value={p.animTarget}
                         onChange={(e) => updateParam(p.id, { animTarget: parseFloat(e.target.value) || 0 })}
-                        className="w-16 bg-slate-950 border border-slate-700 text-sky-300 font-mono text-xs px-1.5 py-0.5 rounded focus:outline-none focus:border-sky-500"
+                        className="w-full accent-sky-500 bg-slate-800 rounded-lg cursor-pointer h-1.5"
                       />
                     </div>
                   )}
