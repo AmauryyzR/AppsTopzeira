@@ -111,8 +111,25 @@ export function MathRenderApp() {
     setBackendChecking(false);
   };
 
+  // Fast local scene extraction without blocking network latency
+  const getSceneNameFast = (currentCode: string): string => {
+    if (selectedScene && currentCode.includes(`class ${selectedScene}`)) {
+      return selectedScene;
+    }
+    const matches = Array.from(currentCode.matchAll(/class\s+([a-zA-Z0-9_]+)\s*\(\s*Scene\s*\)/g)).map(m => m[1]);
+    if (matches.length > 0) {
+      return matches[0];
+    }
+    return selectedScene || 'MainScene';
+  };
+
   // Inspect python code to auto-detect scene class names
   const handleDetectScenes = async (currentCode: string): Promise<string[]> => {
+    // Fast local regex first
+    const matches = Array.from(currentCode.matchAll(/class\s+([a-zA-Z0-9_]+)\s*\(\s*Scene\s*\)/g)).map(m => m[1]);
+    if (matches.length > 0) {
+      setScenes(matches);
+    }
     try {
       const res = await smartFetch('/api/inspect', {
         method: 'POST',
@@ -130,28 +147,22 @@ export function MathRenderApp() {
         }
       }
     } catch {
-      // Fallback scene extraction
-      const matches = Array.from(currentCode.matchAll(/class\s+([a-zA-Z0-9_]+)\s*\(\s*Scene\s*\)/g)).map(m => m[1]);
-      if (matches.length > 0) {
-        setScenes(matches);
-        return matches;
-      }
+      // Fallback
     }
-    return [selectedScene];
+    return matches.length > 0 ? matches : [selectedScene];
   };
 
   // Start Manim SSE Render Stream (accepts overrideCode to IMMEDIATELY render new code without state delay)
   const handleStartRender = async (overrideCode?: string) => {
     const codeToRender = overrideCode !== undefined ? overrideCode : code;
 
-    // Detect scenes for the code being rendered
-    const detectedScenes = await handleDetectScenes(codeToRender);
-    const sceneToUse = (detectedScenes && detectedScenes.length > 0) ? detectedScenes[0] : selectedScene;
-
     setIsRendering(true);
     setProgressPercent(0);
     setErrorMessage(null);
     setLogs(['🚀 Inicializando conexão com o servidor de renderização Manim...']);
+
+    // Fast scene resolution without blocking UI on mobile latency
+    const sceneToUse = getSceneNameFast(codeToRender);
 
     // Cancel any previous active request controller
     if (abortControllerRef.current) {
