@@ -232,8 +232,9 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   js = js.replace(/(\d)\s*([a-zA-Z\(π√])/g, '$1*$2');
   js = js.replace(/(\))\s*([\w\(])/g, '$1*$2');
 
-  // 3. Exponents x^y -> Math.pow(x, y)
-  js = js.replace(/([\w\.\)]+)\s*\^\s*([\w\.\)]+)/g, 'Math.pow($1, $2)');
+  // 3. Exponents x**y or x^y -> __safePow(x, y)
+  js = js.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\)]+)/g, '__safePow($1, $2)');
+  js = js.replace(/([\w\.\)]+)\s*\^\s*([\w\.\)]+)/g, '__safePow($1, $2)');
 
   // 4. Map math functions for JavaScript evaluation
   const mathFns = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sqrt', 'log', 'log10', 'exp', 'abs'];
@@ -266,7 +267,14 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   py = py.replace(/\b(sin|cos|tan|arcsin|arccos|arctan|exp|log|log10|abs)\b/g, 'np.$1');
 
   try {
-    const testFn = new Function('x', `return ${js};`);
+    const testFn = new Function('x', `
+      function __safePow(b, p) {
+        if (b >= 0) return Math.pow(b, p);
+        if (Number.isInteger(p)) return Math.pow(b, p);
+        return Math.sign(b) * Math.pow(Math.abs(b), p);
+      }
+      return ${js};
+    `);
     testFn(1);
     return { jsExpr: js, pyExpr: py, rawInput: expr, isValid: true };
   } catch (err: any) {
@@ -624,7 +632,14 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
 
     let evalFn: ((x: number) => number) | null = null;
     try {
-      evalFn = new Function('x', `return ${parsed.jsExpr};`) as (x: number) => number;
+      evalFn = new Function('x', `
+        function __safePow(b, p) {
+          if (b >= 0) return Math.pow(b, p);
+          if (Number.isInteger(p)) return Math.pow(b, p);
+          return Math.sign(b) * Math.pow(Math.abs(b), p);
+        }
+        return ${parsed.jsExpr};
+      `) as (x: number) => number;
     } catch {
       return;
     }
@@ -662,6 +677,7 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     ctx.beginPath();
 
     let isPlotting = false;
+    let lastY: number | null = null;
     const numPoints = width * 1.5;
 
     for (let i = 0; i <= numPoints; i++) {
@@ -672,12 +688,23 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
         y = evalFn(x);
       } catch {
         isPlotting = false;
+        lastY = null;
         continue;
       }
 
       if (isNaN(y) || !isFinite(y)) {
         isPlotting = false;
+        lastY = null;
         continue;
+      }
+
+      // Asymptote jump detection (e.g. tg(u) flipping between +Inf and -Inf across vertical asymptotes)
+      if (lastY !== null) {
+        const dy = Math.abs(y - lastY);
+        const isSignFlip = (lastY > 0 && y < 0) || (lastY < 0 && y > 0);
+        if (isSignFlip && dy > ySpan * 1.2) {
+          isPlotting = false;
+        }
       }
 
       const sy = toScreenY(y);
@@ -687,6 +714,8 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
       } else {
         ctx.lineTo(sx, sy);
       }
+
+      lastY = y;
     }
     ctx.stroke();
 
