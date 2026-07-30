@@ -792,35 +792,50 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     setIsDragging(false);
   };
 
-  // Mouse Wheel Zoom Handler (Zoom Towards Cursor Position)
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+  // Native non-passive wheel & touchmove listeners to prevent browser page scrolling
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const onNativeWheel = (e: WheelEvent) => {
+      e.preventDefault();
 
-    // Current math coordinates under mouse cursor before zoom
-    const mathXUnderMouse = xMin + (mouseX / canvas.width) * (xMax - xMin);
-    const mathYUnderMouse = yMax - (mouseY / canvas.height) * (yMax - yMin);
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-    const zoomFactor = e.deltaY < 0 ? 1.2 : 0.83;
-    const nextZoom = Math.max(1e-15, Math.min(1e15, zoomScale * zoomFactor));
+      const mathXUnderMouse = xMin + (mouseX / canvas.width) * (xMax - xMin);
+      const mathYUnderMouse = yMax - (mouseY / canvas.height) * (yMax - yMin);
 
-    // New span dimensions under nextZoom
-    const currentAspect = canvas.height > 0 ? canvas.width / canvas.height : 1.6;
-    const newRangeY = 10 / nextZoom;
-    const newRangeX = newRangeY * currentAspect;
+      const zoomFactor = e.deltaY < 0 ? 1.2 : 0.83;
+      const nextZoom = Math.max(1e-15, Math.min(1e15, zoomScale * zoomFactor));
 
-    // Adjust center so (mathXUnderMouse, mathYUnderMouse) stays locked under the cursor
-    const newXCenter = mathXUnderMouse + (0.5 - mouseX / canvas.width) * newRangeX;
-    const newYCenter = mathYUnderMouse - (0.5 - mouseY / canvas.height) * newRangeY;
+      const currentAspect = canvas.height > 0 ? canvas.width / canvas.height : 1.6;
+      const newRangeY = 10 / nextZoom;
+      const newRangeX = newRangeY * currentAspect;
 
-    setXCenter(newXCenter);
-    setYCenter(newYCenter);
-    setZoomScale(nextZoom);
-  };
+      const newXCenter = mathXUnderMouse + (0.5 - mouseX / canvas.width) * newRangeX;
+      const newYCenter = mathYUnderMouse - (0.5 - mouseY / canvas.height) * newRangeY;
+
+      setXCenter(newXCenter);
+      setYCenter(newYCenter);
+      setZoomScale(nextZoom);
+    };
+
+    const onNativeTouchMove = (e: TouchEvent) => {
+      if (e.touches.length >= 1) {
+        e.preventDefault();
+      }
+    };
+
+    canvas.addEventListener('wheel', onNativeWheel, { passive: false });
+    canvas.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', onNativeWheel);
+      canvas.removeEventListener('touchmove', onNativeTouchMove);
+    };
+  }, [xMin, xMax, yMin, yMax, zoomScale, canvasDimensions]);
 
   // Touch Handlers for Mobile Panning & Pinch-to-Zoom (Towards Pinch Center)
   const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
@@ -1540,7 +1555,6 @@ ${animationBlock}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
