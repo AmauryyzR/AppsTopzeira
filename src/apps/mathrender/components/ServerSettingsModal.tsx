@@ -37,6 +37,21 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
     setTimeout(() => setCopiedCmd(false), 2000);
   };
 
+  const DEFAULT_URL = 'https://appstopzeira.onrender.com';
+  const LOCAL_URL = 'http://127.0.0.1:8000';
+
+  const handleSetDefault = () => {
+    setUrlInput(DEFAULT_URL);
+    onSaveBackendUrl(DEFAULT_URL);
+    onCheckStatus();
+  };
+
+  const handleSetLocal = () => {
+    setUrlInput(LOCAL_URL);
+    onSaveBackendUrl(LOCAL_URL);
+    onCheckStatus();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -82,7 +97,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 <p className="opacity-80">
                   {backendOnline
                     ? 'O motor Manim (Python + FFmpeg) está pronto para compilar animações.'
-                    : 'A hospedagem estática não executa Python nativamente. Conecte ao seu servidor local ou nuvem.'}
+                    : 'A hospedagem estática não executa Python nativamente. Conecte ao servidor na nuvem ou local.'}
                 </p>
               </div>
             </div>
@@ -97,12 +112,15 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
             </button>
           </div>
 
-          {/* URL Settings Form */}
+          {/* URL Settings Form & Quick Preset Buttons */}
           <form onSubmit={handleSave} className="space-y-3 p-4 bg-slate-950/80 border border-slate-800 rounded-2xl">
-            <label className="block font-bold text-slate-200 text-xs flex items-center gap-2">
-              <Globe className="w-4 h-4 text-sky-400" />
-              URL do Servidor Backend (Remoto ou Local)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-200 text-xs flex items-center gap-2">
+                <Globe className="w-4 h-4 text-sky-400" />
+                URL do Servidor Backend (Remoto ou Local)
+              </label>
+            </div>
+
             <div className="flex gap-2">
               <input
                 type="url"
@@ -118,8 +136,29 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 Salvar URL
               </button>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Servidor Padrão Ativo: <code className="text-sky-300 font-mono">https://appstopzeira.onrender.com</code>. Você pode alterar para seu próprio servidor ou para desenvolvimento local (<code className="text-sky-300 font-mono">http://127.0.0.1:8000</code>).
+
+            {/* Quick Presets row */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[11px] text-slate-400 font-medium mr-1">Atalhos rápidos:</span>
+              <button
+                type="button"
+                onClick={handleSetDefault}
+                className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+              >
+                ⚡ Usar Servidor Padrão (Nuvem)
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSetLocal}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+              >
+                💻 Usar Servidor Local
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-400 pt-1">
+              Servidor Padrão em uso: <code className="text-sky-300 font-mono">{urlInput || DEFAULT_URL}</code>
             </p>
           </form>
 
