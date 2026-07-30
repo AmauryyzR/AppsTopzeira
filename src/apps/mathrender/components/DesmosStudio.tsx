@@ -938,6 +938,32 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     const xStepManim = manimGridStep;
     const yStepManim = manimGridStep;
 
+    // Replace powers with safe_pow in Python expression to prevent invalid value scalar power warnings on negative bases
+    let safePyExpr = pyExpr.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\)]+)/g, 'safe_pow($1, $2)');
+
+    // Trackers and Constants for ALL parameters (a, b, c, d, etc.)
+    const animatedParamsList = params.filter(p => p.isAnimated);
+    const paramsToTrack = animatedParamsList.length > 0 ? animatedParamsList : [params[0]];
+
+    // Build tracker inits for animated parameters
+    const trackerInits = paramsToTrack.map(p => `        ${p.name}_tracker = ValueTracker(${formatParamValue(p.value)})`).join('\n');
+
+    // Build static float definitions for ALL untracked parameters so NameError never happens!
+    const untrackedParams = params.filter(p => !paramsToTrack.some(tp => tp.id === p.id));
+    const untrackedInits = untrackedParams.map(p => `        ${p.name} = ${formatParamValue(p.value)}`).join('\n');
+
+    // Build python lambda with trackers
+    let pyLambdaExpr = safePyExpr;
+    for (const p of paramsToTrack) {
+      const reg = new RegExp(`\\b${p.name}\\b`, 'g');
+      pyLambdaExpr = pyLambdaExpr.replace(reg, `${p.name}_tracker.get_value()`);
+    }
+
+    const animateCalls = paramsToTrack.map(p => `${p.name}_tracker.animate.set_value(${formatParamValue(p.animTarget)})`).join(',\n            ');
+
+    // Build live parameter value label for upper right (UR) corner using bulletproof LaTeX separator
+    const paramLatexParts = paramsToTrack.map(p => `${p.name} = {${p.name}_tracker.get_value():.2f}`).join(', \\ \\ ');
+
     let animationBlock = '';
 
     if (animMode === 'riemann') {
@@ -953,27 +979,9 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
         self.play(Create(riemann), run_time=${formatParamValue(animRunTime)})
         self.wait(1)`;
     } else if (animMode === 'parametric') {
-      // Build dynamic ValueTrackers for selected parameters
-      const animatedParamsList = params.filter(p => p.isAnimated);
-      const paramsToTrack = animatedParamsList.length > 0 ? animatedParamsList : [params[0]];
-
-      const trackerInits = paramsToTrack.map(p => `        ${p.name}_tracker = ValueTracker(${formatParamValue(p.value)})`).join('\n');
-
-      // Build python lambda with trackers
-      let pyLambdaExpr = pyExpr;
-      for (const p of paramsToTrack) {
-        const reg = new RegExp(`\\b${p.name}\\b`, 'g');
-        pyLambdaExpr = pyLambdaExpr.replace(reg, `${p.name}_tracker.get_value()`);
-      }
-
-      const animateCalls = paramsToTrack.map(p => `${p.name}_tracker.animate.set_value(${formatParamValue(p.animTarget)})`).join(',\n            ');
-
-      // Build live parameter value label for upper right (UR) corner using bulletproof LaTeX separator
-      const paramLatexParts = paramsToTrack.map(p => `${p.name} = {${p.name}_tracker.get_value():.2f}`).join(', \\ \\ ');
-
       animationBlock = `        # 3. Animação Paramétrica dos Parâmetros (${paramsToTrack.map(p => p.name).join(', ')})
 ${trackerInits}
-
+${untrackedInits ? untrackedInits + '\n' : ''}
         # Gráfico que se atualiza continuamente com a mudança dos parâmetros
         graph = always_redraw(lambda: axes.plot(
             lambda x: ${pyLambdaExpr},
@@ -1002,7 +1010,6 @@ ${trackerInits}
         )
         self.wait(1)`;
     } else {
-      // Standard / Tangent animation
       animationBlock = `        # 3. Animações Adicionais
 ${showIntegral ? `        # Preenchimento da Área da Integral Definida
         area = axes.get_area(graph, x_range=[${formatParamValue(integralStart)}, ${formatParamValue(integralEnd)}], color=${animColor}, opacity=0.3)
@@ -1029,9 +1036,28 @@ ${showTangent ? `        # Reta Tangente no Ponto x0
         self.wait(1)`;
     }
 
+    const safePowHeader = `def safe_pow(b, p):
+    if isinstance(b, (int, float, np.number)):
+        if b >= 0:
+            return b**p
+        if p == int(p):
+            return b**int(p)
+        return np.sign(b) * (abs(b)**p)
+    b = np.asarray(b)
+    res = np.zeros_like(b, dtype=float)
+    pos = b >= 0
+    res[pos] = b[pos]**p
+    res[~pos] = np.sign(b[~pos]) * (np.abs(b[~pos])**p)
+    return res
+`;
+
+    const allParamDefs = params.map(p => `        ${p.name} = ${formatParamValue(p.value)}`).join('\n');
+
     if (animMode !== 'parametric') {
       return `from manim import *
 import numpy as np
+
+${safePowHeader}
 
 class GeoGebraGraphScene(Scene):
     def construct(self):
@@ -1054,8 +1080,9 @@ class GeoGebraGraphScene(Scene):
         )
         axes_labels = axes.get_axis_labels(x_label="x", y_label="y")
 
-        # 2. Definição da Função f(x)
-        func = lambda x: ${pyExpr}
+        # 2. Definição da Função f(x) e Parâmetros
+${allParamDefs}
+        func = lambda x: ${safePyExpr}
         graph = axes.plot(func, color=${animColor}, x_range=[${formattedXMin}, ${formattedXMax}])
         
         # Rótulo em LaTeX elegante
@@ -1071,6 +1098,8 @@ ${animationBlock}
 
     return `from manim import *
 import numpy as np
+
+${safePowHeader}
 
 class GeoGebraGraphScene(Scene):
     def construct(self):
