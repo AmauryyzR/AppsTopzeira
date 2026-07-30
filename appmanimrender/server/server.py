@@ -462,7 +462,9 @@ async def render_manim(req: RenderRequest):
         except Exception as ex:
             tb = traceback.format_exc()
             logger.error(f"Render exception:\n{tb}")
-            yield f"data: {json.dumps({'type': 'error', 'message': f'Python Error: {type(ex).__name__}: {str(ex)}\n{tb}'})}\n\n"
+            err_msg = f"Python Error: {type(ex).__name__}: {str(ex)}\n{tb}"
+            err_payload = {'type': 'error', 'message': err_msg}
+            yield f"data: {json.dumps(err_payload)}\n\n"
 
     return StreamingResponse(
         event_generator(),
