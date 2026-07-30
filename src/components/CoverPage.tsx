@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Gamepad2, ArrowRight, Cpu, Trophy } from 'lucide-react';
+import { Calculator, Gamepad2, ArrowRight } from 'lucide-react';
 import { TabType } from '../types';
 
 interface CoverPageProps {
@@ -37,19 +37,10 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
             topzeira
           </h1>
         </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="font-jakarta text-slate-400 text-sm sm:text-base md:text-xl max-w-2xl mx-auto mt-6 font-medium leading-relaxed"
-        >
-          Ecossistema interativo de nova geração. Escolha seu aplicativo abaixo para iniciar a sessão na janela dedicada.
-        </motion.p>
       </div>
 
       {/* Considerable Spacing */}
-      <div className="w-full my-8 md:my-14" />
+      <div className="w-full my-6 md:my-10" />
 
       {/* 2 Large Rectangular 16:9 Buttons Container */}
       <div className="w-full max-w-6xl z-10 px-2 sm:px-4">
@@ -100,12 +91,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
               </div>
 
               {/* Bottom Action Bar inside 16:9 Card */}
-              <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/5">
-                <span className="text-xs font-space text-slate-400 group-hover:text-slate-200 transition-colors flex items-center gap-1.5">
-                  <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-                  Acessar Aplicativo
-                </span>
-                
+              <div className="relative z-10 flex items-center justify-end pt-2 border-t border-white/5">
                 <div className="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-300 group-hover:bg-cyan-400 group-hover:text-black flex items-center justify-center transition-all duration-300 shadow-md">
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -159,12 +145,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
               </div>
 
               {/* Bottom Action Bar inside 16:9 Card */}
-              <div className="relative z-10 flex items-center justify-between pt-2 border-t border-white/5">
-                <span className="text-xs font-space text-slate-400 group-hover:text-slate-200 transition-colors flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                  Iniciar Partida
-                </span>
-                
+              <div className="relative z-10 flex items-center justify-end pt-2 border-t border-white/5">
                 <div className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-300 group-hover:bg-purple-500 group-hover:text-black flex items-center justify-center transition-all duration-300 shadow-md">
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </div>
