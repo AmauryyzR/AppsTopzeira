@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Code2, Wand2 } from 'lucide-react';
+import { Code2, Wand2, Trash2 } from 'lucide-react';
 
 interface CodeEditorProps {
   code: string;
@@ -18,13 +18,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, onDetect
     onDetectScenes(nextCode);
   };
 
-  const insertSnippet = (snippet: string) => {
+  const handleClearAll = () => {
+    onChange('');
+    onDetectScenes('');
     if (editorRef.current) {
-      const editor = editorRef.current;
-      const selection = editor.getSelection();
-      editor.executeEdits('snippet', [{ range: selection, text: snippet, forceMoveMarkers: true }]);
-    } else {
-      onChange(code + '\n' + snippet);
+      editorRef.current.setValue('');
     }
   };
 
@@ -59,35 +57,25 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, onChange, onDetect
           <h3 className="font-bold text-white text-base">Editor de Código Python / Manim</h3>
         </div>
 
-        {/* Snippet Quick-Add & Format Bar */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Action Buttons: Format & Clear All */}
+        <div className="flex items-center gap-2">
           <button
             onClick={handleFormatCode}
             disabled={isFormatting}
-            className="text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-500/30 font-semibold flex items-center gap-1 transition-all mr-2"
+            className="text-xs bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 px-3 py-1.5 rounded-xl border border-sky-500/30 font-semibold flex items-center gap-1.5 transition-all"
             title="Corrigir indentação e formatar código automaticamente"
           >
             <Wand2 className={`w-3.5 h-3.5 ${isFormatting ? 'animate-spin' : ''}`} />
             Formatar / Indentar
           </button>
-          <span className="text-[10px] text-slate-500 font-semibold uppercase mr-1">Snippets:</span>
+
           <button
-            onClick={() => insertSnippet('MathTex(r"e^{i\\pi} + 1 = 0", color=YELLOW)')}
-            className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
+            onClick={handleClearAll}
+            className="text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 px-3 py-1.5 rounded-xl border border-rose-500/30 font-semibold flex items-center gap-1.5 transition-all"
+            title="Limpar todo o código do editor"
           >
-            + MathTex
-          </button>
-          <button
-            onClick={() => insertSnippet('axes = Axes(x_range=[-3,3], y_range=[-2,2])\nself.play(Create(axes))')}
-            className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
-          >
-            + Eixos 2D
-          </button>
-          <button
-            onClick={() => insertSnippet('self.play(Transform(mobj1, mobj2), run_time=2)')}
-            className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
-          >
-            + Transform
+            <Trash2 className="w-3.5 h-3.5" />
+            Limpar Tudo
           </button>
         </div>
       </div>
