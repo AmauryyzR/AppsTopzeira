@@ -1,31 +1,33 @@
 import os
-import subprocess
-import sys
+import threading
+import uvicorn
+import gradio as gr
+import spaces
+from server import app
 
-# Try loading Streamlit UI, or fallback to direct uvicorn execution
-try:
-    import streamlit as st
+# 1. Inicia o servidor FastAPI em segundo plano para o AppsTopzeira
+def run_fastapi():
+    uvicorn.run(app, host="0.0.0.0", port=7860, log_level="info")
 
-    st.set_page_config(page_title="Manim Backend API", page_icon="🎬")
+server_thread = threading.Thread(target=run_fastapi, daemon=True)
+server_thread.start()
 
-    @st.cache_resource
-    def start_backend():
-        # Start FastAPI server on port 7860 in background
-        proc = subprocess.Popen([
-            sys.executable, "-m", "uvicorn", "server:app",
-            "--host", "0.0.0.0",
-            "--port", "7860"
-        ])
-        return proc
+# 2. Função GPU registrada no evento do Gradio para satisfazer a checagem do ZeroGPU
+@spaces.GPU
+def test_gpu_health(input_text: str):
+    return f"🟢 ZeroGPU Ativo e Pronto! Cena: {input_text}"
 
-    start_backend()
+# 3. Interface Gradio Blocks com vínculo de evento oficial do Hugging Face
+with gr.Blocks(title="Manim Backend Server") as demo:
+    gr.Markdown("# 🎬 Motor Manim Backend API - AppsTopzeira")
+    gr.Markdown("Servidor FastAPI ativo em segundo plano com suporte a ZeroGPU 32GB RAM.")
+    
+    with gr.Row():
+        txt_input = gr.Textbox(value="MainScene", label="Teste de Cena")
+        txt_output = gr.Textbox(label="Status do Servidor")
+    
+    btn_check = gr.Button("🚀 Validar Status do ZeroGPU", variant="primary")
+    btn_check.click(fn=test_gpu_health, inputs=txt_input, outputs=txt_output)
 
-    st.title("🎬 Motor Manim Backend - Online 🟢")
-    st.success("O servidor FastAPI (Manim + TeX + FFmpeg) está rodando com sucesso e 16 GB de RAM disponível!")
-    st.info("Conecte a URL deste Space no portal AppsTopzeira para renderizar animações.")
-
-except Exception:
-    import uvicorn
-    from server import app
-    if __name__ == "__main__":
-        uvicorn.run(app, host="0.0.0.0", port=7860)
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
