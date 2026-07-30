@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, Play, Pause, RotateCcw, SkipForward, SkipBack, Film, Sparkles, Clock, HardDrive, CheckCircle2, Maximize2, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -374,14 +375,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Maximized Overlay Modal (Giant Centered View 94vw x 88vh matching red rectangle, Blurred Background, Close X Button & Full Video Controls) */}
-      {isMaximized && currentRender && (
+      {/* Maximized Overlay Modal Rendered via React Portal directly into document.body to cover full screen over code editor and navbars */}
+      {isMaximized && currentRender && createPortal(
         <div
-          className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
           onClick={() => setIsMaximized(false)}
         >
           <div
-            className="relative w-[94vw] max-w-[1400px] h-[88vh] max-h-[920px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-3 sm:p-5 shadow-2xl shadow-sky-500/20 flex flex-col justify-between"
+            className="relative w-[94vw] max-w-[1400px] h-[88vh] max-h-[920px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-3 sm:p-5 shadow-2xl shadow-sky-500/30 flex flex-col justify-between"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header bar with scene title & Close X button */}
@@ -521,7 +522,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
