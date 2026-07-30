@@ -208,7 +208,7 @@ const CustomScaleModal: React.FC<CustomScaleModalProps> = ({ label, currentMin, 
   );
 };
 
-// Smart Math Expression Parser (supports sin, sen, 2x, x^2, tg, ln, sqrt, and dynamic parameters)
+// Smart Math Expression Parser (supports implicit multiplication, Euler constant e, pi, custom log/exp bases)
 export function parseMathExpression(rawInput: string, paramsMap: Record<string, number>): ParsedMath {
   if (!rawInput || !rawInput.trim()) {
     return { jsExpr: '0', pyExpr: '0', rawInput: '0', isValid: true };
@@ -216,8 +216,8 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
 
   let expr = rawInput.trim();
 
-  // 1. Convert Portuguese & shortcut math notation
-  let js = expr
+  // 1. Convert Portuguese & unicode shortcut math notation
+  let s = expr
     .replace(/sen⁻¹/g, 'asin')
     .replace(/cos⁻¹/g, 'acos')
     .replace(/tg⁻¹/g, 'atan')
@@ -228,16 +228,51 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
     .replace(/÷/g, '/')
     .replace(/×/g, '*');
 
-  // 2. Implicit multiplication (e.g. 2x -> 2*x, 3sin -> 3*sin, (x+1)(x-1) -> (x+1)*(x-1))
-  js = js.replace(/(\d)\s*([a-zA-Z\(π√])/g, '$1*$2');
-  js = js.replace(/(\))\s*([\w\(])/g, '$1*$2');
+  // 2. Normalize Arbitrary Base Logarithms:
+  // Syntax A: log_b(x) or log_2(x) or log_a(x) -> __logBase(b, x)
+  s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '__logBase($1, $2)');
+  // Syntax B: log(b, x) -> __logBase(b, x)
+  s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '__logBase($1, $2)');
 
-  // 3. Exponents x**y or x^y -> __safePow(x, y)
+  // 3. Robust Implicit Multiplication:
+  // A) Number followed by variable, constant, function, or opening paren:
+  // 2x -> 2*x, 2( -> 2*(, 2sin -> 2*sin, 2pi -> 2*pi, 2e -> 2*e, 2sqrt -> 2*sqrt
+  s = s.replace(/(\d)\s*([a-zA-Z\(π√])/g, '$1*$2');
+
+  // B) Closing paren followed by number, variable, function, or opening paren:
+  // (x+1)(x-1) -> (x+1)*(x-1), (x+1)x -> (x+1)*x, (x+1)2 -> (x+1)*2
+  s = s.replace(/(\))\s*([\d\w\(π√])/g, '$1*$2');
+
+  // C) Insert * between adjacent variables/parameters (e.g. ax -> a*x, bx -> b*x, ab -> a*b, 2e -> 2*e, e x -> e*x)
+  // Preserve multi-letter function names (sin, cos, tan, asin, acos, atan, sqrt, log, log10, ln, exp, abs, pi)
+  s = s.replace(/\b([a-df-zA-DF-Z])(?![a-zA-Z0-9_])\s*([a-df-zA-DF-Z\(])\b/g, '$1*$2');
+  s = s.replace(/\b([a-df-zA-DF-Z])\s*([xye\(π])/g, (match, p1, p2) => {
+    if ((p1 + p2).toLowerCase() === 'pi') return p1 + p2;
+    return `${p1}*${p2}`;
+  });
+  s = s.replace(/\b([xy])\s*([a-df-zA-DF-Z\(])/g, '$1*$2');
+  s = s.replace(/\b(pi)\s*([a-df-zxyA-DF-Z\(])/g, '$1*$2');
+
+  // 4. Build JavaScript evaluation expression
+  let js = s;
+
+  // Process __logBase(b, x) -> ((Math.log(x))/(Math.log(b)))
+  js = js.replace(/__logBase\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/g, '((Math.log($2))/(Math.log($1)))');
+  js = js.replace(/\bln\b/g, 'Math.log');
+  js = js.replace(/\blog10\b/g, 'Math.log10');
+  js = js.replace(/\blog\b/g, 'Math.log10'); // log(x) default base 10
+
+  // Euler constant exponentiation: e**(expr) or e^(expr) -> Math.exp(...)
+  js = js.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'Math.exp($2)');
+  js = js.replace(/\be\s*(\*\*|\^)\s*([\w\._]+)/g, 'Math.exp($2)');
+  js = js.replace(/\bexp\(([^)]+)\)/g, 'Math.exp($1)');
+
+  // Arbitrary base power: x**y or x^y -> __safePow(x, y)
   js = js.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\)]+)/g, '__safePow($1, $2)');
   js = js.replace(/([\w\.\)]+)\s*\^\s*([\w\.\)]+)/g, '__safePow($1, $2)');
 
-  // 4. Map math functions for JavaScript evaluation
-  const mathFns = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sqrt', 'log', 'log10', 'exp', 'abs'];
+  // Map math functions
+  const mathFns = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sqrt', 'abs'];
   for (const fn of mathFns) {
     const reg = new RegExp(`\\b${fn}\\b`, 'g');
     js = js.replace(reg, `Math.${fn}`);
@@ -245,26 +280,34 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   js = js.replace(/\bpi\b/g, 'Math.PI');
   js = js.replace(/\be\b/g, 'Math.E');
 
-  // Replace parameter values dynamically in JS string
+  // Substitute parameter values dynamically
   for (const [pName, pVal] of Object.entries(paramsMap)) {
+    if (pName === 'e' || pName === 'pi' || pName === 'x' || pName === 'y') continue;
     const reg = new RegExp(`\\b${pName}\\b`, 'g');
     js = js.replace(reg, `(${pVal})`);
   }
 
-  // 5. Build Python / NumPy expression
-  let py = expr
-    .replace(/sen⁻¹/g, 'arcsin')
-    .replace(/cos⁻¹/g, 'arccos')
-    .replace(/tg⁻¹/g, 'arctan')
-    .replace(/sen/g, 'sin')
-    .replace(/tg/g, 'tan')
-    .replace(/√/g, 'np.sqrt')
-    .replace(/π/g, 'np.pi')
-    .replace(/÷/g, '/')
-    .replace(/×/g, '*')
-    .replace(/\^/g, '**');
+  // 5. Build Python / NumPy expression for Manim
+  let py = s;
 
-  py = py.replace(/\b(sin|cos|tan|arcsin|arccos|arctan|exp|log|log10|abs)\b/g, 'np.$1');
+  // Process __logBase(b, x) -> (np.log(x)/np.log(b))
+  py = py.replace(/__logBase\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/g, '(np.log($2)/np.log($1))');
+  py = py.replace(/\bln\b/g, 'np.log');
+  py = py.replace(/\blog10\b/g, 'np.log10');
+  py = py.replace(/\blog\b/g, 'np.log10');
+
+  py = py.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'np.exp($2)');
+  py = py.replace(/\be\s*(\*\*|\^)\s*([\w\._]+)/g, 'np.exp($2)');
+
+  py = py.replace(/\basin\b/g, 'arcsin')
+         .replace(/\bacos\b/g, 'arccos')
+         .replace(/\batan\b/g, 'arctan')
+         .replace(/\bsqrt\b/g, 'np.sqrt')
+         .replace(/\bpi\b/g, 'np.pi')
+         .replace(/\be\b/g, 'np.e')
+         .replace(/\^/g, '**');
+
+  py = py.replace(/\b(sin|cos|tan|arcsin|arccos|arctan|exp|abs)\b/g, 'np.$1');
 
   try {
     const testFn = new Function('x', `
@@ -288,15 +331,27 @@ export function formatExpressionToLatex(rawInput: string): string {
 
   let s = rawInput.trim();
 
-  // 1. Convert double asterisk exponents x**(expr) or x**a BEFORE single * conversion!
+  // 1. Convert unicode math symbols
+  s = s.replace(/π/g, '\\pi')
+       .replace(/÷/g, '\\div');
+
+  // 2. Exponentiation of Euler's constant: e**(expr) or e^(expr) or exp(expr) -> e^{expr}
+  s = s.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'e^{$2}');
+  s = s.replace(/\be\s*(\*\*|\^)\s*([\w\.\_]+)/g, 'e^{$2}');
+  s = s.replace(/\bexp\(([^)]+)\)/g, 'e^{\\left($1\\right)}');
+
+  // 3. Custom base logarithms: log_b(x) or log(b, x) -> \log_{b}\left(x\right)
+  s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '\\log_{$1}\\left($2\\right)');
+  s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '\\log_{$1}\\left($2\\right)');
+  s = s.replace(/\blog10\(([^)]+)\)/g, '\\log_{10}\\left($1\\right)');
+
+  // 4. Caret or asterisk exponents x**(expr) or x^(expr) -> x^{expr}
   s = s.replace(/([\w\.\)]+)\s*\*\*\s*\(([^)]+)\)/g, '$1^{$2}');
   s = s.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\_]+)/g, '$1^{$2}');
-
-  // 2. Convert caret exponents x^(expr) or x^a
   s = s.replace(/([\w\.\)]+)\s*\^\s*\(([^)]+)\)/g, '$1^{$2}');
   s = s.replace(/([\w\.\)]+)\s*\^\s*([\w\.\_]+)/g, '$1^{$2}');
 
-  // 3. Portuguese trig & standard math functions
+  // 5. Portuguese trig & standard math functions
   s = s
     .replace(/sen⁻¹/g, '\\arcsin')
     .replace(/cos⁻¹/g, '\\arccos')
@@ -310,13 +365,10 @@ export function formatExpressionToLatex(rawInput: string): string {
     .replace(/\blog\b/g, '\\log')
     .replace(/√/g, '\\sqrt');
 
-  // 4. exp(expr) -> e^{expr}
-  s = s.replace(/\bexp\(([^)]+)\)/g, 'e^{\\left($1\\right)}');
-
-  // 5. sqrt(expr) -> \sqrt{expr}
+  // 6. sqrt(expr) -> \sqrt{expr}
   s = s.replace(/\bsqrt\(([^)]+)\)/g, '\\sqrt{$1}');
 
-  // 6. Replace single '*' with '\cdot ' (ONLY AFTER double ** is handled!)
+  // 7. Replace single '*' with '\cdot '
   s = s.replace(/\*/g, ' \\cdot ');
 
   return s.replace(/\s+/g, ' ').trim();
@@ -485,11 +537,59 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     return Number(val.toFixed(4)).toString();
   };
 
+  // Reserved math keywords & constants that MUST NEVER be parameters
+  const RESERVED_PARAM_NAMES = new Set(['x', 'y', 'e', 'pi', 'π', 'sin', 'cos', 'tan', 'tg', 'sen', 'sqrt', 'log', 'log10', 'ln', 'exp', 'abs', 'asin', 'acos', 'atan', 'arcsin', 'arccos', 'arctan', 'Math', 'np']);
+
+  // Filter out reserved constants (like 'e', 'pi', 'x', 'y') from parameters list
+  useEffect(() => {
+    setParams((prev) => {
+      const filtered = prev.filter((p) => !RESERVED_PARAM_NAMES.has(p.name));
+      return filtered.length !== prev.length ? filtered : prev;
+    });
+  }, []);
+
+  // Auto-detect parameters when function string changes (excluding reserved constants like 'e' and 'pi')
+  useEffect(() => {
+    const matches = Array.from(funcStr.matchAll(/\b([a-zA-Z])\b/g)).map((m) => m[1]);
+    const detected = Array.from(new Set(matches)).filter((name) => !RESERVED_PARAM_NAMES.has(name));
+
+    if (detected.length > 0) {
+      setParams((prev) => {
+        const existingMap = new Map(prev.map((p) => [p.name, p]));
+        const updatedParams: DynamicParam[] = [];
+
+        for (const name of detected) {
+          if (existingMap.has(name)) {
+            updatedParams.push(existingMap.get(name)!);
+          } else {
+            updatedParams.push({
+              id: `param_${name}_${Date.now()}`,
+              name,
+              value: 1.0,
+              min: -10,
+              max: 10,
+              isAnimated: false,
+              animTarget: 3.0,
+            });
+          }
+        }
+
+        // Retain any existing valid non-reserved parameters
+        for (const p of prev) {
+          if (!updatedParams.some((u) => u.name === p.name) && !RESERVED_PARAM_NAMES.has(p.name)) {
+            updatedParams.push(p);
+          }
+        }
+        return updatedParams.length > 0 ? updatedParams : prev;
+      });
+    }
+  }, [funcStr]);
+
   // Add new parameter
   const handleAddParam = () => {
-    const availableNames = ['c', 'd', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'z'];
+    const availableNames = ['a', 'b', 'c', 'd', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'z'];
     const existingNames = params.map(p => p.name);
-    const nextName = availableNames.find(n => !existingNames.includes(n)) || `p${params.length + 1}`;
+    const nextName = availableNames.find(n => !existingNames.includes(n) && !RESERVED_PARAM_NAMES.has(n)) || `p${params.length + 1}`;
 
     const newParam: DynamicParam = {
       id: `param_${Date.now()}`,
@@ -505,6 +605,9 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
 
   // Update a single parameter field
   const updateParam = (id: string, updates: Partial<DynamicParam>) => {
+    if (updates.name && RESERVED_PARAM_NAMES.has(updates.name)) {
+      return; // Block renaming to reserved constants
+    }
     setParams(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   };
 
@@ -1645,24 +1748,37 @@ ${animationBlock}
 
             {keypadTab === '123' && (
               <div className="grid grid-cols-6 gap-1.5">
-                {['x', 'y', 'a', 'b', '^', 'sqrt('].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
-                  </button>
-                ))}
-                {['7', '8', '9', '/', '*', '-'].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
-                  </button>
-                ))}
-                {['4', '5', '6', '+', '(', ')'].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
-                  </button>
-                ))}
-                {['1', '2', '3', '0', '.', '='].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-200 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
+                {[
+                  { label: 'x', insert: 'x' },
+                  { label: 'y', insert: 'y' },
+                  { label: 'π', insert: 'π' },
+                  { label: 'e', insert: 'e' },
+                  { label: 'xⁿ', insert: '^(' },
+                  { label: '√', insert: '√(' },
+
+                  { label: '7', insert: '7' },
+                  { label: '8', insert: '8' },
+                  { label: '9', insert: '9' },
+                  { label: '÷', insert: '/' },
+                  { label: '×', insert: '*' },
+                  { label: '-', insert: '-' },
+
+                  { label: '4', insert: '4' },
+                  { label: '5', insert: '5' },
+                  { label: '6', insert: '6' },
+                  { label: '+', insert: '+' },
+                  { label: '(', insert: '(' },
+                  { label: ')', insert: ')' },
+
+                  { label: '1', insert: '1' },
+                  { label: '2', insert: '2' },
+                  { label: '3', insert: '3' },
+                  { label: '0', insert: '0' },
+                  { label: '.', insert: '.' },
+                  { label: '=', insert: '=' },
+                ].map((item, idx) => (
+                  <button key={idx} onClick={() => insertKey(item.insert)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
+                    {item.label}
                   </button>
                 ))}
                 <button onClick={() => insertKey('CLEAR')} className="col-span-3 p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-mono text-xs font-bold rounded-lg border border-rose-800/40">
@@ -1676,19 +1792,29 @@ ${animationBlock}
 
             {keypadTab === 'fx' && (
               <div className="grid grid-cols-4 gap-1.5">
-                {['sin(', 'cos(', 'tg(', 'exp('].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
-                  </button>
-                ))}
-                {['log(', 'ln(', 'abs(', 'pi'].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
-                  </button>
-                ))}
-                {['sen⁻¹(', 'cos⁻¹(', 'tg⁻¹(', 'e'].map((k) => (
-                  <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
-                    {k}
+                {[
+                  { label: 'sen(', insert: 'sen(' },
+                  { label: 'cos(', insert: 'cos(' },
+                  { label: 'tg(', insert: 'tg(' },
+                  { label: 'eⁿ', insert: 'e^(' },
+
+                  { label: 'log₁₀(', insert: 'log10(' },
+                  { label: 'log_b(', insert: 'log(' },
+                  { label: 'ln(', insert: 'ln(' },
+                  { label: '10ⁿ', insert: '10^(' },
+
+                  { label: 'sen⁻¹(', insert: 'sen⁻¹(' },
+                  { label: 'cos⁻¹(', insert: 'cos⁻¹(' },
+                  { label: 'tg⁻¹(', insert: 'tg⁻¹(' },
+                  { label: 'abs(', insert: 'abs(' },
+
+                  { label: 'π', insert: 'π' },
+                  { label: 'e', insert: 'e' },
+                  { label: 'bⁿ', insert: '^(' },
+                  { label: '√(', insert: '√(' },
+                ].map((item, idx) => (
+                  <button key={idx} onClick={() => insertKey(item.insert)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
+                    {item.label}
                   </button>
                 ))}
               </div>
@@ -1696,7 +1822,7 @@ ${animationBlock}
 
             {keypadTab === 'abc' && (
               <div className="grid grid-cols-7 gap-1">
-                {['a', 'b', 'c', 'd', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w'].map((k) => (
+                {['a', 'b', 'c', 'd', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'z'].map((k) => (
                   <button key={k} onClick={() => insertKey(k)} className="p-2 bg-slate-900 hover:bg-slate-800 text-sky-300 font-mono text-xs font-bold rounded-lg border border-slate-800">
                     {k}
                   </button>
