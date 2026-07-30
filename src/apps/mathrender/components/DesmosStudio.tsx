@@ -739,6 +739,68 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     setIsDragging(false);
   };
 
+  // Mouse Wheel Zoom Handler
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const zoomFactor = e.deltaY < 0 ? 1.2 : 0.83;
+    setZoomScale((prev) => {
+      const next = prev * zoomFactor;
+      return Math.max(0.05, Math.min(200, next));
+    });
+  };
+
+  // Touch Handlers for Mobile Panning & Pinch-to-Zoom
+  const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      setTouchStartDist(null);
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setTouchStartDist(dist);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (e.touches.length === 1 && isDragging) {
+      const dx = e.touches[0].clientX - dragStart.x;
+      const dy = e.touches[0].clientY - dragStart.y;
+      setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+
+      const mathDx = (dx / canvas.width) * (xMax - xMin);
+      const mathDy = (dy / canvas.height) * (yMax - yMin);
+
+      setXCenter((prev) => prev - mathDx);
+      setYCenter((prev) => prev + mathDy);
+    } else if (e.touches.length === 2 && touchStartDist !== null) {
+      const newDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (newDist > 0 && touchStartDist > 0) {
+        const factor = newDist / touchStartDist;
+        setTouchStartDist(newDist);
+        setZoomScale((prev) => {
+          const next = prev * factor;
+          return Math.max(0.05, Math.min(200, next));
+        });
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchStartDist(null);
+  };
+
   const resetView = () => {
     setXCenter(0);
     setYCenter(0);
@@ -1342,7 +1404,11 @@ ${animationBlock}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
-            className="w-full h-full block cursor-grab active:cursor-grabbing"
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
           />
         </div>
 
