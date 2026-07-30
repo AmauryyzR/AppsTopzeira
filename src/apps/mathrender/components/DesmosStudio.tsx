@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Sparkles, Sliders, RefreshCw, ZoomIn, ZoomOut, Sun, Moon, Keyboard, Plus, Trash2, Layers } from 'lucide-react';
 
 interface DesmosStudioProps {
-  onSendToManim: (code: string) => void;
+  onSendToManim: (code: string, displayName?: string) => void;
 }
 
 export interface ParsedMath {
@@ -1132,7 +1132,17 @@ ${animationBlock}
 
   const handleSendToStudio = () => {
     const code = generateManimCode();
-    onSendToManim(code);
+    let displayName = `Gráfico de ${funcStr.trim()}`;
+    if (animMode === 'riemann') {
+      displayName = 'Integral de Riemann';
+    } else if (animMode === 'parametric') {
+      const animatedList = params.filter(p => p.isAnimated);
+      const names = animatedList.length > 0 ? animatedList.map(p => p.name).join(', ') : params[0]?.name || 'a';
+      displayName = `Animação Paramétrica (${names})`;
+    } else if (showTangent) {
+      displayName = 'Reta Tangente';
+    }
+    onSendToManim(code, displayName);
   };
 
   return (

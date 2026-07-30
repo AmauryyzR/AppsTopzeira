@@ -182,7 +182,7 @@ export function MathRenderApp() {
   };
 
   // Start Manim SSE Render Stream (accepts overrideCode to IMMEDIATELY render new code without state delay)
-  const handleStartRender = async (overrideCode?: string) => {
+  const handleStartRender = async (overrideCode?: string, customDisplayName?: string) => {
     const codeToRender = overrideCode !== undefined ? overrideCode : code;
 
     setIsRendering(true);
@@ -259,6 +259,36 @@ export function MathRenderApp() {
                 setProgressPercent(event.percent);
               } else if (event.type === 'complete') {
                 const activeBackendBase = (customBackendUrl || DEFAULT_BACKEND_URL).replace(/\/+$/, '');
+
+                let friendlyName = customDisplayName;
+                if (!friendlyName) {
+                  if (sceneToUse === 'GeoGebraGraphScene') {
+                    if (codeToRender.includes('ValueTracker') && codeToRender.includes('_tracker')) {
+                      friendlyName = 'Animação Paramétrica';
+                    } else if (codeToRender.includes('get_riemann_rectangles')) {
+                      friendlyName = 'Integral de Riemann';
+                    } else if (codeToRender.includes('tangent_line')) {
+                      friendlyName = 'Reta Tangente';
+                    } else {
+                      friendlyName = 'Animação do Gráfico';
+                    }
+                  } else {
+                    const knownNames: Record<string, string> = {
+                      'FourierSeries': 'Série de Fourier',
+                      'LinearTransformation2D': 'Transformação Linear 2D',
+                      'PythagoreanTheorem': 'Teorema de Pitágoras',
+                      'DoublePendulum': 'Pêndulo Duplo',
+                      'VectorField2D': 'Campo Vetorial 2D',
+                      'SineWave3D': 'Onda Senoidal 3D',
+                      'PlanetaryOrbit': 'Órbita Planetária',
+                      'BinarySearchTree': 'Árvore de Busca Binária',
+                      'NormalDistribution': 'Distribuição Normal',
+                      'ComplexAnalysis': 'Análise Complexa',
+                    };
+                    friendlyName = knownNames[sceneToUse] || sceneToUse.replace(/([A-Z])/g, ' $1').trim();
+                  }
+                }
+
                 const newResult: RenderResult = {
                   renderId: event.render_id,
                   videoUrl: `${activeBackendBase}${event.video_url}`,
@@ -269,7 +299,7 @@ export function MathRenderApp() {
                   resolution: event.resolution,
                   fps: event.fps,
                   format: event.format,
-                  sceneName: sceneToUse,
+                  sceneName: friendlyName,
                   createdAt: new Date().toLocaleTimeString(),
                 };
 
@@ -334,15 +364,15 @@ export function MathRenderApp() {
     }
 
     if (autoRender) {
-      handleStartRender(template.code);
+      handleStartRender(template.code, template.title);
     }
   };
 
   // Handle code received from Desmos Studio
-  const handleSendFromDesmos = (desmosCode: string) => {
+  const handleSendFromDesmos = (desmosCode: string, displayName?: string) => {
     setCode(desmosCode);
     setActiveTab('studio');
-    handleStartRender(desmosCode); // Directly render new code!
+    handleStartRender(desmosCode, displayName || 'Animação do Gráfico'); // Directly render new code!
   };
 
   return (
