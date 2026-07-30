@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Gamepad2, ArrowRight, Sparkles, Cpu, Trophy, Terminal, Play, Zap } from 'lucide-react';
+import { Calculator, Gamepad2, ArrowRight, Cpu, Trophy } from 'lucide-react';
 import { TabType } from '../types';
 
 interface CoverPageProps {
@@ -8,7 +8,8 @@ interface CoverPageProps {
 }
 
 export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
-  const [hoveredCard, setHoveredCard] = useState<'mathrender' | 'snake' | null>(null);
+  const [, setHoveredCard] = useState<'mathrender' | 'snake' | null>(null);
+  const [isRevealed, setIsRevealed] = useState<boolean>(false);
 
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] w-full flex flex-col items-center justify-between px-4 py-8 md:py-16 overflow-hidden bg-grid-pattern">
@@ -47,7 +48,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
         </motion.p>
       </div>
 
-      {/* Considerable Spacing as requested */}
+      {/* Considerable Spacing */}
       <div className="w-full my-8 md:my-14" />
 
       {/* 2 Large Rectangular 16:9 Buttons Container */}
@@ -175,7 +176,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
         </div>
       </div>
 
-      {/* Footer Info - Dark Rectangle revealing 'Amaury Roscoe' on hover */}
+      {/* Footer Info - Dark Rectangle revealing 'Amaury Roscoe' on hover or tap/click */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,14 +184,14 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
         className="mt-16 md:mt-24 mb-4 z-10 flex items-center justify-center"
       >
         <div 
+          onClick={() => setIsRevealed(!isRevealed)}
           className="group relative inline-flex items-center justify-center px-6 py-2 rounded-xl bg-[#080d19] border border-slate-800/80 shadow-md hover:border-cyan-500/80 hover:shadow-[0_0_25px_rgba(6,182,212,0.35)] cursor-pointer transition-all duration-300 overflow-hidden"
-          title="Passe o mouse para revelar"
         >
           {/* Solid Dark Mask Layer */}
-          <div className="absolute inset-0 bg-[#080d19] group-hover:opacity-0 transition-opacity duration-300 z-10" />
+          <div className={`absolute inset-0 bg-[#080d19] transition-opacity duration-300 z-10 ${isRevealed ? 'opacity-0' : 'group-hover:opacity-0'}`} />
 
-          {/* Secret Text revealed on hover */}
-          <span className="font-space font-bold tracking-widest text-xs text-cyan-400 glow-text-cyan relative z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 select-none">
+          {/* Secret Text revealed on hover or tap */}
+          <span className={`font-space font-bold tracking-widest text-xs text-cyan-400 glow-text-cyan relative z-0 transition-opacity duration-300 select-none ${isRevealed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
             Amaury Roscoe
           </span>
         </div>
@@ -199,4 +200,3 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
     </div>
   );
 };
-
