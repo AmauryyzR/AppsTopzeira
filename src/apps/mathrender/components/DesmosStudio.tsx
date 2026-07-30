@@ -310,6 +310,27 @@ export function formatExpressionToLatex(rawInput: string): string {
   return s.replace(/\s+/g, ' ').trim();
 }
 
+// Calculate nice grid steps (1, 2, 5, 10...) so both X and Y axes always match 1:1
+export function getNiceGridStep(span: number, targetTicks: number = 7): number {
+  if (span <= 0 || isNaN(span)) return 1;
+  const rawStep = span / targetTicks;
+  const exponent = Math.floor(Math.log10(rawStep));
+  const fraction = rawStep / Math.pow(10, exponent);
+
+  let niceFraction: number;
+  if (fraction < 1.5) {
+    niceFraction = 1;
+  } else if (fraction < 3.5) {
+    niceFraction = 2;
+  } else if (fraction < 7.5) {
+    niceFraction = 5;
+  } else {
+    niceFraction = 10;
+  }
+
+  return niceFraction * Math.pow(10, exponent);
+}
+
 const LOCAL_STORAGE_KEY = 'manim_geogebra_studio_config';
 
 export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => {
@@ -364,6 +385,22 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Canvas Dimensions State
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 500 });
+
+  // Compute 1:1 Isotropic Axis Extents based on container aspect ratio
+  const aspect = canvasDimensions.height > 0 ? canvasDimensions.width / canvasDimensions.height : 1.6;
+  const baseRangeY = 10 / zoomScale;
+  const baseRangeX = baseRangeY * aspect;
+
+  const xMin = xCenter - baseRangeX / 2;
+  const xMax = xCenter + baseRangeX / 2;
+  const yMin = yCenter - baseRangeY / 2;
+  const yMax = yCenter + baseRangeY / 2;
+
+  const xSpan = Math.abs(xMax - xMin);
+  const ySpan = Math.abs(yMax - yMin);
 
   // Load saved graph settings from localStorage on mount
   useEffect(() => {
@@ -424,17 +461,6 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
 
   // Parse math expression
   const parsed = parseMathExpression(funcStr, paramsMap);
-
-  // Compute Axis Extents based on center and zoom
-  const baseRangeX = 16 / zoomScale;
-  const baseRangeY = 10 / zoomScale;
-  const xMin = xCenter - baseRangeX / 2;
-  const xMax = xCenter + baseRangeX / 2;
-  const yMin = yCenter - baseRangeY / 2;
-  const yMax = yCenter + baseRangeY / 2;
-
-  const xSpan = Math.abs(xMax - xMin);
-  const ySpan = Math.abs(yMax - yMin);
 
   // Format Helper
   const formatParamValue = (val: number): string => {
@@ -502,9 +528,6 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     }
   };
 
-  // Canvas Dimensions State
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 500 });
-
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
@@ -542,8 +565,9 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     const toScreenX = (x: number) => ((x - xMin) / (xMax - xMin)) * width;
     const toScreenY = (y: number) => height - ((y - yMin) / (yMax - yMin)) * height;
 
-    const xGridStep = Math.pow(10, Math.floor(Math.log10(xSpan / 6)));
-    const yGridStep = Math.pow(10, Math.floor(Math.log10(ySpan / 6)));
+    const gridStep = getNiceGridStep(ySpan, 7);
+    const xGridStep = gridStep;
+    const yGridStep = gridStep;
 
     // Grid lines
     ctx.lineWidth = 1;
@@ -829,8 +853,9 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     const formattedYMin = formatParamValue(yMin);
     const formattedYMax = formatParamValue(yMax);
 
-    const xStepManim = formatParamValue(Math.pow(10, Math.floor(Math.log10(xSpan / 5))));
-    const yStepManim = formatParamValue(Math.pow(10, Math.floor(Math.log10(ySpan / 5))));
+    const manimGridStep = formatParamValue(getNiceGridStep(ySpan, 6));
+    const xStepManim = manimGridStep;
+    const yStepManim = manimGridStep;
 
     let animationBlock = '';
 
