@@ -28,14 +28,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onSelectFromHistory,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const theaterVideoRef = useRef<HTMLVideoElement | null>(null);
+  const maximizedVideoRef = useRef<HTMLVideoElement | null>(null);
   
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [isLooping, setIsLooping] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [isTheaterOpen, setIsTheaterOpen] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
   // Reset player time when render changes
   useEffect(() => {
@@ -43,19 +43,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setDuration(currentRender?.durationSec || 0);
   }, [currentRender?.videoUrl]);
 
-  // Handle ESC key to exit theater mode
+  // Handle ESC key to exit maximized mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isTheaterOpen) {
-        setIsTheaterOpen(false);
+      if (e.key === 'Escape' && isMaximized) {
+        setIsMaximized(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isTheaterOpen]);
+  }, [isMaximized]);
 
   const togglePlay = () => {
-    const targetVideo = isTheaterOpen ? theaterVideoRef.current : videoRef.current;
+    const targetVideo = isMaximized ? maximizedVideoRef.current : videoRef.current;
     if (!targetVideo) return;
     if (isPlaying) {
       targetVideo.pause();
@@ -69,11 +69,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleSpeedChange = (speed: number) => {
     setPlaybackSpeed(speed);
     if (videoRef.current) videoRef.current.playbackRate = speed;
-    if (theaterVideoRef.current) theaterVideoRef.current.playbackRate = speed;
+    if (maximizedVideoRef.current) maximizedVideoRef.current.playbackRate = speed;
   };
 
   const handleFrameStep = (frames: number) => {
-    const targetVideo = isTheaterOpen ? theaterVideoRef.current : videoRef.current;
+    const targetVideo = isMaximized ? maximizedVideoRef.current : videoRef.current;
     if (!targetVideo) return;
     targetVideo.pause();
     setIsPlaying(false);
@@ -87,7 +87,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const nextTime = parseFloat(e.target.value);
     setCurrentTime(nextTime);
     if (videoRef.current) videoRef.current.currentTime = nextTime;
-    if (theaterVideoRef.current) theaterVideoRef.current.currentTime = nextTime;
+    if (maximizedVideoRef.current) maximizedVideoRef.current.currentTime = nextTime;
   };
 
   const handleDownload = () => {
@@ -167,13 +167,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 className="max-h-full max-w-full object-contain rounded-lg cursor-pointer shadow-2xl"
                 onClick={togglePlay}
               />
+              {/* YouTube style Maximize button on video overlay */}
               <button
-                onClick={() => setIsTheaterOpen(true)}
-                className="absolute top-3 right-3 z-10 p-2.5 bg-slate-900/80 hover:bg-sky-500 text-slate-300 hover:text-white rounded-xl backdrop-blur-md border border-slate-700 transition-all opacity-80 hover:opacity-100 shadow-lg flex items-center gap-1.5 text-xs font-semibold"
-                title="Modo Teatro (~75% da Tela)"
+                onClick={() => setIsMaximized(true)}
+                className="absolute top-3 right-3 z-10 p-2 bg-slate-900/80 hover:bg-sky-500 text-slate-300 hover:text-white rounded-xl backdrop-blur-md border border-slate-700 transition-all opacity-80 hover:opacity-100 shadow-lg flex items-center gap-1 text-xs font-semibold"
+                title="Maximizar Vídeo (75% da Tela)"
               >
                 <Maximize2 className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">Modo Teatro</span>
+                <span className="hidden sm:inline">Maximizar</span>
               </button>
             </>
           )
@@ -192,7 +193,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
       </div>
 
-      {/* Primary Download & Theater Action Buttons */}
+      {/* Primary Download & Maximize Buttons */}
       {currentRender && (
         <div className="flex items-center gap-3">
           <button
@@ -204,12 +205,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </button>
 
           <button
-            onClick={() => setIsTheaterOpen(true)}
+            onClick={() => setIsMaximized(true)}
             className="bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 font-bold py-3 px-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all"
-            title="Expandir Vídeo para Modo Teatro (~75% da Tela)"
+            title="Maximizar Vídeo (75% - 80% da Tela)"
           >
             <Maximize2 className="w-5 h-5 stroke-[2.5]" />
-            <span className="hidden sm:inline">Modo Teatro</span>
+            <span className="hidden sm:inline">Maximizar</span>
           </button>
         </div>
       )}
@@ -301,6 +302,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Loop
               </button>
+
+              <button
+                onClick={() => setIsMaximized(true)}
+                className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-all"
+                title="Maximizar Vídeo (75% da Tela)"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -365,24 +374,24 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         </div>
       )}
 
-      {/* Theater Mode Modal Overlay (~75% Screen Width, 5% Margins, Blurred Background, Close X Button & Full Video Controls) */}
-      {isTheaterOpen && currentRender && (
+      {/* Maximized Overlay Modal (~75% - 80% Screen Size, Centered, Blurred Background, Close X Button & Full Video Controls) */}
+      {isMaximized && currentRender && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
-          onClick={() => setIsTheaterOpen(false)}
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 lg:p-8 animate-in fade-in duration-200"
+          onClick={() => setIsMaximized(false)}
         >
           <div
-            className="relative w-[78vw] max-w-6xl h-[85vh] max-h-[850px] min-w-[300px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl shadow-sky-500/20 flex flex-col justify-between"
+            className="relative w-[78vw] max-w-5xl h-[80vh] max-h-[820px] min-w-[300px] min-h-[360px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-4 sm:p-6 shadow-2xl shadow-sky-500/20 flex flex-col justify-between"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header bar with scene title & Close X button */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2 text-sky-400">
                 <Film className="w-5 h-5" />
-                <h3 className="font-bold text-white text-base truncate">{currentRender.sceneName} - Modo Teatro</h3>
+                <h3 className="font-bold text-white text-base truncate">{currentRender.sceneName}</h3>
               </div>
               <button
-                onClick={() => setIsTheaterOpen(false)}
+                onClick={() => setIsMaximized(false)}
                 className="p-2 bg-slate-800 hover:bg-rose-500 text-slate-300 hover:text-white rounded-full transition-all shadow-md"
                 title="Fechar (ESC ou Clicar Fora)"
               >
@@ -390,21 +399,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </button>
             </div>
 
-            {/* Main Video Viewport in Theater Modal */}
+            {/* Main Video Viewport in Maximized Modal */}
             <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center my-3 p-2">
               <video
-                ref={theaterVideoRef}
+                ref={maximizedVideoRef}
                 src={currentRender.videoUrl}
                 loop={isLooping}
                 autoPlay
                 onTimeUpdate={() => {
-                  if (theaterVideoRef.current) {
-                    setCurrentTime(theaterVideoRef.current.currentTime);
+                  if (maximizedVideoRef.current) {
+                    setCurrentTime(maximizedVideoRef.current.currentTime);
                   }
                 }}
                 onLoadedMetadata={() => {
-                  if (theaterVideoRef.current) {
-                    setDuration(theaterVideoRef.current.duration || currentRender.durationSec || 0);
+                  if (maximizedVideoRef.current) {
+                    setDuration(maximizedVideoRef.current.duration || currentRender.durationSec || 0);
                   }
                 }}
                 onPlay={() => setIsPlaying(true)}
@@ -414,7 +423,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               />
             </div>
 
-            {/* Video Controls Timeline & Seekbar inside Theater Modal */}
+            {/* Video Controls Timeline & Seekbar inside Maximized Modal */}
             {!['gif', 'png', 'jpg', 'jpeg'].includes(currentRender.format.toLowerCase()) && (
               <div className="bg-slate-950/90 rounded-2xl p-3 sm:p-4 border border-slate-800 flex flex-col gap-3">
                 {/* Seekbar */}
@@ -448,7 +457,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     </button>
                     <button
                       onClick={() => {
-                        const target = theaterVideoRef.current || videoRef.current;
+                        const target = maximizedVideoRef.current || videoRef.current;
                         if (target) {
                           target.currentTime = 0;
                           setCurrentTime(0);
