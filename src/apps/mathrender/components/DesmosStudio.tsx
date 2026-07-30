@@ -763,16 +763,16 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     setIsDragging(false);
   };
 
-  // Mouse Wheel Zoom Handler
+  // Mouse Wheel Zoom Handler (Infinite Zoom)
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     const zoomFactor = e.deltaY < 0 ? 1.2 : 0.83;
     setZoomScale((prev) => {
       const next = prev * zoomFactor;
-      return Math.max(0.05, Math.min(200, next));
+      return Math.max(1e-15, Math.min(1e15, next));
     });
   };
 
-  // Touch Handlers for Mobile Panning & Pinch-to-Zoom
+  // Touch Handlers for Mobile Panning & Pinch-to-Zoom (Infinite Zoom)
   const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -814,7 +814,7 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
         setTouchStartDist(newDist);
         setZoomScale((prev) => {
           const next = prev * factor;
-          return Math.max(0.05, Math.min(200, next));
+          return Math.max(1e-15, Math.min(1e15, next));
         });
       }
     }
@@ -865,7 +865,7 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
         area = axes.get_area(graph, x_range=[${formatParamValue(integralStart)}, ${formatParamValue(integralEnd)}], color=${animColor}, opacity=0.3)
         riemann = axes.get_riemann_rectangles(graph, x_range=[${formatParamValue(integralStart)}, ${formatParamValue(integralEnd)}], dx=${stepWidth}, stroke_width=0.5, color=BLUE_B)
         
-        area_label = MathTex(r"\\int_{${formatParamValue(integralStart)}}^{${formatParamValue(integralEnd)}} f(x) dx \\approx ${integralValStr}", font_size=26, color=${animColor})
+        area_label = MathTex(r"\\int_{${formatParamValue(integralStart)}}^{${formatParamValue(integralEnd)}} f(x) dx \\approx ${integralValStr}", font_size=34, color=${animColor})
         area_label.to_corner(UR)
 
         self.play(Create(area), Write(area_label), run_time=1.5)
@@ -887,8 +887,8 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
 
       const animateCalls = paramsToTrack.map(p => `${p.name}_tracker.animate.set_value(${formatParamValue(p.animTarget)})`).join(',\n            ');
 
-      // Build live parameter value label for upper right (UR) corner
-      const paramLatexParts = paramsToTrack.map(p => `${p.name} = {${p.name}_tracker.get_value():.2f}`).join(', \\\\quad ');
+      // Build live parameter value label for upper right (UR) corner using bulletproof LaTeX separator
+      const paramLatexParts = paramsToTrack.map(p => `${p.name} = {${p.name}_tracker.get_value():.2f}`).join(', \\ \\ ');
 
       animationBlock = `        # 3. Animação Paramétrica dos Parâmetros (${paramsToTrack.map(p => p.name).join(', ')})
 ${trackerInits}
@@ -901,12 +901,12 @@ ${trackerInits}
         ))
 
         # Rótulo em LaTeX da fórmula no canto superior esquerdo (UL)
-        graph_label = MathTex(r"f(x) = ${latexExpr}", font_size=28, color=${animColor}).to_corner(UL)
+        graph_label = MathTex(r"f(x) = ${latexExpr}", font_size=36, color=${animColor}).to_corner(UL)
 
         # Rótulo animado em tempo real com o valor dos parâmetros no canto superior direito (UR)
         param_label = always_redraw(lambda: MathTex(
             rf"${paramLatexParts}",
-            font_size=28,
+            font_size=36,
             color=${animColor}
         ).to_corner(UR))
 
@@ -925,7 +925,7 @@ ${trackerInits}
       animationBlock = `        # 3. Animações Adicionais
 ${showIntegral ? `        # Preenchimento da Área da Integral Definida
         area = axes.get_area(graph, x_range=[${formatParamValue(integralStart)}, ${formatParamValue(integralEnd)}], color=${animColor}, opacity=0.3)
-        area_label = MathTex(r"\\int_{${formatParamValue(integralStart)}}^{${formatParamValue(integralEnd)}} f(x) dx \\approx ${integralValStr}", font_size=26, color=${animColor})
+        area_label = MathTex(r"\\int_{${formatParamValue(integralStart)}}^{${formatParamValue(integralEnd)}} f(x) dx \\approx ${integralValStr}", font_size=34, color=${animColor})
         area_label.to_corner(UR)
         self.play(Create(area), Write(area_label), run_time=2)` : ''}
 
@@ -942,7 +942,7 @@ ${showTangent ? `        # Reta Tangente no Ponto x0
             p2 = axes.c2p(x0 + span_x, y0 + slope * span_x)
             return Line(p1, p2, color=RED_A, stroke_width=3)
         tangent_line = always_redraw(get_tangent)
-        point_label = always_redraw(lambda: Text(f"x0 = {t_param.get_value():.3f}", font_size=22, color=RED).to_corner(UR))
+        point_label = always_redraw(lambda: Text(f"x0 = {t_param.get_value():.3f}", font_size=32, color=RED).to_corner(UR))
         self.play(Create(dot), Create(tangent_line), Write(point_label))
         self.play(t_param.animate.set_value(${formattedXMax}), run_time=${formatParamValue(animRunTime)}, rate_func=there_and_back)` : ''}
         self.wait(1)`;
@@ -978,7 +978,7 @@ class GeoGebraGraphScene(Scene):
         graph = axes.plot(func, color=${animColor}, x_range=[${formattedXMin}, ${formattedXMax}])
         
         # Rótulo em LaTeX elegante
-        graph_label = MathTex(r"f(x) = ${latexExpr}", font_size=28, color=${animColor}).to_corner(UL)
+        graph_label = MathTex(r"f(x) = ${latexExpr}", font_size=36, color=${animColor}).to_corner(UL)
 
         self.play(Create(axes), Write(axes_labels), run_time=1.5)
         self.play(Create(graph), Write(graph_label), run_time=1.5)
