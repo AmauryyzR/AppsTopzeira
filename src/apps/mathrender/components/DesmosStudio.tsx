@@ -228,23 +228,29 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
     .replace(/÷/g, '/')
     .replace(/×/g, '*');
 
-  // 2. Normalize Arbitrary Base Logarithms:
-  // Syntax A: log_b(x) or log_2(x) or log_a(x) -> __logBase(b, x)
-  s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '__logBase($1, $2)');
-  // Syntax B: log(b, x) -> __logBase(b, x)
-  s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '__logBase($1, $2)');
+  // 2. Normalize Exponentials with Euler Constant e:
+  // e**(expr) or e^(expr) or exp(expr) -> __EXP__(expr)
+  s = s.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, '__EXP__($2)');
+  s = s.replace(/\be\s*(\*\*|\^)\s*([a-zA-Z0-9\._]+)/g, '__EXP__($2)');
+  s = s.replace(/\bexp\s*\(([^)]+)\)/g, '__EXP__($1)');
 
-  // 3. Robust Implicit Multiplication:
+  // 3. Normalize Arbitrary Base Logarithms:
+  // log_b(x) or log_2(x) or log_a(x) -> __LOGBASE__(b, x)
+  s = s.replace(/\blog_([a-zA-Z0-9\._]+)\s*\(([^)]+)\)/g, '__LOGBASE__($1, $2)');
+  // log(b, x) -> __LOGBASE__(b, x)
+  s = s.replace(/\blog\s*\(\s*([a-zA-Z0-9\._]+)\s*,\s*([^)]+)\s*\)/g, '__LOGBASE__($1, $2)');
+  s = s.replace(/\bln\s*\(([^)]+)\)/g, '__LN__($1)');
+  s = s.replace(/\blog10\s*\(([^)]+)\)/g, '__LOG10__($1)');
+  s = s.replace(/\blog\s*\(([^)]+)\)/g, '__LOG10__($1)');
+
+  // 4. Robust Implicit Multiplication:
   // A) Number followed by variable, constant, function, or opening paren:
-  // 2x -> 2*x, 2( -> 2*(, 2sin -> 2*sin, 2pi -> 2*pi, 2e -> 2*e, 2sqrt -> 2*sqrt
   s = s.replace(/(\d)\s*([a-zA-Z\(π√])/g, '$1*$2');
 
   // B) Closing paren followed by number, variable, function, or opening paren:
-  // (x+1)(x-1) -> (x+1)*(x-1), (x+1)x -> (x+1)*x, (x+1)2 -> (x+1)*2
   s = s.replace(/(\))\s*([\d\w\(π√])/g, '$1*$2');
 
   // C) Insert * between adjacent variables/parameters (e.g. ax -> a*x, bx -> b*x, ab -> a*b, 2e -> 2*e, e x -> e*x)
-  // Preserve multi-letter function names (sin, cos, tan, asin, acos, atan, sqrt, log, log10, ln, exp, abs, pi)
   s = s.replace(/\b([a-df-zA-DF-Z])(?![a-zA-Z0-9_])\s*([a-df-zA-DF-Z\(])\b/g, '$1*$2');
   s = s.replace(/\b([a-df-zA-DF-Z])\s*([xye\(π])/g, (match, p1, p2) => {
     if ((p1 + p2).toLowerCase() === 'pi') return p1 + p2;
@@ -253,25 +259,26 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   s = s.replace(/\b([xy])\s*([a-df-zA-DF-Z\(])/g, '$1*$2');
   s = s.replace(/\b(pi)\s*([a-df-zxyA-DF-Z\(])/g, '$1*$2');
 
-  // 4. Build JavaScript evaluation expression
+  // 5. Build JavaScript evaluation expression
   let js = s;
 
-  // Process __logBase(b, x) -> ((Math.log(x))/(Math.log(b)))
-  js = js.replace(/__logBase\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/g, '((Math.log($2))/(Math.log($1)))');
-  js = js.replace(/\bln\b/g, 'Math.log');
-  js = js.replace(/\blog10\b/g, 'Math.log10');
-  js = js.replace(/\blog\b/g, 'Math.log10'); // log(x) default base 10
+  // Substitute parameter values dynamically into JS
+  for (const [pName, pVal] of Object.entries(paramsMap)) {
+    if (pName === 'e' || pName === 'pi' || pName === 'x' || pName === 'y') continue;
+    const reg = new RegExp(`\\b${pName}\\b`, 'g');
+    js = js.replace(reg, `(${pVal})`);
+  }
 
-  // Euler constant exponentiation: e**(expr) or e^(expr) -> Math.exp(...)
-  js = js.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'Math.exp($2)');
-  js = js.replace(/\be\s*(\*\*|\^)\s*([\w\._]+)/g, 'Math.exp($2)');
-  js = js.replace(/\bexp\(([^)]+)\)/g, 'Math.exp($1)');
-
-  // Arbitrary base power: x**y or x^y -> __safePow(x, y)
+  // Convert caret exponents x^y -> __safePow(x, y)
   js = js.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\)]+)/g, '__safePow($1, $2)');
   js = js.replace(/([\w\.\)]+)\s*\^\s*([\w\.\)]+)/g, '__safePow($1, $2)');
 
-  // Map math functions
+  // Expand token placeholders for JS
+  js = js.replace(/__EXP__\(([^)]+)\)/g, 'Math.exp($1)')
+         .replace(/__LOGBASE__\(([^,]+),\s*([^)]+)\)/g, '((Math.log($2))/(Math.log($1)))')
+         .replace(/__LN__\(([^)]+)\)/g, 'Math.log($1)')
+         .replace(/__LOG10__\(([^)]+)\)/g, 'Math.log10($1)');
+
   const mathFns = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sqrt', 'abs'];
   for (const fn of mathFns) {
     const reg = new RegExp(`\\b${fn}\\b`, 'g');
@@ -280,34 +287,30 @@ export function parseMathExpression(rawInput: string, paramsMap: Record<string, 
   js = js.replace(/\bpi\b/g, 'Math.PI');
   js = js.replace(/\be\b/g, 'Math.E');
 
-  // Substitute parameter values dynamically
-  for (const [pName, pVal] of Object.entries(paramsMap)) {
-    if (pName === 'e' || pName === 'pi' || pName === 'x' || pName === 'y') continue;
-    const reg = new RegExp(`\\b${pName}\\b`, 'g');
-    js = js.replace(reg, `(${pVal})`);
-  }
-
-  // 5. Build Python / NumPy expression for Manim
+  // 6. Build Python / NumPy expression for Manim
   let py = s;
 
-  // Process __logBase(b, x) -> (np.log(x)/np.log(b))
-  py = py.replace(/__logBase\s*\(\s*([^,]+)\s*,\s*([^)]+)\s*\)/g, '(np.log($2)/np.log($1))');
-  py = py.replace(/\bln\b/g, 'np.log');
-  py = py.replace(/\blog10\b/g, 'np.log10');
-  py = py.replace(/\blog\b/g, 'np.log10');
+  // Convert caret exponents x^y -> x**y for Python
+  py = py.replace(/\^/g, '**');
 
-  py = py.replace(/\be\s*(\*\*|\^)\s*\(([^)]+)\)/g, 'np.exp($2)');
-  py = py.replace(/\be\s*(\*\*|\^)\s*([\w\._]+)/g, 'np.exp($2)');
+  // Expand token placeholders for Python
+  py = py.replace(/__EXP__\(([^)]+)\)/g, 'np.exp($1)')
+         .replace(/__LOGBASE__\(([^,]+),\s*([^)]+)\)/g, '(np.log($2)/np.log($1))')
+         .replace(/__LN__\(([^)]+)\)/g, 'np.log($1)')
+         .replace(/__LOG10__\(([^)]+)\)/g, 'np.log10($1)');
 
   py = py.replace(/\basin\b/g, 'arcsin')
          .replace(/\bacos\b/g, 'arccos')
          .replace(/\batan\b/g, 'arctan')
          .replace(/\bsqrt\b/g, 'np.sqrt')
          .replace(/\bpi\b/g, 'np.pi')
-         .replace(/\be\b/g, 'np.e')
-         .replace(/\^/g, '**');
+         .replace(/\be\b/g, 'np.e');
 
-  py = py.replace(/\b(sin|cos|tan|arcsin|arccos|arctan|exp|abs)\b/g, 'np.$1');
+  const pyFns = ['sin', 'cos', 'tan', 'arcsin', 'arccos', 'arctan', 'abs'];
+  for (const fn of pyFns) {
+    const reg = new RegExp(`\\b${fn}\\b`, 'g');
+    py = py.replace(reg, `np.${fn}`);
+  }
 
   try {
     const testFn = new Function('x', `
