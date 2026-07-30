@@ -12,7 +12,7 @@ import { ServerSettingsModal } from './components/ServerSettingsModal';
 import { MANIM_TEMPLATES } from './data/templates';
 import type { Template } from './data/templates';
 
-const BACKEND_URL = '';
+const DEFAULT_BACKEND_URL = 'https://appstopzeira.onrender.com';
 
 export function MathRenderApp() {
   const [activeTab, setActiveTab] = useState<'studio' | 'desmos' | 'gallery'>('studio');
@@ -42,11 +42,12 @@ export function MathRenderApp() {
   const [currentRender, setCurrentRender] = useState<RenderResult | null>(null);
   const [renderHistory, setRenderHistory] = useState<RenderResult[]>([]);
 
-  // Backend status & custom URL configuration
+  // Backend status & custom URL configuration (defaults to https://appstopzeira.onrender.com)
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [backendChecking, setBackendChecking] = useState<boolean>(true);
   const [customBackendUrl, setCustomBackendUrl] = useState<string>(() => {
-    return localStorage.getItem('manim_backend_url') || '';
+    const saved = localStorage.getItem('manim_backend_url');
+    return saved !== null ? saved : DEFAULT_BACKEND_URL;
   });
   const [isServerModalOpen, setIsServerModalOpen] = useState<boolean>(false);
 
@@ -63,15 +64,16 @@ export function MathRenderApp() {
     if (url) {
       localStorage.setItem('manim_backend_url', url);
     } else {
-      localStorage.removeItem('manim_backend_url');
+      localStorage.setItem('manim_backend_url', '');
     }
   };
 
   // Resilient fetch helper: tries customBackendUrl, Vite proxy (/api), and direct http://127.0.0.1:8000
   const smartFetch = async (endpoint: string, options?: RequestInit): Promise<Response> => {
-    if (customBackendUrl) {
+    const activeUrl = customBackendUrl || DEFAULT_BACKEND_URL;
+    if (activeUrl) {
       try {
-        const cleanBase = customBackendUrl.replace(/\/+$/, '');
+        const cleanBase = activeUrl.replace(/\/+$/, '');
         const res = await fetch(`${cleanBase}${endpoint}`, options);
         if (res.status !== 404 && res.status !== 502 && res.status !== 504) {
           return res;
@@ -216,10 +218,11 @@ export function MathRenderApp() {
               } else if (event.type === 'progress') {
                 setProgressPercent(event.percent);
               } else if (event.type === 'complete') {
+                const activeBackendBase = (customBackendUrl || DEFAULT_BACKEND_URL).replace(/\/+$/, '');
                 const newResult: RenderResult = {
                   renderId: event.render_id,
-                  videoUrl: `${BACKEND_URL}${event.video_url}`,
-                  downloadUrl: `${BACKEND_URL}${event.download_url}`,
+                  videoUrl: `${activeBackendBase}${event.video_url}`,
+                  downloadUrl: `${activeBackendBase}${event.download_url}`,
                   fileName: event.file_name,
                   fileSize: event.file_size,
                   durationSec: event.duration_sec,

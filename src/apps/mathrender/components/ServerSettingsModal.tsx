@@ -108,7 +108,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="ex: https://meu-manim-server.onrender.com ou http://127.0.0.1:8000"
+                placeholder="ex: https://appstopzeira.onrender.com ou http://127.0.0.1:8000"
                 className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
               />
               <button
@@ -119,7 +119,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
               </button>
             </div>
             <p className="text-[11px] text-slate-400">
-              Deixe em branco para usar a autodetecção local (<code className="text-sky-300 font-mono">http://127.0.0.1:8000</code>).
+              Servidor Padrão Ativo: <code className="text-sky-300 font-mono">https://appstopzeira.onrender.com</code>. Você pode alterar para seu próprio servidor ou para desenvolvimento local (<code className="text-sky-300 font-mono">http://127.0.0.1:8000</code>).
             </p>
           </form>
 
