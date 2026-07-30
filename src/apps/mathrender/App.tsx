@@ -12,7 +12,7 @@ import { ServerSettingsModal } from './components/ServerSettingsModal';
 import { MANIM_TEMPLATES } from './data/templates';
 import type { Template } from './data/templates';
 
-const DEFAULT_BACKEND_URL = 'https://appstopzeira.onrender.com';
+const DEFAULT_BACKEND_URL = 'https://amauryyz-backendmanim.hf.space';
 
 export function MathRenderApp() {
   const [activeTab, setActiveTab] = useState<'studio' | 'desmos' | 'gallery'>('studio');
@@ -42,12 +42,12 @@ export function MathRenderApp() {
   const [currentRender, setCurrentRender] = useState<RenderResult | null>(null);
   const [renderHistory, setRenderHistory] = useState<RenderResult[]>([]);
 
-  // Backend status & custom URL configuration (defaults to https://appstopzeira.onrender.com)
+  // Backend status & custom URL configuration (defaults to https://amauryyz-backendmanim.hf.space)
   const [backendOnline, setBackendOnline] = useState<boolean>(false);
   const [backendChecking, setBackendChecking] = useState<boolean>(true);
   const [customBackendUrl, setCustomBackendUrl] = useState<string>(() => {
     const saved = localStorage.getItem('manim_backend_url');
-    return saved !== null ? saved : DEFAULT_BACKEND_URL;
+    return saved ? saved : DEFAULT_BACKEND_URL;
   });
   const [isServerModalOpen, setIsServerModalOpen] = useState<boolean>(false);
 

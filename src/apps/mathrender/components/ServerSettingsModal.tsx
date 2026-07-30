@@ -37,7 +37,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
     setTimeout(() => setCopiedCmd(false), 2000);
   };
 
-  const DEFAULT_URL = 'https://appstopzeira.onrender.com';
+  const DEFAULT_URL = 'https://amauryyz-backendmanim.hf.space';
   const LOCAL_URL = 'http://127.0.0.1:8000';
 
   const handleSetDefault = () => {
@@ -126,7 +126,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="ex: https://appstopzeira.onrender.com ou http://127.0.0.1:8000"
+                placeholder="ex: https://amauryyz-backendmanim.hf.space ou http://127.0.0.1:8000"
                 className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
               />
               <button
