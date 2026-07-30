@@ -288,7 +288,15 @@ export function formatExpressionToLatex(rawInput: string): string {
 
   let s = rawInput.trim();
 
-  // Portuguese trig replacements
+  // 1. Convert double asterisk exponents x**(expr) or x**a BEFORE single * conversion!
+  s = s.replace(/([\w\.\)]+)\s*\*\*\s*\(([^)]+)\)/g, '$1^{$2}');
+  s = s.replace(/([\w\.\)]+)\s*\*\*\s*([\w\.\_]+)/g, '$1^{$2}');
+
+  // 2. Convert caret exponents x^(expr) or x^a
+  s = s.replace(/([\w\.\)]+)\s*\^\s*\(([^)]+)\)/g, '$1^{$2}');
+  s = s.replace(/([\w\.\)]+)\s*\^\s*([\w\.\_]+)/g, '$1^{$2}');
+
+  // 3. Portuguese trig & standard math functions
   s = s
     .replace(/sen⁻¹/g, '\\arcsin')
     .replace(/cos⁻¹/g, '\\arccos')
@@ -302,18 +310,14 @@ export function formatExpressionToLatex(rawInput: string): string {
     .replace(/\blog\b/g, '\\log')
     .replace(/√/g, '\\sqrt');
 
-  // Replace exp(expr) -> e^{expr}
+  // 4. exp(expr) -> e^{expr}
   s = s.replace(/\bexp\(([^)]+)\)/g, 'e^{\\left($1\\right)}');
 
-  // Replace sqrt(expr) -> \sqrt{expr}
+  // 5. sqrt(expr) -> \sqrt{expr}
   s = s.replace(/\bsqrt\(([^)]+)\)/g, '\\sqrt{$1}');
 
-  // Multiplication: replace '*' with '\cdot '
+  // 6. Replace single '*' with '\cdot ' (ONLY AFTER double ** is handled!)
   s = s.replace(/\*/g, ' \\cdot ');
-
-  // Exponents: x^2 or x^(2/a) -> x^{2/a}
-  s = s.replace(/\^\(([^)]+)\)/g, '^{$1}');
-  s = s.replace(/\^([a-zA-Z0-9_]+)/g, '^{$1}');
 
   return s.replace(/\s+/g, ' ').trim();
 }
