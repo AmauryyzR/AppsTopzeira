@@ -763,16 +763,37 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
     setIsDragging(false);
   };
 
-  // Mouse Wheel Zoom Handler (Infinite Zoom)
+  // Mouse Wheel Zoom Handler (Zoom Towards Cursor Position)
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Current math coordinates under mouse cursor before zoom
+    const mathXUnderMouse = xMin + (mouseX / canvas.width) * (xMax - xMin);
+    const mathYUnderMouse = yMax - (mouseY / canvas.height) * (yMax - yMin);
+
     const zoomFactor = e.deltaY < 0 ? 1.2 : 0.83;
-    setZoomScale((prev) => {
-      const next = prev * zoomFactor;
-      return Math.max(1e-15, Math.min(1e15, next));
-    });
+    const nextZoom = Math.max(1e-15, Math.min(1e15, zoomScale * zoomFactor));
+
+    // New span dimensions under nextZoom
+    const currentAspect = canvas.height > 0 ? canvas.width / canvas.height : 1.6;
+    const newRangeY = 10 / nextZoom;
+    const newRangeX = newRangeY * currentAspect;
+
+    // Adjust center so (mathXUnderMouse, mathYUnderMouse) stays locked under the cursor
+    const newXCenter = mathXUnderMouse + (0.5 - mouseX / canvas.width) * newRangeX;
+    const newYCenter = mathYUnderMouse - (0.5 - mouseY / canvas.height) * newRangeY;
+
+    setXCenter(newXCenter);
+    setYCenter(newYCenter);
+    setZoomScale(nextZoom);
   };
 
-  // Touch Handlers for Mobile Panning & Pinch-to-Zoom (Infinite Zoom)
+  // Touch Handlers for Mobile Panning & Pinch-to-Zoom (Towards Pinch Center)
   const [touchStartDist, setTouchStartDist] = useState<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -805,17 +826,33 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
       setXCenter((prev) => prev - mathDx);
       setYCenter((prev) => prev + mathDy);
     } else if (e.touches.length === 2 && touchStartDist !== null) {
+      const rect = canvas.getBoundingClientRect();
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+
+      const mathXUnderPinch = xMin + (midX / canvas.width) * (xMax - xMin);
+      const mathYUnderPinch = yMax - (midY / canvas.height) * (yMax - yMin);
+
       const newDist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
+
       if (newDist > 0 && touchStartDist > 0) {
         const factor = newDist / touchStartDist;
         setTouchStartDist(newDist);
-        setZoomScale((prev) => {
-          const next = prev * factor;
-          return Math.max(1e-15, Math.min(1e15, next));
-        });
+
+        const nextZoom = Math.max(1e-15, Math.min(1e15, zoomScale * factor));
+        const currentAspect = canvas.height > 0 ? canvas.width / canvas.height : 1.6;
+        const newRangeY = 10 / nextZoom;
+        const newRangeX = newRangeY * currentAspect;
+
+        const newXCenter = mathXUnderPinch + (0.5 - midX / canvas.width) * newRangeX;
+        const newYCenter = mathYUnderPinch - (0.5 - midY / canvas.height) * newRangeY;
+
+        setXCenter(newXCenter);
+        setYCenter(newYCenter);
+        setZoomScale(nextZoom);
       }
     }
   };
