@@ -903,7 +903,8 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
           y = evalFn(x);
         } catch { y = 0; }
         if (isNaN(y) || !isFinite(y)) y = 0;
-        ctx.lineTo(toScreenX(x), toScreenY(y));
+        const clampedSy = Math.max(-1000, Math.min(height + 1000, toScreenY(y)));
+        ctx.lineTo(toScreenX(x), clampedSy);
       }
 
       const endSx = toScreenX(b);
@@ -919,7 +920,10 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
 
     let isPlotting = false;
     let lastY: number | null = null;
-    const numPoints = width * 1.5;
+    const numPoints = Math.max(Math.round(width * 1.5), 800);
+
+    const minYBound = -1000;
+    const maxYBound = height + 1000;
 
     for (let i = 0; i <= numPoints; i++) {
       const sx = (i / numPoints) * width;
@@ -943,17 +947,19 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
       if (lastY !== null) {
         const dy = Math.abs(y - lastY);
         const isSignFlip = (lastY > 0 && y < 0) || (lastY < 0 && y > 0);
-        if (isSignFlip && dy > ySpan * 1.2) {
+        if (isSignFlip && dy > ySpan * 1.5) {
           isPlotting = false;
         }
       }
 
-      const sy = toScreenY(y);
+      const rawSy = toScreenY(y);
+      const clampedSy = Math.max(minYBound, Math.min(maxYBound, rawSy));
+
       if (!isPlotting) {
-        ctx.moveTo(sx, sy);
+        ctx.moveTo(sx, clampedSy);
         isPlotting = true;
       } else {
-        ctx.lineTo(sx, sy);
+        ctx.lineTo(sx, clampedSy);
       }
 
       lastY = y;
@@ -972,29 +978,33 @@ export const DesmosStudio: React.FC<DesmosStudioProps> = ({ onSendToManim }) => 
           const yMinus = evalFn(x0 - h);
           const slope = (yPlus - yMinus) / (2 * h);
 
-          const span = xSpan;
-          const x1 = x0 - span;
-          const y1 = y0 - slope * span;
-          const x2 = x0 + span;
-          const y2 = y0 + slope * span;
+          if (isFinite(slope)) {
+            const span = xSpan;
+            const x1 = x0 - span;
+            const y1 = y0 - slope * span;
+            const x2 = x0 + span;
+            const y2 = y0 + slope * span;
 
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = '#f43f5e';
-          ctx.beginPath();
-          ctx.moveTo(toScreenX(x1), toScreenY(y1));
-          ctx.lineTo(toScreenX(x2), toScreenY(y2));
-          ctx.stroke();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#f43f5e';
+            ctx.beginPath();
+            ctx.moveTo(toScreenX(x1), Math.max(minYBound, Math.min(maxYBound, toScreenY(y1))));
+            ctx.lineTo(toScreenX(x2), Math.max(minYBound, Math.min(maxYBound, toScreenY(y2))));
+            ctx.stroke();
 
-          // Point (x0, y0)
-          const dotSx = toScreenX(x0);
-          const dotSy = toScreenY(y0);
-          ctx.fillStyle = '#f43f5e';
-          ctx.beginPath();
-          ctx.arc(dotSx, dotSy, 6, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+            // Point (x0, y0)
+            const dotSx = toScreenX(x0);
+            const dotSy = toScreenY(y0);
+            if (dotSx >= 0 && dotSx <= width && dotSy >= 0 && dotSy <= height) {
+              ctx.fillStyle = '#f43f5e';
+              ctx.beginPath();
+              ctx.arc(dotSx, dotSy, 6, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+            }
+          }
         }
       } catch {}
     }
