@@ -442,18 +442,19 @@ async def render_manim(req: RenderRequest):
 
                     yield f"data: {json.dumps({'type': 'progress', 'percent': 100})}\n\n"
                     yield f"data: {json.dumps({'type': 'log', 'line': f'✅ Render completed successfully in {elapsed}s!'})}\n\n"
-                    yield f"data: {json.dumps({\
-                        'type': 'complete',\
-                        'render_id': render_id,\
-                        'video_url': f'/api/videos/{render_id}',\
-                        'download_url': f'/api/videos/{render_id}/download',\
-                        'file_name': f'{scene_to_render}{ext}',\
-                        'file_size': file_size,\
-                        'duration_sec': elapsed,\
-                        'resolution': req.resolution,\
-                        'fps': req.fps,\
-                        'format': file_format\
-                    })}\n\n"
+                    complete_data = {
+                        'type': 'complete',
+                        'render_id': render_id,
+                        'video_url': f'/api/videos/{render_id}',
+                        'download_url': f'/api/videos/{render_id}/download',
+                        'file_name': f'{scene_to_render}{ext}',
+                        'file_size': file_size,
+                        'duration_sec': elapsed,
+                        'resolution': req.resolution,
+                        'fps': req.fps,
+                        'format': file_format
+                    }
+                    yield f"data: {json.dumps(complete_data)}\n\n"
                 else:
                     yield f"data: {json.dumps({'type': 'error', 'message': 'Render process finished but output file was not found.'})}\n\n"
             else:
