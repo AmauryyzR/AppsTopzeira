@@ -361,6 +361,10 @@ async def render_manim(req: RenderRequest):
             
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
+            env["MALLOC_ARENA_MAX"] = "2"
+            env["OMP_NUM_THREADS"] = "1"
+            env["OPENBLAS_NUM_THREADS"] = "1"
+            env["MKL_NUM_THREADS"] = "1"
 
             process = await create_subprocess_safe(
                 cmd,
