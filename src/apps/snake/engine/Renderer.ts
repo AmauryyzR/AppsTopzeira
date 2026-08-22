@@ -216,7 +216,7 @@ export class Renderer {
       const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
       const directionX = projectile.velocityX / speed;
       const directionY = projectile.velocityY / speed;
-      const trailLength = this.cellSize * 1.98;
+      const trailLength = this.cellSize * 2.178;
 
       this.ctx.save();
       const trail = this.ctx.createLinearGradient(
@@ -230,7 +230,7 @@ export class Renderer {
       trail.addColorStop(1, 'rgba(251, 113, 133, 0.62)');
       this.ctx.strokeStyle = trail;
       this.ctx.lineCap = 'round';
-      this.ctx.lineWidth = this.cellSize * 0.288;
+      this.ctx.lineWidth = this.cellSize * 0.3168;
       this.ctx.beginPath();
       this.ctx.moveTo(centerX - directionX * trailLength, centerY - directionY * trailLength);
       this.ctx.lineTo(centerX, centerY);
@@ -241,7 +241,7 @@ export class Renderer {
       this.ctx.translate(centerX, centerY);
       this.ctx.rotate(projectile.rotation);
       const impactPulse = 1 + Math.sin(projectile.age * 18) * 0.025;
-      const imageHeight = this.cellSize * 1.74 * impactPulse;
+      const imageHeight = this.cellSize * 1.914 * impactPulse;
       const imageRatio = this.pedrinImageReady && this.pedrinImage
         ? this.pedrinImage.naturalWidth / this.pedrinImage.naturalHeight
         : 0.7;
@@ -249,16 +249,16 @@ export class Renderer {
 
       if (glow) {
         this.ctx.shadowColor = '#fb7185';
-        this.ctx.shadowBlur = this.cellSize * 0.744;
+        this.ctx.shadowBlur = this.cellSize * 0.8184;
       }
 
-      const aura = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.cellSize * 0.864);
+      const aura = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.cellSize * 0.9504);
       aura.addColorStop(0, 'rgba(251, 113, 133, 0.24)');
       aura.addColorStop(0.62, 'rgba(190, 24, 93, 0.12)');
       aura.addColorStop(1, 'rgba(190, 24, 93, 0)');
       this.ctx.fillStyle = aura;
       this.ctx.beginPath();
-      this.ctx.arc(0, 0, this.cellSize * 0.864, 0, Math.PI * 2);
+      this.ctx.arc(0, 0, this.cellSize * 0.9504, 0, Math.PI * 2);
       this.ctx.fill();
 
       if (this.pedrinImageReady && this.pedrinImage) {
@@ -266,7 +266,7 @@ export class Renderer {
       } else {
         this.ctx.fillStyle = '#e11d48';
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, this.cellSize * 0.576, 0, Math.PI * 2);
+        this.ctx.arc(0, 0, this.cellSize * 0.6336, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = '#fff1f2';
         this.ctx.font = `900 ${this.cellSize * 0.52}px ui-monospace, monospace`;
