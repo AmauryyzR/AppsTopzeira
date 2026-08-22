@@ -288,15 +288,24 @@ export default function SettingsView({ onBack }: SettingsProps) {
       {/* Very Easy Confirmation Modal */}
       {showVeryEasyConfirm && (
         <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-amber-500/30 p-6 rounded-3xl max-w-sm w-full mx-4 text-center flex flex-col items-center shadow-[0_0_50px_rgba(245,158,11,0.15)] animate-scale-up">
-            <h3 className="text-2xl font-black text-amber-400 mb-4 tracking-wide font-mono">ARE YOU REALLY A BABY?</h3>
+          <div className="bg-slate-900 border border-amber-500/30 p-6 rounded-3xl max-w-lg w-full mx-4 text-center flex flex-col items-center shadow-[0_0_50px_rgba(245,158,11,0.15)] animate-scale-up">
+            <h3 className="text-2xl font-black text-amber-400 mb-4 tracking-wide font-mono">ARE YOU GU GU DA DA?</h3>
 
-            <div className="w-full max-h-80 overflow-hidden rounded-2xl border border-slate-800 mb-6 flex items-center justify-center bg-slate-950">
-              <img
-                src="/baby.jpg"
-                alt="Baby Cry"
-                className="object-contain w-full h-full max-h-72"
-              />
+            <div className="grid grid-cols-2 gap-3 w-full mb-6">
+              <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-slate-800 flex items-center justify-center bg-slate-950">
+                <img
+                  src="/baby.jpg"
+                  alt="Baby Cry"
+                  className="object-contain w-full h-full"
+                />
+              </div>
+              <div className="aspect-[3/4] overflow-hidden rounded-2xl border border-slate-800 flex items-center justify-center bg-slate-950">
+                <img
+                  src="/cinderella.png"
+                  alt="Cinderella"
+                  className="object-cover w-full h-full"
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 w-full">
