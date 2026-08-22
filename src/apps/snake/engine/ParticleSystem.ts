@@ -28,6 +28,7 @@ export interface Particle {
 
 export class ParticleSystem {
   public particles: Particle[] = [];
+  private readonly maxParticles = 280;
 
   public emit(
     x: number, 
@@ -37,7 +38,8 @@ export class ParticleSystem {
     speedMultiplier: number = 1, 
     type: ParticleType = 'circle'
   ) {
-    for (let i = 0; i < count; i++) {
+    const available = Math.max(0, this.maxParticles - this.particles.length);
+    for (let i = 0; i < Math.min(count, available); i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = (Math.random() * 3 + 1) * speedMultiplier;
       this.particles.push({
@@ -57,6 +59,7 @@ export class ParticleSystem {
   }
 
   public emitTrail(x: number, y: number, type: Exclude<ParticleType, 'circle'>, color: string) {
+    if (this.particles.length >= this.maxParticles) return;
     const angle = Math.random() * Math.PI * 2;
     let speed = Math.random() * 0.15;
     let life = 0.3 + Math.random() * 0.15;

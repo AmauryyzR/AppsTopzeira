@@ -10,7 +10,8 @@ export const SKINS: Skin[] = [
     glowColor: '#4ade80',
     particleType: 'leaf',
     trail: true,
-    pattern: 'solid'
+    pattern: 'solid',
+    visual: { material: 'organic', highlightColor: '#86efac', detailColor: '#bbf7d0', secondaryDetailColor: '#166534', outlineColor: '#052e16', bellyColor: '#a7f3d0', eyeColor: '#fef3c7', pupilColor: '#17210f' }
   },
   {
     id: 'neon_blue',
@@ -21,7 +22,8 @@ export const SKINS: Skin[] = [
     glowColor: '#38bdf8',
     particleType: 'plasma',
     trail: true,
-    pattern: 'striped'
+    pattern: 'striped',
+    visual: { material: 'energy', highlightColor: '#e0f2fe', detailColor: '#7dd3fc', secondaryDetailColor: '#1d4ed8', outlineColor: '#082f49', bellyColor: '#bae6fd', eyeColor: '#ffffff', pupilColor: '#0c4a6e' }
   },
   {
     id: 'crimson_fire',
@@ -32,7 +34,8 @@ export const SKINS: Skin[] = [
     glowColor: '#f87171',
     particleType: 'fire',
     trail: true,
-    pattern: 'gradient'
+    pattern: 'gradient',
+    visual: { material: 'fire', highlightColor: '#fff7ae', detailColor: '#fde047', secondaryDetailColor: '#fb923c', outlineColor: '#7f1d1d', bellyColor: '#ffb347', eyeColor: '#ffd166', pupilColor: '#2b0a05' }
   },
   {
     id: 'golden_serpent',
@@ -43,7 +46,8 @@ export const SKINS: Skin[] = [
     glowColor: '#fde047',
     particleType: 'gold',
     trail: true,
-    pattern: 'scaled'
+    pattern: 'scaled',
+    visual: { material: 'metal', highlightColor: '#fff7ae', detailColor: '#fde68a', secondaryDetailColor: '#92400e', outlineColor: '#713f12', bellyColor: '#fef3c7', eyeColor: '#fff7ed', pupilColor: '#451a03' }
   },
   {
     id: 'amethyst_void',
@@ -54,7 +58,8 @@ export const SKINS: Skin[] = [
     glowColor: '#c084fc',
     particleType: 'ghost',
     trail: true,
-    pattern: 'striped'
+    pattern: 'striped',
+    visual: { material: 'void', highlightColor: '#e9d5ff', detailColor: '#d8b4fe', secondaryDetailColor: '#581c87', outlineColor: '#2e1065', bellyColor: '#c4b5fd', eyeColor: '#f5d0fe', pupilColor: '#3b0764' }
   },
   {
     id: 'cyber_pink',
@@ -65,7 +70,8 @@ export const SKINS: Skin[] = [
     glowColor: '#f472b6',
     particleType: 'digital',
     trail: true,
-    pattern: 'gradient'
+    pattern: 'gradient',
+    visual: { material: 'cyber', highlightColor: '#fce7f3', detailColor: '#67e8f9', secondaryDetailColor: '#831843', outlineColor: '#500724', bellyColor: '#f9a8d4', eyeColor: '#ecfeff', pupilColor: '#083344' }
   },
   {
     id: 'toxic_sludge',
@@ -76,7 +82,8 @@ export const SKINS: Skin[] = [
     glowColor: '#a3e635',
     particleType: 'bubble',
     trail: true,
-    pattern: 'solid'
+    pattern: 'solid',
+    visual: { material: 'sludge', highlightColor: '#d9f99d', detailColor: '#bef264', secondaryDetailColor: '#365314', outlineColor: '#1a2e05', bellyColor: '#ecfccb', eyeColor: '#f7fee7', pupilColor: '#1a2e05' }
   },
   {
     id: 'ice_wyrm',
@@ -87,7 +94,8 @@ export const SKINS: Skin[] = [
     glowColor: '#67e8f9',
     particleType: 'ice',
     trail: true,
-    pattern: 'scaled'
+    pattern: 'scaled',
+    visual: { material: 'ice', highlightColor: '#ecfeff', detailColor: '#a5f3fc', secondaryDetailColor: '#155e75', outlineColor: '#164e63', bellyColor: '#cffafe', eyeColor: '#ffffff', pupilColor: '#0e7490' }
   },
   {
     id: 'shadow_fiend',
@@ -98,7 +106,8 @@ export const SKINS: Skin[] = [
     glowColor: '#64748b',
     particleType: 'smoke',
     trail: true,
-    pattern: 'solid'
+    pattern: 'solid',
+    visual: { material: 'shadow', highlightColor: '#a78bfa', detailColor: '#8b5cf6', secondaryDetailColor: '#020617', outlineColor: '#020617', bellyColor: '#475569', eyeColor: '#c4b5fd', pupilColor: '#020617' }
   },
   {
     id: 'magma_core',
@@ -109,7 +118,8 @@ export const SKINS: Skin[] = [
     glowColor: '#fdba74',
     particleType: 'fire',
     trail: true,
-    pattern: 'gradient'
+    pattern: 'gradient',
+    visual: { material: 'magma', highlightColor: '#fef08a', detailColor: '#facc15', secondaryDetailColor: '#7f1d1d', outlineColor: '#431407', bellyColor: '#fb923c', eyeColor: '#fde047', pupilColor: '#270603' }
   },
   {
     id: 'plasma_ray',
@@ -120,7 +130,8 @@ export const SKINS: Skin[] = [
     glowColor: '#fef08a',
     particleType: 'plasma',
     trail: true,
-    pattern: 'striped'
+    pattern: 'striped',
+    visual: { material: 'plasma', highlightColor: '#ffffff', detailColor: '#67e8f9', secondaryDetailColor: '#1d4ed8', outlineColor: '#172554', bellyColor: '#fef08a', eyeColor: '#ffffff', pupilColor: '#164e63' }
   },
   {
     id: 'blood_moon',
@@ -131,7 +142,8 @@ export const SKINS: Skin[] = [
     glowColor: '#ef4444',
     particleType: 'smoke',
     trail: true,
-    pattern: 'solid'
+    pattern: 'solid',
+    visual: { material: 'blood', highlightColor: '#fca5a5', detailColor: '#ef4444', secondaryDetailColor: '#450a0a', outlineColor: '#280303', bellyColor: '#fecaca', eyeColor: '#fee2e2', pupilColor: '#450a0a' }
   },
   {
     id: 'emerald_dream',
@@ -142,7 +154,8 @@ export const SKINS: Skin[] = [
     glowColor: '#34d399',
     particleType: 'sparkle',
     trail: true,
-    pattern: 'scaled'
+    pattern: 'scaled',
+    visual: { material: 'crystal', highlightColor: '#d1fae5', detailColor: '#6ee7b7', secondaryDetailColor: '#065f46', outlineColor: '#022c22', bellyColor: '#a7f3d0', eyeColor: '#ecfdf5', pupilColor: '#064e3b' }
   },
   {
     id: 'pure_light',
@@ -153,7 +166,8 @@ export const SKINS: Skin[] = [
     glowColor: '#ffffff',
     particleType: 'sparkle',
     trail: true,
-    pattern: 'solid'
+    pattern: 'solid',
+    visual: { material: 'light', highlightColor: '#ffffff', detailColor: '#fef9c3', secondaryDetailColor: '#c7d2fe', outlineColor: '#cbd5e1', bellyColor: '#ffffff', eyeColor: '#ffffff', pupilColor: '#6366f1' }
   },
   {
     id: 'rainbow_dash',
@@ -164,6 +178,7 @@ export const SKINS: Skin[] = [
     glowColor: '#ffffff',
     particleType: 'rainbow',
     trail: true,
-    pattern: 'gradient'
+    pattern: 'gradient',
+    visual: { material: 'rainbow', highlightColor: '#ffffff', detailColor: '#fef08a', secondaryDetailColor: '#c084fc', outlineColor: '#312e81', bellyColor: '#fdf4ff', eyeColor: '#ffffff', pupilColor: '#312e81' }
   }
 ];

@@ -109,6 +109,7 @@ export default function SettingsView({ onBack }: SettingsProps) {
       particles: true,
       screenShake: true,
       glow: true,
+      headTracksFood: false,
       gridSize: 20,
       difficulty: 'medium' as const
     };
@@ -225,6 +226,11 @@ export default function SettingsView({ onBack }: SettingsProps) {
                 label="Screen Shake"
                 checked={settings.screenShake}
                 onChange={(v) => updateSetting('screenShake', v)}
+              />
+              <ToggleRow
+                label="Head Follows Coin"
+                checked={settings.headTracksFood}
+                onChange={(v) => updateSetting('headTracksFood', v)}
               />
             </div>
           </div>

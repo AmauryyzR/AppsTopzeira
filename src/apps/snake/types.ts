@@ -24,6 +24,34 @@ export interface Position {
 
 export type SkinPattern = 'solid' | 'striped' | 'scaled' | 'gradient' | 'none';
 
+export type SkinMaterial =
+  | 'organic'
+  | 'energy'
+  | 'fire'
+  | 'metal'
+  | 'void'
+  | 'cyber'
+  | 'sludge'
+  | 'ice'
+  | 'shadow'
+  | 'magma'
+  | 'plasma'
+  | 'blood'
+  | 'crystal'
+  | 'light'
+  | 'rainbow';
+
+export interface SkinVisualProfile {
+  material: SkinMaterial;
+  highlightColor: string;
+  detailColor: string;
+  secondaryDetailColor: string;
+  outlineColor: string;
+  bellyColor: string;
+  eyeColor: string;
+  pupilColor: string;
+}
+
 export interface Skin {
   id: string;
   name: string;
@@ -34,6 +62,7 @@ export interface Skin {
   particleType: 'sparkle' | 'fire' | 'digital' | 'smoke' | 'bubble' | 'ice' | 'ghost' | 'rainbow' | 'leaf' | 'gold' | 'plasma' | 'none';
   trail: boolean;
   pattern: SkinPattern;
+  visual: SkinVisualProfile;
 }
 
 export interface GameSettings {
@@ -43,6 +72,7 @@ export interface GameSettings {
   particles: boolean;
   screenShake: boolean;
   glow: boolean;
+  headTracksFood: boolean;
   gridSize: number;
   difficulty: 'very_easy' | 'easy' | 'medium' | 'hard';
 }
@@ -70,4 +100,3 @@ export interface SaveData {
   stats: Stats;
   unlockedAchievements: string[];
 }
-

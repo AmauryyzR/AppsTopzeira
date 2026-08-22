@@ -4,6 +4,7 @@ import { saveManager } from '../store/SaveManager';
 import { audioManager } from '../audio/AudioManager';
 import { SKINS } from '../data/skins';
 import { cn } from '../utils';
+import SkinPreviewCanvas from './SkinPreviewCanvas';
 
 interface StoreProps {
   onBack: () => void;
@@ -76,12 +77,7 @@ export default function StoreView({ onBack }: StoreProps) {
               >
                 {/* Preview Box */}
                 <div className="h-32 w-full flex items-center justify-center bg-slate-950/50 relative">
-                  {/* Dummy snake rendering */}
-                  <div className="flex items-center">
-                     <div className="w-5 h-5 rounded-md z-10" style={{ backgroundColor: skin.headColor, boxShadow: `0 0 10px ${skin.glowColor}` }} />
-                     <div className="w-4 h-4 rounded-md -ml-1 opacity-90" style={{ backgroundColor: skin.bodyColors[0] }} />
-                     <div className="w-3 h-3 rounded-md -ml-1 opacity-70" style={{ backgroundColor: skin.bodyColors[1] || skin.bodyColors[0] }} />
-                  </div>
+                  <SkinPreviewCanvas skin={skin} />
                   {!isUnlocked && (
                     <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center">
                       <span className="text-2xl">🔒</span>

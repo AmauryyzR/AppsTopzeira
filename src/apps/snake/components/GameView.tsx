@@ -14,6 +14,7 @@ interface GameProps {
 }
 
 const BASE_TICK_RATE = 120; // ms per move
+const SCORE_ACCELERATION_FACTOR = 0.7; // 30% gentler speed growth
 
 export default function GameView({ mode, onStateChange }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,7 +83,10 @@ export default function GameView({ mode, onStateChange }: GameProps) {
           speedScale = 500;
         }
 
-        const currentTickSpeed = baseTickRate / Math.max(1, 1 + (engine.state.score / speedScale));
+        const currentTickSpeed = baseTickRate / Math.max(
+          1,
+          1 + (engine.state.score / speedScale) * SCORE_ACCELERATION_FACTOR,
+        );
 
         if (time - lastTickRef.current > currentTickSpeed) {
           lastTickRef.current += currentTickSpeed;

@@ -27,6 +27,7 @@ const DEFAULT_SAVE: SaveData = {
     particles: true,
     screenShake: true,
     glow: true,
+    headTracksFood: false,
     gridSize: 20,
     difficulty: 'medium',
   },
