@@ -52,7 +52,7 @@ export default function SnakeApp() {
   };
 
   return (
-    <div className="w-full h-[100dvh] bg-slate-950 text-slate-200 overflow-hidden select-none relative">
+    <div className="w-full h-full min-h-0 bg-slate-950 text-slate-200 overflow-hidden select-none relative">
       {gameState === GameState.MENU && (
         <MainMenu
           selectedMode={selectedMode}

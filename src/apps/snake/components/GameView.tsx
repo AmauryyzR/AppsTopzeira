@@ -37,6 +37,37 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   const lastTimeTickRef = useRef<number>(0);
   const gameOverTimeoutRef = useRef<number | null>(null);
 
+  // Keep mobile swipe gestures inside the game instead of letting them move the page.
+  useEffect(() => {
+    const gameContainer = containerRef.current;
+    if (!gameContainer) return;
+
+    const preventPageScroll = (event: TouchEvent) => {
+      if (event.cancelable) event.preventDefault();
+    };
+
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousHtmlOverscroll = html.style.overscrollBehavior;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyOverscroll = body.style.overscrollBehavior;
+
+    html.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    body.style.overflow = 'hidden';
+    body.style.overscrollBehavior = 'none';
+    gameContainer.addEventListener('touchmove', preventPageScroll, { passive: false });
+
+    return () => {
+      gameContainer.removeEventListener('touchmove', preventPageScroll);
+      html.style.overflow = previousHtmlOverflow;
+      html.style.overscrollBehavior = previousHtmlOverscroll;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overscrollBehavior = previousBodyOverscroll;
+    };
+  }, []);
+
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
@@ -190,7 +221,10 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center bg-slate-950 p-2 sm:p-4 overflow-hidden" ref={containerRef}>
+    <div
+      className="relative w-full h-full min-h-0 flex flex-col items-center justify-center bg-slate-950 p-2 sm:p-4 overflow-hidden touch-none overscroll-none"
+      ref={containerRef}
+    >
 
       {/* HUD */}
       <div className="absolute top-2 left-3 right-3 sm:top-3 sm:left-4 sm:right-4 flex justify-between items-start text-white pointer-events-none z-10">

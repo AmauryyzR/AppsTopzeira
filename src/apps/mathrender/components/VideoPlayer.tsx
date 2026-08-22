@@ -31,6 +31,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const maximizedVideoRef = useRef<HTMLVideoElement | null>(null);
   const historyScrollRef = useRef<HTMLDivElement | null>(null);
+  const maximizedStartTimeRef = useRef<number>(0);
+  const shouldResumeInMaximizedRef = useRef<boolean>(false);
   
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
@@ -67,12 +69,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMaximized) {
-        setIsMaximized(false);
+        closeMaximized();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMaximized]);
+  }, [isMaximized, currentTime, isPlaying, playbackSpeed]);
 
   const togglePlay = () => {
     const targetVideo = isMaximized ? maximizedVideoRef.current : videoRef.current;
@@ -106,8 +108,41 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextTime = parseFloat(e.target.value);
     setCurrentTime(nextTime);
-    if (videoRef.current) videoRef.current.currentTime = nextTime;
-    if (maximizedVideoRef.current) maximizedVideoRef.current.currentTime = nextTime;
+    const targetVideo = isMaximized ? maximizedVideoRef.current : videoRef.current;
+    if (targetVideo) targetVideo.currentTime = nextTime;
+  };
+
+  const openMaximized = () => {
+    const sourceVideo = videoRef.current;
+    maximizedStartTimeRef.current = sourceVideo?.currentTime ?? currentTime;
+    shouldResumeInMaximizedRef.current = sourceVideo ? !sourceVideo.paused : isPlaying;
+    sourceVideo?.pause();
+    setCurrentTime(maximizedStartTimeRef.current);
+    setIsPlaying(shouldResumeInMaximizedRef.current);
+    setIsMaximized(true);
+  };
+
+  const closeMaximized = () => {
+    const maximizedVideo = maximizedVideoRef.current;
+    const nextTime = maximizedVideo?.currentTime ?? currentTime;
+    const shouldResume = maximizedVideo ? !maximizedVideo.paused : isPlaying;
+
+    maximizedVideo?.pause();
+    setCurrentTime(nextTime);
+    setIsMaximized(false);
+
+    const sourceVideo = videoRef.current;
+    if (!sourceVideo) return;
+
+    sourceVideo.currentTime = nextTime;
+    sourceVideo.playbackRate = playbackSpeed;
+    if (shouldResume) {
+      setIsPlaying(true);
+      void sourceVideo.play().catch(() => setIsPlaying(false));
+    } else {
+      sourceVideo.pause();
+      setIsPlaying(false);
+    }
   };
 
   const handleDownload = () => {
@@ -172,7 +207,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               loop={isLooping}
               autoPlay
               onTimeUpdate={() => {
-                if (videoRef.current) {
+                if (!isMaximized && videoRef.current) {
                   setCurrentTime(videoRef.current.currentTime);
                 }
               }}
@@ -181,8 +216,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   setDuration(videoRef.current.duration || currentRender.durationSec || 0);
                 }
               }}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
+              onPlay={() => {
+                if (!isMaximized) setIsPlaying(true);
+              }}
+              onPause={() => {
+                if (!isMaximized) setIsPlaying(false);
+              }}
               className="max-h-full max-w-full object-contain rounded-lg cursor-pointer shadow-2xl"
               onClick={togglePlay}
             />
@@ -304,7 +343,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </button>
 
               <button
-                onClick={() => setIsMaximized(true)}
+                onClick={openMaximized}
                 className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-300 transition-all"
                 title="Maximizar Vídeo (75% da Tela)"
               >
@@ -378,7 +417,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {isMaximized && currentRender && createPortal(
         <div
           className="fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
-          onClick={() => setIsMaximized(false)}
+          onClick={closeMaximized}
         >
           <div
             className="relative w-[94vw] max-w-[1400px] h-[88vh] max-h-[920px] bg-slate-900 border-2 border-sky-500/40 rounded-3xl p-3 sm:p-5 shadow-2xl shadow-sky-500/30 flex flex-col justify-between"
@@ -391,7 +430,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <h3 className="font-bold text-white text-base truncate">{currentRender.sceneName}</h3>
               </div>
               <button
-                onClick={() => setIsMaximized(false)}
+                onClick={closeMaximized}
                 className="p-2 bg-slate-800 hover:bg-rose-500 text-slate-300 hover:text-white rounded-full transition-all shadow-md"
                 title="Fechar (ESC ou Clicar Fora)"
               >
@@ -405,19 +444,34 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 ref={maximizedVideoRef}
                 src={currentRender.videoUrl}
                 loop={isLooping}
-                autoPlay
                 onTimeUpdate={() => {
-                  if (maximizedVideoRef.current) {
+                  if (isMaximized && maximizedVideoRef.current) {
                     setCurrentTime(maximizedVideoRef.current.currentTime);
                   }
                 }}
                 onLoadedMetadata={() => {
                   if (maximizedVideoRef.current) {
-                    setDuration(maximizedVideoRef.current.duration || currentRender.durationSec || 0);
+                    const maximizedVideo = maximizedVideoRef.current;
+                    const loadedDuration = maximizedVideo.duration || currentRender.durationSec || 0;
+                    const startTime = Math.min(maximizedStartTimeRef.current, loadedDuration);
+                    setDuration(loadedDuration);
+                    maximizedVideo.currentTime = startTime;
+                    maximizedVideo.playbackRate = playbackSpeed;
+                    setCurrentTime(startTime);
+                    if (shouldResumeInMaximizedRef.current) {
+                      void maximizedVideo.play().catch(() => setIsPlaying(false));
+                    } else {
+                      maximizedVideo.pause();
+                      setIsPlaying(false);
+                    }
                   }
                 }}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
+                onPlay={() => {
+                  if (isMaximized) setIsPlaying(true);
+                }}
+                onPause={() => {
+                  if (isMaximized) setIsPlaying(false);
+                }}
                 className="max-h-full max-w-full object-contain rounded-xl cursor-pointer shadow-2xl"
                 onClick={togglePlay}
               />

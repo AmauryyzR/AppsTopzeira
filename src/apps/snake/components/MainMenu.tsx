@@ -37,7 +37,7 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
       {/* Top Header Bar (Mobile only) */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/50 flex items-center justify-between px-6 z-30 sm:hidden">
         <h1 className="text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">
-          SNAKE ARCADE
+          Snake Topzeira
         </h1>
         <div className="flex items-center gap-2 bg-slate-900/60 px-3 py-1 rounded-full border border-slate-800">
           <span className="text-[10px] text-slate-500 font-bold">COINS</span>
@@ -52,9 +52,8 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
         {/* Title */}
         <div className="mb-6 sm:mb-8 text-center mt-12 sm:mt-0">
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-500 drop-shadow-sm mb-1">
-            SNAKE ARCADE
+            Snake Topzeira
           </h1>
-          <p className="text-slate-400 tracking-[0.3em] text-xs sm:text-sm font-medium">PREMIUM EXPERIENCE</p>
         </div>
 
         {/* Stats bar */}
@@ -90,8 +89,7 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
                 >
                   {isSelected && <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none" />}
                   <span className="text-2xl sm:text-3xl mb-2 sm:mb-3">{mode.icon}</span>
-                  <h3 className={cn("font-bold text-base sm:text-lg mb-1", isSelected ? "text-white" : "text-slate-200")}>{mode.name}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-grow">{mode.description}</p>
+                  <h3 className={cn("font-bold text-lg sm:text-xl mb-4", isSelected ? "text-white" : "text-slate-200")}>{mode.name}</h3>
                   <div className="mt-auto pt-2 border-t border-slate-800/50 w-full flex justify-between items-center">
                     <span className="text-[10px] text-slate-500 font-bold">BEST</span>
                     <span className="text-xs sm:text-sm font-mono font-bold text-slate-300">{highScore}</span>
