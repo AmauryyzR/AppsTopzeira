@@ -28,6 +28,7 @@ interface RenderPoint extends ArtworkPoint {
   normalX: number;
   normalY: number;
   radius: number;
+  tailProgress: number;
 }
 
 const TAU = Math.PI * 2;
@@ -82,7 +83,8 @@ function enrich(points: ArtworkPoint[], cellSize: number, taperTail: boolean): R
     const progress = points.length <= 1 ? 0 : index / (points.length - 1);
     const neck = 0.9 + Math.min(1, progress / 0.14) * 0.1;
     const tailProgress = taperTail ? Math.max(0, (progress - 0.58) / 0.42) : 0;
-    const tail = 1 - tailProgress * 0.84;
+    const smoothTailProgress = tailProgress * tailProgress * (3 - 2 * tailProgress);
+    const tail = 1 - smoothTailProgress * 0.94;
     const breathing = 1 + Math.sin(progress * Math.PI * 5) * 0.018;
     return {
       ...point,
@@ -91,11 +93,12 @@ function enrich(points: ArtworkPoint[], cellSize: number, taperTail: boolean): R
       normalX: -tangentY,
       normalY: tangentX,
       radius: cellSize * 0.405 * neck * tail * breathing,
+      tailProgress,
     };
   });
 }
 
-function makeRibbon(points: RenderPoint[], scale = 1): Path2D {
+function makeRibbon(points: RenderPoint[], scale = 1, tailTipLength = 0): Path2D {
   const path = new Path2D();
   if (!points.length) return path;
 
@@ -106,7 +109,34 @@ function makeRibbon(points: RenderPoint[], scale = 1): Path2D {
     else path.lineTo(x, y);
   });
 
-  for (let index = points.length - 1; index >= 0; index--) {
+  let reverseStart = points.length - 1;
+  const tail = points[points.length - 1];
+  const hasNaturalTail = points.length > 1 && tail.tailProgress > 0.98;
+
+  if (hasNaturalTail) {
+    const tailRadius = tail.radius * scale;
+    const tipLength = tailTipLength || Math.max(...points.map(point => point.radius)) * 0.92;
+    const tipX = tail.x + tail.tangentX * tipLength;
+    const tipY = tail.y + tail.tangentY * tipLength;
+    const shoulderX = tail.x + tail.tangentX * tipLength * 0.48;
+    const shoulderY = tail.y + tail.tangentY * tipLength * 0.48;
+
+    path.quadraticCurveTo(
+      shoulderX + tail.normalX * tailRadius * 0.62,
+      shoulderY + tail.normalY * tailRadius * 0.62,
+      tipX,
+      tipY,
+    );
+    path.quadraticCurveTo(
+      shoulderX - tail.normalX * tailRadius * 0.62,
+      shoulderY - tail.normalY * tailRadius * 0.62,
+      tail.x - tail.normalX * tailRadius,
+      tail.y - tail.normalY * tailRadius,
+    );
+    reverseStart -= 1;
+  }
+
+  for (let index = reverseStart; index >= 0; index--) {
     const point = points[index];
     path.lineTo(
       point.x - point.normalX * point.radius * scale,
@@ -446,8 +476,9 @@ function drawBodyRun(
     return;
   }
 
-  const outerPath = makeRibbon(points, 1.08);
-  const innerPath = makeRibbon(points, 0.93);
+  const tailTipLength = cellSize * 0.38;
+  const outerPath = makeRibbon(points, 1.08, tailTipLength);
+  const innerPath = makeRibbon(points, 0.93, tailTipLength);
   const centerLine = makeCenterLine(points);
 
   ctx.save();

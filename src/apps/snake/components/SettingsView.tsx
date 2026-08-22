@@ -109,7 +109,7 @@ export default function SettingsView({ onBack }: SettingsProps) {
       particles: true,
       screenShake: true,
       glow: true,
-      headTracksFood: false,
+      headTracksFood: true,
       gridSize: 20,
       difficulty: 'medium' as const
     };
