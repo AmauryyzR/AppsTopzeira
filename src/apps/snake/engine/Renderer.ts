@@ -20,6 +20,8 @@ export class Renderer {
   private visualHeadAngle: number | null = null;
   private pedrinImage: HTMLImageElement | null = null;
   private pedrinImageReady = false;
+  private alternateForbiddenImage: HTMLImageElement | null = null;
+  private alternateForbiddenImageReady = false;
 
   constructor(canvas: HTMLCanvasElement, gridWidth: number) {
     this.canvas = canvas;
@@ -190,20 +192,31 @@ export class Renderer {
     });
   }
 
-  private ensurePedrinImage() {
-    if (this.pedrinImage) return;
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => {
-      this.pedrinImageReady = true;
-    };
-    image.src = '/pedrin.png';
-    this.pedrinImage = image;
+  private ensureForbiddenImages() {
+    if (!this.pedrinImage) {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => {
+        this.pedrinImageReady = true;
+      };
+      image.src = '/pedrin.png';
+      this.pedrinImage = image;
+    }
+
+    if (!this.alternateForbiddenImage) {
+      const image = new Image();
+      image.decoding = 'async';
+      image.onload = () => {
+        this.alternateForbiddenImageReady = true;
+      };
+      image.src = '/forbidden-alt.jpg';
+      this.alternateForbiddenImage = image;
+    }
   }
 
   private drawForbiddenProjectiles(engine: GameEngine, time: number, glow: boolean) {
     if (engine.mode !== GameMode.FORBIDDEN) return;
-    this.ensurePedrinImage();
+    this.ensureForbiddenImages();
 
     engine.forbiddenProjectiles.forEach(projectile => {
       if (projectile.warningTime > 0) {
@@ -242,8 +255,13 @@ export class Renderer {
       this.ctx.rotate(projectile.rotation);
       const impactPulse = 1 + Math.sin(projectile.age * 18) * 0.025;
       const imageHeight = this.cellSize * 1.914 * impactPulse;
-      const imageRatio = this.pedrinImageReady && this.pedrinImage
-        ? this.pedrinImage.naturalWidth / this.pedrinImage.naturalHeight
+      const usesAlternateImage = projectile.appearance === 'alternate';
+      const projectileImage = usesAlternateImage ? this.alternateForbiddenImage : this.pedrinImage;
+      const projectileImageReady = usesAlternateImage
+        ? this.alternateForbiddenImageReady
+        : this.pedrinImageReady;
+      const imageRatio = projectileImageReady && projectileImage
+        ? projectileImage.naturalWidth / projectileImage.naturalHeight
         : 0.7;
       const imageWidth = imageHeight * imageRatio;
 
@@ -261,8 +279,8 @@ export class Renderer {
       this.ctx.arc(0, 0, this.cellSize * 0.9504, 0, Math.PI * 2);
       this.ctx.fill();
 
-      if (this.pedrinImageReady && this.pedrinImage) {
-        this.ctx.drawImage(this.pedrinImage, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
+      if (projectileImageReady && projectileImage) {
+        this.ctx.drawImage(projectileImage, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
       } else {
         this.ctx.fillStyle = '#e11d48';
         this.ctx.beginPath();

@@ -18,6 +18,7 @@ export interface GameStateData {
 
 export interface ForbiddenProjectile {
   id: number;
+  appearance: 'pedrin' | 'alternate';
   x: number;
   y: number;
   targetX: number;
@@ -219,6 +220,7 @@ export class GameEngine {
 
     this.forbiddenProjectiles.push({
       id: this.nextForbiddenProjectileId++,
+      appearance: Math.random() < 0.5 ? 'alternate' : 'pedrin',
       x,
       y,
       targetX: target.x,
