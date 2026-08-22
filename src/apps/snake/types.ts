@@ -14,6 +14,7 @@ export enum GameMode {
   NO_WALLS = 'NO_WALLS',
   TIME_ATTACK = 'TIME_ATTACK',
   COIN_FEVER = 'COIN_FEVER',
+  FORBIDDEN = 'FORBIDDEN',
   ALL_IN = 'ALL_IN'
 }
 

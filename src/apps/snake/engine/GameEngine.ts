@@ -16,6 +16,22 @@ export interface GameStateData {
   streak: number;
 }
 
+export interface ForbiddenProjectile {
+  id: number;
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  velocityX: number;
+  velocityY: number;
+  rotation: number;
+  angularVelocity: number;
+  spinning: boolean;
+  warningTime: number;
+  warningDuration: number;
+  age: number;
+}
+
 export class GameEngine {
   public gridWidth: number;
   public gridHeight: number;
@@ -30,6 +46,9 @@ export class GameEngine {
   public interpolationProgress: number = 0;
   public previousSnake: Position[] = [];
   public justAte: boolean = false;
+  public forbiddenProjectiles: ForbiddenProjectile[] = [];
+  private forbiddenSpawnAccumulator = 0;
+  private nextForbiddenProjectileId = 1;
 
   constructor(gridWidth: number, gridHeight: number, mode: GameMode) {
     this.gridWidth = gridWidth;
@@ -50,7 +69,11 @@ export class GameEngine {
       { x: startX - 2, y: startY }
     ];
 
-    const foodsCount = this.mode === GameMode.COIN_FEVER ? 8 : 1;
+    const foodsCount = this.mode === GameMode.FORBIDDEN
+      ? 16
+      : this.mode === GameMode.COIN_FEVER
+        ? 8
+        : 1;
     const initialFoods: Position[] = [];
     for (let i = 0; i < foodsCount; i++) {
       initialFoods.push(this.generateFood(snake, initialFoods));
@@ -74,6 +97,8 @@ export class GameEngine {
     this.state = this.getInitialState();
     this.previousSnake = [...this.state.snake];
     this.particleSystem.particles = [];
+    this.forbiddenProjectiles = [];
+    this.forbiddenSpawnAccumulator = 0;
     this.interpolationProgress = 0;
   }
 
@@ -93,12 +118,132 @@ export class GameEngine {
   }
 
   public getCoinValue(): number {
-    if (this.mode !== GameMode.COIN_FEVER) return 1;
+    if (this.mode !== GameMode.COIN_FEVER && this.mode !== GameMode.FORBIDDEN) return 1;
     const time = this.state.survivalTime;
-    if (time >= 100) return 10;
-    if (time >= 50) return 5;
-    if (time >= 20) return 2;
-    return 1;
+    let value = 1;
+    if (time >= 100) value = 10;
+    else if (time >= 50) value = 5;
+    else if (time >= 20) value = 2;
+    return this.mode === GameMode.FORBIDDEN ? value * 2 : value;
+  }
+
+  public updateForbiddenProjectiles(deltaTime: number) {
+    if (this.mode !== GameMode.FORBIDDEN || this.state.gameOver) return;
+
+    const dt = Math.max(0, Math.min(0.05, deltaTime));
+    this.forbiddenSpawnAccumulator += dt;
+    while (this.forbiddenSpawnAccumulator >= 1) {
+      this.forbiddenSpawnAccumulator -= 1;
+      this.spawnForbiddenProjectile();
+    }
+
+    const head = this.state.snake[0];
+    const previousHead = this.previousSnake[0] || head;
+    let collisionHead = head;
+    if (head && previousHead && Math.abs(head.x - previousHead.x) <= 1 && Math.abs(head.y - previousHead.y) <= 1) {
+      collisionHead = {
+        x: previousHead.x + (head.x - previousHead.x) * this.interpolationProgress,
+        y: previousHead.y + (head.y - previousHead.y) * this.interpolationProgress,
+      };
+    }
+    for (const projectile of this.forbiddenProjectiles) {
+      projectile.age += dt;
+      if (projectile.warningTime > 0) {
+        projectile.warningTime = Math.max(0, projectile.warningTime - dt);
+        continue;
+      }
+
+      const previousX = projectile.x;
+      const previousY = projectile.y;
+      projectile.x += projectile.velocityX * dt;
+      projectile.y += projectile.velocityY * dt;
+      if (projectile.spinning) {
+        projectile.rotation += projectile.angularVelocity * dt;
+      }
+
+      if (collisionHead && this.distanceToSegment(collisionHead.x, collisionHead.y, previousX, previousY, projectile.x, projectile.y) <= 0.62) {
+        this.triggerGameOver();
+        return;
+      }
+    }
+
+    this.forbiddenProjectiles = this.forbiddenProjectiles.filter(projectile => (
+      projectile.age < 8
+      && projectile.x > -3
+      && projectile.x < this.gridWidth + 2
+      && projectile.y > -3
+      && projectile.y < this.gridHeight + 2
+    ));
+  }
+
+  private spawnForbiddenProjectile() {
+    const head = this.state.snake[0];
+    if (!head) return;
+
+    const nearbyTargets: Position[] = [];
+    for (let offsetY = -3; offsetY <= 3; offsetY++) {
+      for (let offsetX = -3; offsetX <= 3; offsetX++) {
+        const distance = Math.hypot(offsetX, offsetY);
+        const x = head.x + offsetX;
+        const y = head.y + offsetY;
+        if (distance < 1 || distance > 3 || x < 0 || x >= this.gridWidth || y < 0 || y >= this.gridHeight) continue;
+        nearbyTargets.push({ x, y });
+      }
+    }
+    const target = nearbyTargets[Math.floor(Math.random() * nearbyTargets.length)] || head;
+
+    let x = 0;
+    let y = 0;
+    const edge = Math.floor(Math.random() * 4);
+    if (edge === 0) {
+      x = Math.random() * (this.gridWidth - 1);
+      y = -1.4;
+    } else if (edge === 1) {
+      x = this.gridWidth + 0.4;
+      y = Math.random() * (this.gridHeight - 1);
+    } else if (edge === 2) {
+      x = Math.random() * (this.gridWidth - 1);
+      y = this.gridHeight + 0.4;
+    } else {
+      x = -1.4;
+      y = Math.random() * (this.gridHeight - 1);
+    }
+
+    const directionX = target.x - x;
+    const directionY = target.y - y;
+    const magnitude = Math.hypot(directionX, directionY) || 1;
+    const speed = 7.2 + Math.random() * 1.6 + Math.min(2.2, this.state.survivalTime * 0.018);
+    const spinning = Math.random() < 0.225;
+    const warningDuration = 0.36;
+
+    this.forbiddenProjectiles.push({
+      id: this.nextForbiddenProjectileId++,
+      x,
+      y,
+      targetX: target.x,
+      targetY: target.y,
+      velocityX: directionX / magnitude * speed,
+      velocityY: directionY / magnitude * speed,
+      rotation: spinning ? Math.random() * Math.PI * 2 : 0,
+      angularVelocity: spinning ? (Math.random() < 0.5 ? -1 : 1) * (4.5 + Math.random() * 2.5) : 0,
+      spinning,
+      warningTime: warningDuration,
+      warningDuration,
+      age: 0,
+    });
+
+    if (this.forbiddenProjectiles.length > 10) {
+      this.forbiddenProjectiles.splice(0, this.forbiddenProjectiles.length - 10);
+    }
+  }
+
+  private distanceToSegment(px: number, py: number, x1: number, y1: number, x2: number, y2: number) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return Math.hypot(px - x1, py - y1);
+    const projection = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSquared));
+    return Math.hypot(px - (x1 + projection * dx), py - (y1 + projection * dy));
   }
 
   public update(direction: Position) {

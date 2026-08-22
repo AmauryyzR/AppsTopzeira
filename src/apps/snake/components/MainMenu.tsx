@@ -75,6 +75,7 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {MODES.map(mode => {
               const isSelected = selectedMode === mode.id;
+              const isForbidden = mode.id === GameMode.FORBIDDEN;
               const highScore = data.highScores[mode.id] || 0;
               return (
                 <button
@@ -83,11 +84,18 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
                   className={cn(
                     "relative flex flex-col items-start p-4 sm:p-5 rounded-2xl text-left transition-all duration-300 border-2 overflow-hidden group cursor-pointer",
                     isSelected
-                      ? "bg-slate-800/80 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.15)] transform scale-[1.02]"
+                      ? isForbidden
+                        ? "bg-rose-950/35 border-rose-500 shadow-[0_0_24px_rgba(244,63,94,0.2)] transform scale-[1.02]"
+                        : "bg-slate-800/80 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.15)] transform scale-[1.02]"
                       : "bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"
                   )}
                 >
-                  {isSelected && <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none" />}
+                  {isSelected && (
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-br to-transparent pointer-events-none",
+                      isForbidden ? "from-rose-500/15" : "from-emerald-500/10",
+                    )} />
+                  )}
                   <span className="text-2xl sm:text-3xl mb-2 sm:mb-3">{mode.icon}</span>
                   <h3 className={cn("font-bold text-lg sm:text-xl mb-4", isSelected ? "text-white" : "text-slate-200")}>{mode.name}</h3>
                   <div className="mt-auto pt-2 border-t border-slate-800/50 w-full flex justify-between items-center">
@@ -104,7 +112,12 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-2xl px-2">
           <button
             onClick={handleStart}
-            className="w-full sm:w-auto sm:flex-1 py-3.5 px-8 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base sm:text-lg tracking-wider rounded-2xl transition-all shadow-[0_4px_20px_rgba(16,185,129,0.3)] hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer flex items-center justify-center gap-2"
+            className={cn(
+              "w-full sm:w-auto sm:flex-1 py-3.5 px-8 font-black text-base sm:text-lg tracking-wider rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer flex items-center justify-center gap-2",
+              selectedMode === GameMode.FORBIDDEN
+                ? "bg-rose-500 hover:bg-rose-400 text-white shadow-[0_4px_24px_rgba(244,63,94,0.35)]"
+                : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_4px_20px_rgba(16,185,129,0.3)]",
+            )}
           >
             <span>▶</span> PLAY NOW
           </button>

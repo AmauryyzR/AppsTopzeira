@@ -22,6 +22,11 @@ export const MODES = [
     icon: '💰'
   },
   {
+    id: GameMode.FORBIDDEN,
+    name: 'Forbidden Mode',
+    icon: '⛔'
+  },
+  {
     id: GameMode.ALL_IN,
     name: 'All in',
     icon: '🎰'

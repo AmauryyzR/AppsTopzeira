@@ -1,6 +1,6 @@
 import { SKINS } from '../data/skins';
 import { saveManager } from '../store/SaveManager';
-import { GameEngine } from './GameEngine';
+import { ForbiddenProjectile, GameEngine } from './GameEngine';
 import { GameMode, Position, Skin } from '../types';
 import { drawSnakeArtwork } from './SnakeArtwork';
 
@@ -18,6 +18,8 @@ export class Renderer {
   private tailParticleAccumulator = 0;
   private headParticleAccumulator = 0;
   private visualHeadAngle: number | null = null;
+  private pedrinImage: HTMLImageElement | null = null;
+  private pedrinImageReady = false;
 
   constructor(canvas: HTMLCanvasElement, gridWidth: number) {
     this.canvas = canvas;
@@ -49,7 +51,7 @@ export class Renderer {
     const time = now / 1000;
 
     this.updateEatingAnimation(engine, dt);
-    this.drawBoard(time);
+    this.drawBoard(time, engine.mode === GameMode.FORBIDDEN);
 
     const shaking = settings.screenShake && state.gameOver;
     if (shaking) {
@@ -85,6 +87,8 @@ export class Renderer {
       });
     }
 
+    this.drawForbiddenProjectiles(engine, time, settings.glow);
+
     if (shaking) this.ctx.restore();
   }
 
@@ -101,19 +105,19 @@ export class Renderer {
     }
   }
 
-  private drawBoard(time: number) {
+  private drawBoard(time: number, forbidden = false) {
     const width = this.canvas.width / this.dpr;
     const height = this.canvas.height / this.dpr;
     const background = this.ctx.createRadialGradient(width * 0.48, height * 0.42, this.cellSize, width * 0.5, height * 0.5, width * 0.76);
-    background.addColorStop(0, '#16243a');
-    background.addColorStop(0.55, '#101b2d');
-    background.addColorStop(1, '#080f1e');
+    background.addColorStop(0, forbidden ? '#301827' : '#16243a');
+    background.addColorStop(0.55, forbidden ? '#1c1221' : '#101b2d');
+    background.addColorStop(1, forbidden ? '#0d0914' : '#080f1e');
     this.ctx.fillStyle = background;
     this.ctx.fillRect(0, 0, width, height);
 
     const ambient = this.ctx.createRadialGradient(width * (0.25 + Math.sin(time * 0.12) * 0.03), height * 0.18, 0, width * 0.25, height * 0.18, width * 0.55);
-    ambient.addColorStop(0, 'rgba(16, 185, 129, 0.055)');
-    ambient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+    ambient.addColorStop(0, forbidden ? 'rgba(244, 63, 94, 0.11)' : 'rgba(16, 185, 129, 0.055)');
+    ambient.addColorStop(1, forbidden ? 'rgba(244, 63, 94, 0)' : 'rgba(16, 185, 129, 0)');
     this.ctx.fillStyle = ambient;
     this.ctx.fillRect(0, 0, width, height);
 
@@ -184,6 +188,130 @@ export class Renderer {
       this.ctx.fill();
       this.ctx.restore();
     });
+  }
+
+  private ensurePedrinImage() {
+    if (this.pedrinImage) return;
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      this.pedrinImageReady = true;
+    };
+    image.src = '/pedrin.png';
+    this.pedrinImage = image;
+  }
+
+  private drawForbiddenProjectiles(engine: GameEngine, time: number, glow: boolean) {
+    if (engine.mode !== GameMode.FORBIDDEN) return;
+    this.ensurePedrinImage();
+
+    engine.forbiddenProjectiles.forEach(projectile => {
+      if (projectile.warningTime > 0) {
+        this.drawForbiddenWarning(projectile, time);
+        return;
+      }
+
+      const centerX = (projectile.x + 0.5) * this.cellSize;
+      const centerY = (projectile.y + 0.5) * this.cellSize;
+      const speed = Math.hypot(projectile.velocityX, projectile.velocityY) || 1;
+      const directionX = projectile.velocityX / speed;
+      const directionY = projectile.velocityY / speed;
+      const trailLength = this.cellSize * 1.65;
+
+      this.ctx.save();
+      const trail = this.ctx.createLinearGradient(
+        centerX - directionX * trailLength,
+        centerY - directionY * trailLength,
+        centerX,
+        centerY,
+      );
+      trail.addColorStop(0, 'rgba(244, 63, 94, 0)');
+      trail.addColorStop(0.62, 'rgba(244, 63, 94, 0.18)');
+      trail.addColorStop(1, 'rgba(251, 113, 133, 0.62)');
+      this.ctx.strokeStyle = trail;
+      this.ctx.lineCap = 'round';
+      this.ctx.lineWidth = this.cellSize * 0.24;
+      this.ctx.beginPath();
+      this.ctx.moveTo(centerX - directionX * trailLength, centerY - directionY * trailLength);
+      this.ctx.lineTo(centerX, centerY);
+      this.ctx.stroke();
+      this.ctx.restore();
+
+      this.ctx.save();
+      this.ctx.translate(centerX, centerY);
+      this.ctx.rotate(projectile.rotation);
+      const impactPulse = 1 + Math.sin(projectile.age * 18) * 0.025;
+      const imageHeight = this.cellSize * 1.45 * impactPulse;
+      const imageRatio = this.pedrinImageReady && this.pedrinImage
+        ? this.pedrinImage.naturalWidth / this.pedrinImage.naturalHeight
+        : 0.7;
+      const imageWidth = imageHeight * imageRatio;
+
+      if (glow) {
+        this.ctx.shadowColor = '#fb7185';
+        this.ctx.shadowBlur = this.cellSize * 0.62;
+      }
+
+      const aura = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.cellSize * 0.72);
+      aura.addColorStop(0, 'rgba(251, 113, 133, 0.24)');
+      aura.addColorStop(0.62, 'rgba(190, 24, 93, 0.12)');
+      aura.addColorStop(1, 'rgba(190, 24, 93, 0)');
+      this.ctx.fillStyle = aura;
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, this.cellSize * 0.72, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      if (this.pedrinImageReady && this.pedrinImage) {
+        this.ctx.drawImage(this.pedrinImage, -imageWidth / 2, -imageHeight / 2, imageWidth, imageHeight);
+      } else {
+        this.ctx.fillStyle = '#e11d48';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, this.cellSize * 0.48, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#fff1f2';
+        this.ctx.font = `900 ${this.cellSize * 0.52}px ui-monospace, monospace`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('!', 0, 0);
+      }
+      this.ctx.restore();
+    });
+  }
+
+  private drawForbiddenWarning(projectile: ForbiddenProjectile, time: number) {
+    const spawnX = (projectile.x + 0.5) * this.cellSize;
+    const spawnY = (projectile.y + 0.5) * this.cellSize;
+    const targetX = (projectile.targetX + 0.5) * this.cellSize;
+    const targetY = (projectile.targetY + 0.5) * this.cellSize;
+    const progress = 1 - projectile.warningTime / projectile.warningDuration;
+    const pulse = 0.82 + Math.sin(time * 28) * 0.18;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = 0.22 + progress * 0.34;
+    this.ctx.strokeStyle = '#fb7185';
+    this.ctx.lineWidth = Math.max(1.5, this.cellSize * 0.055);
+    this.ctx.setLineDash([this.cellSize * 0.18, this.cellSize * 0.16]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(spawnX, spawnY);
+    this.ctx.lineTo(targetX, targetY);
+    this.ctx.stroke();
+    this.ctx.setLineDash([]);
+
+    this.ctx.globalAlpha = 0.72;
+    this.ctx.strokeStyle = '#f43f5e';
+    this.ctx.shadowColor = '#f43f5e';
+    this.ctx.shadowBlur = this.cellSize * 0.5;
+    this.ctx.lineWidth = Math.max(2, this.cellSize * 0.075);
+    this.ctx.beginPath();
+    this.ctx.arc(targetX, targetY, this.cellSize * (0.36 + progress * 0.2) * pulse, 0, Math.PI * 2);
+    this.ctx.stroke();
+    this.ctx.beginPath();
+    this.ctx.moveTo(targetX - this.cellSize * 0.25, targetY);
+    this.ctx.lineTo(targetX + this.cellSize * 0.25, targetY);
+    this.ctx.moveTo(targetX, targetY - this.cellSize * 0.25);
+    this.ctx.lineTo(targetX, targetY + this.cellSize * 0.25);
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 
   private getVisualPositions(engine: GameEngine): Position[] {

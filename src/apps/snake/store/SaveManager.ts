@@ -16,6 +16,7 @@ const DEFAULT_SAVE: SaveData = {
     [GameMode.NO_WALLS]: 0,
     [GameMode.TIME_ATTACK]: 0,
     [GameMode.COIN_FEVER]: 0,
+    [GameMode.FORBIDDEN]: 0,
     [GameMode.ALL_IN]: 0,
   },
   unlockedSkins: ['default', 'neon_blue'],

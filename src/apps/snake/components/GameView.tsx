@@ -23,7 +23,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   const [timeLeft, setTimeLeft] = useState(mode === GameMode.TIME_ATTACK ? 60 : 0);
   const [multiplier, setMultiplier] = useState(1);
   const [survivalTime, setSurvivalTime] = useState(0);
-  const [coinValue, setCoinValue] = useState(1);
+  const [coinValue, setCoinValue] = useState(mode === GameMode.FORBIDDEN ? 2 : 1);
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(isPaused);
   const [gridSize] = useState(saveManager.data.settings.gridSize || 20);
@@ -146,6 +146,10 @@ export default function GameView({ mode, onStateChange }: GameProps) {
         // Update interpolation progress
         engine.interpolationProgress = Math.min(1, (time - lastTickRef.current) / currentTickSpeed);
 
+        // Forbidden projectiles move continuously between snake ticks so their
+        // trajectory and collision remain smooth and frame-rate independent.
+        engine.updateForbiddenProjectiles(dt);
+
         // Update particles
         engine.particleSystem.update(dt);
       } else if (engine.state.gameOver) {
@@ -250,14 +254,24 @@ export default function GameView({ mode, onStateChange }: GameProps) {
             </div>
           )}
 
-          {mode === GameMode.COIN_FEVER && (
+          {(mode === GameMode.COIN_FEVER || mode === GameMode.FORBIDDEN) && (
             <div className="flex flex-col items-end gap-1 animate-in slide-in-from-top duration-300">
-              <div className="bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/50 text-lg sm:text-2xl font-mono font-bold text-sky-400">
+              <div className={cn(
+                "bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border text-lg sm:text-2xl font-mono font-bold",
+                mode === GameMode.FORBIDDEN
+                  ? "border-rose-500/40 text-rose-400"
+                  : "border-slate-700/50 text-sky-400",
+              )}>
                 {survivalTime}s
               </div>
-              <div className="bg-slate-900/60 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-500/30 text-[10px] sm:text-xs font-bold text-amber-400 animate-pulse tracking-wider">
+              <div className="bg-slate-900/60 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-500/30 text-[10px] sm:text-xs font-bold text-amber-400 tracking-wider">
                 COIN VALUE: {coinValue}x
               </div>
+              {mode === GameMode.FORBIDDEN && (
+                <div className="bg-rose-950/75 backdrop-blur-md px-2.5 py-1 rounded-xl border border-rose-500/40 text-[9px] sm:text-[10px] font-black text-rose-300 animate-pulse tracking-widest">
+                  ⚠ PEDRIN EVERY 1S
+                </div>
+              )}
             </div>
           )}
 
