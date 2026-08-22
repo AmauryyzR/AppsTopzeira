@@ -162,7 +162,7 @@ export class GameEngine {
         projectile.rotation += projectile.angularVelocity * dt;
       }
 
-      if (collisionHead && this.distanceToSegment(collisionHead.x, collisionHead.y, previousX, previousY, projectile.x, projectile.y) <= 0.62) {
+      if (collisionHead && this.distanceToSegment(collisionHead.x, collisionHead.y, previousX, previousY, projectile.x, projectile.y) <= 0.744) {
         this.triggerGameOver();
         return;
       }
