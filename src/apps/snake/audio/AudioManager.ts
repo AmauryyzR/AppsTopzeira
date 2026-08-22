@@ -8,9 +8,12 @@ class AudioManager {
   
   private musicInterval: number | null = null;
   private eatBuffer: AudioBuffer | null = null;
+  private pedrinDeathBuffer: AudioBuffer | null = null;
   private slotWinBuffer: AudioBuffer | null = null;
   private slotLossBuffer: AudioBuffer | null = null;
   private loadingEat: boolean = false;
+  private loadingPedrinDeath: boolean = false;
+  private pedrinDeathQueued: boolean = false;
   private loadingSlotSounds: boolean = false;
 
   public init() {
@@ -28,6 +31,7 @@ class AudioManager {
 
       this.updateVolumes();
       this.loadEatSound();
+      this.loadPedrinDeathSound();
       this.loadSlotSounds();
     } catch (e) {
       console.warn('Web Audio API not supported', e);
@@ -45,6 +49,28 @@ class AudioManager {
       console.warn('Failed to load eat sound effect:', e);
     } finally {
       this.loadingEat = false;
+    }
+  }
+
+  private async loadPedrinDeathSound() {
+    if (this.pedrinDeathBuffer || this.loadingPedrinDeath || !this.ctx) return;
+    this.loadingPedrinDeath = true;
+    try {
+      const response = await fetch('/pedrin-death.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      this.pedrinDeathBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+      if (this.pedrinDeathQueued) {
+        this.pedrinDeathQueued = false;
+        this.playPedrinDeath();
+      }
+    } catch (e) {
+      console.warn('Failed to load Pedrin death sound effect:', e);
+      if (this.pedrinDeathQueued) {
+        this.pedrinDeathQueued = false;
+        this.playPedrinDeathFallback();
+      }
+    } finally {
+      this.loadingPedrinDeath = false;
     }
   }
 
@@ -181,6 +207,35 @@ class AudioManager {
     osc.stop(t + 0.5);
     
     if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+  }
+
+  public playPedrinDeath() {
+    this.init();
+    if (!this.ctx || !this.sfxGain) {
+      this.playPedrinDeathFallback();
+      return;
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    if (!this.pedrinDeathBuffer) {
+      this.pedrinDeathQueued = true;
+      void this.loadPedrinDeathSound();
+      return;
+    }
+
+    const source = this.ctx.createBufferSource();
+    source.buffer = this.pedrinDeathBuffer;
+    source.connect(this.sfxGain);
+    source.start(0);
+
+    if (navigator.vibrate) navigator.vibrate([120, 40, 220]);
+  }
+
+  private playPedrinDeathFallback() {
+    const audio = new Audio('/pedrin-death.mp3');
+    const settings = saveManager.data.settings;
+    audio.volume = Math.max(0, Math.min(1, settings.masterVolume * settings.sfxVolume));
+    void audio.play().catch(() => undefined);
   }
 
   public playClick() {

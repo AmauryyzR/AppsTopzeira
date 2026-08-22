@@ -163,7 +163,7 @@ export class GameEngine {
       }
 
       if (collisionHead && this.distanceToSegment(collisionHead.x, collisionHead.y, previousX, previousY, projectile.x, projectile.y) <= 0.744) {
-        this.triggerGameOver();
+        this.triggerGameOver('pedrin');
         return;
       }
     }
@@ -214,7 +214,7 @@ export class GameEngine {
     const directionY = target.y - y;
     const magnitude = Math.hypot(directionX, directionY) || 1;
     const speed = 7.2 + Math.random() * 1.6 + Math.min(2.2, this.state.survivalTime * 0.018);
-    const spinning = Math.random() < 0.225;
+    const spinning = Math.random() < 0.35;
     const warningDuration = 0.36;
 
     this.forbiddenProjectiles.push({
@@ -342,9 +342,10 @@ export class GameEngine {
     this.state.foods[eatenFoodIndex] = this.generateFood(this.state.snake, this.state.foods.filter((_, idx) => idx !== eatenFoodIndex));
   }
 
-  private triggerGameOver() {
+  private triggerGameOver(cause: 'standard' | 'pedrin' = 'standard') {
     this.state.gameOver = true;
-    audioManager.playDeath();
+    if (cause === 'pedrin') audioManager.playPedrinDeath();
+    else audioManager.playDeath();
 
     saveManager.addStat('gamesPlayed', 1);
     if (saveManager.data.stats.gamesPlayed >= 10) saveManager.unlockAchievement('dedicated_10');
