@@ -209,7 +209,7 @@ export class Renderer {
       image.onload = () => {
         this.alternateForbiddenImageReady = true;
       };
-      image.src = '/forbidden-alt.jpg';
+      image.src = '/forbidden-alt.png';
       this.alternateForbiddenImage = image;
     }
   }
