@@ -127,13 +127,14 @@ export class GameEngine {
     return this.mode === GameMode.FORBIDDEN ? value * 2 : value;
   }
 
-  public updateForbiddenProjectiles(deltaTime: number) {
+  public updateForbiddenProjectiles(deltaTime: number, spawnInterval = 1) {
     if (this.mode !== GameMode.FORBIDDEN || this.state.gameOver) return;
 
     const dt = Math.max(0, Math.min(0.05, deltaTime));
+    const interval = Math.max(0.3, Math.min(1, spawnInterval));
     this.forbiddenSpawnAccumulator += dt;
-    while (this.forbiddenSpawnAccumulator >= 1) {
-      this.forbiddenSpawnAccumulator -= 1;
+    while (this.forbiddenSpawnAccumulator >= interval) {
+      this.forbiddenSpawnAccumulator -= interval;
       this.spawnForbiddenProjectile();
     }
 

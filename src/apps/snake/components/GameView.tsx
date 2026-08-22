@@ -15,6 +15,7 @@ interface GameProps {
 
 const BASE_TICK_RATE = 120; // ms per move
 const SCORE_ACCELERATION_FACTOR = 0.7; // 30% gentler speed growth
+const MIN_FORBIDDEN_INTERVAL = 0.3; // keeps the late-game barrage playable
 
 export default function GameView({ mode, onStateChange }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,6 +25,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   const [multiplier, setMultiplier] = useState(1);
   const [survivalTime, setSurvivalTime] = useState(0);
   const [coinValue, setCoinValue] = useState(mode === GameMode.FORBIDDEN ? 2 : 1);
+  const [pedrinInterval, setPedrinInterval] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(isPaused);
   const [gridSize] = useState(saveManager.data.settings.gridSize || 20);
@@ -118,6 +120,10 @@ export default function GameView({ mode, onStateChange }: GameProps) {
           1,
           1 + (engine.state.score / speedScale) * SCORE_ACCELERATION_FACTOR,
         );
+        const forbiddenSpawnInterval = Math.max(
+          MIN_FORBIDDEN_INTERVAL,
+          currentTickSpeed / baseTickRate,
+        );
 
         if (time - lastTickRef.current > currentTickSpeed) {
           lastTickRef.current += currentTickSpeed;
@@ -133,6 +139,9 @@ export default function GameView({ mode, onStateChange }: GameProps) {
           setScore(engine.state.score);
           setMultiplier(engine.state.multiplier);
           setCoinValue(engine.getCoinValue());
+          if (mode === GameMode.FORBIDDEN) {
+            setPedrinInterval(forbiddenSpawnInterval);
+          }
         }
 
         // Handle time ticks (1 second)
@@ -148,7 +157,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
 
         // Forbidden projectiles move continuously between snake ticks so their
         // trajectory and collision remain smooth and frame-rate independent.
-        engine.updateForbiddenProjectiles(dt);
+        engine.updateForbiddenProjectiles(dt, forbiddenSpawnInterval);
 
         // Update particles
         engine.particleSystem.update(dt);
@@ -269,7 +278,7 @@ export default function GameView({ mode, onStateChange }: GameProps) {
               </div>
               {mode === GameMode.FORBIDDEN && (
                 <div className="bg-rose-950/75 backdrop-blur-md px-2.5 py-1 rounded-xl border border-rose-500/40 text-[9px] sm:text-[10px] font-black text-rose-300 animate-pulse tracking-widest">
-                  ⚠ PEDRIN EVERY 1S
+                  ⚠ PEDRIN: {pedrinInterval.toFixed(2)}S
                 </div>
               )}
             </div>
