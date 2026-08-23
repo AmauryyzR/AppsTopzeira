@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calculator, Gamepad2, Trees, X, Maximize2, Minimize2 } from 'lucide-react';
+import { Home, Calculator, Gamepad2, X, Maximize2, Minimize2 } from 'lucide-react';
 import { TabItem, TabType } from '../types';
 
 interface TabBarProps {
@@ -28,8 +28,6 @@ export const TabBar: React.FC<TabBarProps> = ({
         return <Calculator className="w-3.5 h-3.5 text-cyan-400" />;
       case 'snake':
         return <Gamepad2 className="w-3.5 h-3.5 text-purple-400" />;
-      case 'jogotop':
-        return <Trees className="w-3.5 h-3.5 text-emerald-400" />;
     }
   };
 

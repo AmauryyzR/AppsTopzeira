@@ -54,14 +54,11 @@ export function App() {
     } else {
       const newId = `tab-${type}-${Date.now()}`;
       let title = 'MathRender';
-      let iconName: 'home' | 'calculator' | 'gamepad' | 'trees' = 'calculator';
+      let iconName: 'home' | 'calculator' | 'gamepad' = 'calculator';
 
       if (type === 'snake') {
         title = 'Snake Game';
         iconName = 'gamepad';
-      } else if (type === 'jogotop') {
-        title = 'JogoTop 3D';
-        iconName = 'trees';
       }
 
       const newTab: TabItem = {

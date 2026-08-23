@@ -1,10 +1,10 @@
-export type TabType = 'cover' | 'mathrender' | 'snake' | 'jogotop';
+export type TabType = 'cover' | 'mathrender' | 'snake';
 
 export interface TabItem {
   id: string;
   type: TabType;
   title: string;
-  iconName: 'home' | 'calculator' | 'gamepad' | 'trees';
+  iconName: 'home' | 'calculator' | 'gamepad';
   active: boolean;
   closable: boolean;
   url?: string;

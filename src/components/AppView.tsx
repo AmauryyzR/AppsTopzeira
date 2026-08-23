@@ -1,9 +1,7 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { TabType } from '../types';
 import { MathRenderApp } from '../apps/mathrender/App';
 import SnakeApp from '../apps/snake/App';
-
-const JogoTopApp = lazy(() => import('../apps/jogotop/App'));
 
 interface AppViewProps {
   type: TabType;
@@ -22,14 +20,6 @@ export const AppView: React.FC<AppViewProps> = ({ type }) => {
       {type === 'snake' && (
         <div className="w-full h-full">
           <SnakeApp />
-        </div>
-      )}
-
-      {type === 'jogotop' && (
-        <div className="w-full h-full">
-          <Suspense fallback={null}>
-            <JogoTopApp />
-          </Suspense>
         </div>
       )}
     </div>

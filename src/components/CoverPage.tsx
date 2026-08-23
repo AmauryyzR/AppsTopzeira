@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Gamepad2, Trees, ArrowRight } from 'lucide-react';
+import { Calculator, Gamepad2, ArrowRight } from 'lucide-react';
 import { TabType } from '../types';
 
 interface CoverPageProps {
@@ -15,7 +15,7 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
       {/* Radial ambient glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-gradient-to-tr from-cyan-600/15 via-purple-600/15 to-emerald-600/15 blur-[140px] pointer-events-none rounded-full" />
       <div className="absolute bottom-10 left-10 w-[350px] h-[350px] bg-cyan-500/10 blur-[100px] pointer-events-none rounded-full" />
-      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-emerald-500/10 blur-[100px] pointer-events-none rounded-full" />
+      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-purple-500/10 blur-[100px] pointer-events-none rounded-full" />
 
       {/* Main Title Section */}
       <div className="w-full max-w-6xl text-center z-10 my-2 md:my-6">
@@ -34,9 +34,9 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
         </motion.div>
       </div>
 
-      {/* 3 Rectangular Cards Container */}
-      <div className="w-full max-w-7xl z-10 px-2 sm:px-4 my-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+      {/* 2 Rectangular Cards Container */}
+      <div className="w-full max-w-4xl z-10 px-2 sm:px-4 my-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {/* Card 1: MathRender */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -95,38 +95,6 @@ export const CoverPage: React.FC<CoverPageProps> = ({ onOpenTab }) => {
               </div>
               <div className="relative z-10 flex items-center justify-end pt-2 border-t border-white/5">
                 <div className="w-9 h-9 rounded-full bg-purple-500/20 text-purple-300 group-hover:bg-purple-500 group-hover:text-black flex items-center justify-center transition-all duration-300 shadow-md">
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Card 3: JogoTop 3D Triple-A */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="group cursor-pointer w-full"
-            onClick={() => onOpenTab('jogotop')}
-          >
-            <div className="relative w-full aspect-video rounded-3xl overflow-hidden glass-card p-6 border border-emerald-500/20 group-hover:border-emerald-400/80 transition-all duration-500 group-hover:shadow-[0_0_40px_rgba(16,185,129,0.35)] group-hover:-translate-y-2 flex flex-col justify-between">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/40 via-slate-950/80 to-sky-950/40 opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-space">
-                  <Trees className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>3D TRIPLE-A</span>
-                </div>
-              </div>
-              <div className="relative z-10 my-auto pt-2">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400 mb-2 group-hover:scale-110 group-hover:bg-emerald-400 group-hover:text-black transition-all duration-300 shadow-lg shadow-emerald-950/50">
-                  <Trees className="w-5 h-5" />
-                </div>
-                <h3 className="font-syne font-extrabold text-2xl text-white group-hover:text-emerald-300 transition-colors">
-                  JogoTop
-                </h3>
-              </div>
-              <div className="relative z-10 flex items-center justify-end pt-2 border-t border-white/5">
-                <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-300 group-hover:bg-emerald-400 group-hover:text-black flex items-center justify-center transition-all duration-300 shadow-md">
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
