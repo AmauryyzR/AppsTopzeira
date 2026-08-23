@@ -133,41 +133,40 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
     bucket.push(colorize(g, color));
   };
 
-  // --- 1. SKY SPHERE ---
+  // --- 1. SKY SPHERE (Safe normalized coordinates, highp precision, zero float overflow) ---
   const skyMat = track(
     new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
+      depthTest: false,
       fog: false,
       uniforms: {
         topColor: { value: new THREE.Color(0x288be6) },
         bottomColor: { value: new THREE.Color(0xcaefff) },
-        offset: { value: 20 },
-        exponent: { value: 0.65 },
       },
       vertexShader: `
-        varying vec3 vWorldPosition;
+        precision highp float;
+        varying vec3 vPos;
         void main() {
-          vec4 wp = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = wp.xyz;
-          gl_Position = projectionMatrix * viewMatrix * wp;
+          vPos = normalize(position);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
+        precision highp float;
         uniform vec3 topColor;
         uniform vec3 bottomColor;
-        uniform float offset;
-        uniform float exponent;
-        varying vec3 vWorldPosition;
+        varying vec3 vPos;
         void main() {
-          float h = normalize(vWorldPosition + vec3(0.0, offset, 0.0)).y;
-          vec3 sky = mix(bottomColor, topColor, pow(max(h, 0.0), exponent));
+          float h = clamp(vPos.y * 0.8 + 0.2, 0.0, 1.0);
+          vec3 sky = mix(bottomColor, topColor, pow(h, 0.7));
           gl_FragColor = vec4(sky, 1.0);
         }
       `,
     })
   );
-  const skyMesh = new THREE.Mesh(track(new THREE.SphereGeometry(450, 24, 16)), skyMat);
+  const skyMesh = new THREE.Mesh(track(new THREE.SphereGeometry(300, 32, 16)), skyMat);
+  skyMesh.renderOrder = -1000;
   skyMesh.matrixAutoUpdate = false;
   skyMesh.frustumCulled = false;
   skyMesh.updateMatrix();
