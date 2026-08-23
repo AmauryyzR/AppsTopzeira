@@ -11,10 +11,12 @@ const JUMP_SPEED = 9.0;
 const G_RISE_HOLD = 20;
 const G_RISE_CUT = 46;
 const G_FALL = 28;
-const CAM_DIST = Math.hypot(16, 10.5);
-const CAM_PITCH0 = Math.atan2(16, 10.5);
-const PITCH_MIN = 0.2;
-const PITCH_MAX = 1.38;
+
+// Natural 3rd-person adventure camera (Roblox / Genshin standard)
+const CAM_DIST = 9.5;
+const CAM_PITCH0 = 0.42; // ~24 degrees incline
+const PITCH_MIN = 0.05;
+const PITCH_MAX = 1.15; // ~66 degrees max, prevents ground near-plane clipping
 const CAM_SENS = 0.005;
 const TOUCH_CAM_SENS = 0.007;
 
@@ -154,7 +156,7 @@ export class GameEngine {
     container.appendChild(this.renderer.domElement);
 
     // Far fog
-    this.scene.fog = new THREE.Fog(0x8ecdf5, 80, 200);
+    this.scene.fog = new THREE.Fog(0x8ecdf5, 80, 250);
 
     // IBL Environment
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -163,14 +165,14 @@ export class GameEngine {
     this.scene.environment = this.envTexture;
     this.scene.environmentIntensity = 0.35;
 
-    // Camera with high-precision near plane (0.5m) to prevent z-fighting on mobile depth buffers
-    this.camera = new THREE.PerspectiveCamera(isPortrait ? 58 : 46, w / h, 0.5, 350);
+    // Perspective Camera with near plane 0.1 to prevent any near-plane clipping
+    this.camera = new THREE.PerspectiveCamera(isPortrait ? 56 : 46, w / h, 0.1, 600);
     this.camera.position.set(0, CAM_DIST * Math.sin(CAM_PITCH0), CAM_DIST * Math.cos(CAM_PITCH0));
 
     // Lights
     this.scene.add(new THREE.HemisphereLight(0xb5e2ff, 0x48a834, 1.0));
 
-    // Rock-solid fixed sun covering the entire park (zero shadow matrix recalculation during movement!)
+    // Fixed sun light covering the entire park uniformly
     this.sun = new THREE.DirectionalLight(0xfff6de, 2.5);
     this.sun.position.set(38, 60, 24);
     this.sun.target.position.set(0, 0, 0);
@@ -198,7 +200,12 @@ export class GameEngine {
     this.dust = new DustSystem(this.scene);
 
     this.lookTarget.copy(this.player.group.position);
-    this.camera.position.copy(this.player.group.position).add(this.camOffset.set(0, CAM_DIST * Math.sin(CAM_PITCH0), CAM_DIST * Math.cos(CAM_PITCH0)));
+    this.camOffset.set(
+      this.camDist * Math.cos(this.camPitch) * Math.sin(this.camYaw),
+      this.camDist * Math.sin(this.camPitch),
+      this.camDist * Math.cos(this.camPitch) * Math.cos(this.camYaw)
+    );
+    this.camera.position.copy(this.player.group.position).add(this.camOffset);
 
     // Desktop Mouse & Pointer Lock Listeners
     container.addEventListener('contextmenu', this.onContextMenu);
@@ -267,7 +274,7 @@ export class GameEngine {
 
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
-    this.camDist = Math.min(34, Math.max(7, this.camDist * (1 + e.deltaY * 0.0011)));
+    this.camDist = Math.min(22, Math.max(4.5, this.camDist * (1 + e.deltaY * 0.0011)));
   };
 
   // Dedicated Mobile Camera Touch Control (Independent from Joystick / Jump / Fullscreen UI)
@@ -316,7 +323,7 @@ export class GameEngine {
         const curDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         if (this.initialPinchDist > 0 && curDist > 10) {
           const ratio = this.initialPinchDist / curDist;
-          this.camDist = Math.min(34, Math.max(7, this.initialPinchCamDist * ratio));
+          this.camDist = Math.min(22, Math.max(4.5, this.initialPinchCamDist * ratio));
         }
         const last1 = this.camTouches.get(t1.identifier);
         const last2 = this.camTouches.get(t2.identifier);
@@ -348,7 +355,7 @@ export class GameEngine {
     const isPortrait = h > w;
 
     this.camera.aspect = w / h;
-    this.camera.fov = isPortrait ? 58 : 46;
+    this.camera.fov = isPortrait ? 56 : 46;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
   };
@@ -434,19 +441,21 @@ export class GameEngine {
 
     this.world.update(this.elapsed, dt);
 
-    // Camera follow with smooth damping
+    // Synchronized Camera Follow (Zero desync, zero ground clipping!)
     const cp = Math.cos(this.camPitch);
     this.camOffset.set(
       this.camDist * cp * Math.sin(this.camYaw),
       this.camDist * Math.sin(this.camPitch),
       this.camDist * cp * Math.cos(this.camYaw)
     );
-    this.desired.copy(pos).add(this.camOffset);
-    this.camera.position.lerp(this.desired, 1 - Math.exp(-dt * 5.5));
-    this.lookTarget.lerp(pos, 1 - Math.exp(-dt * 7));
-    this.camera.lookAt(this.lookTarget.x, this.lookTarget.y + 0.85, this.lookTarget.z);
 
-    // Render (Sun is statically placed over the park, zero matrix jitter!)
+    // Single unified lerp keeps camera rigidly synchronized with target
+    this.lookTarget.lerp(pos, 1 - Math.exp(-dt * 8.5));
+    const targetCamPos = this.desired.copy(this.lookTarget).add(this.camOffset);
+    this.camera.position.lerp(targetCamPos, 1 - Math.exp(-dt * 8.5));
+    this.camera.lookAt(this.lookTarget.x, this.lookTarget.y + 1.1, this.lookTarget.z);
+
+    // Render
     this.renderer.render(this.scene, this.camera);
 
     if (!this.ready) {
