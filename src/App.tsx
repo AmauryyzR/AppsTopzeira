@@ -46,18 +46,29 @@ export function App() {
     );
   };
 
-  // Open a tab by type (e.g. from Cover Page 16:9 buttons)
+  // Open a tab by type (e.g. from Cover Page cards)
   const handleOpenTabType = (type: TabType) => {
     const existingTab = tabs.find((t) => t.type === type);
     if (existingTab) {
       handleSelectTab(existingTab.id);
     } else {
       const newId = `tab-${type}-${Date.now()}`;
+      let title = 'MathRender';
+      let iconName: 'home' | 'calculator' | 'gamepad' | 'trees' = 'calculator';
+
+      if (type === 'snake') {
+        title = 'Snake Game';
+        iconName = 'gamepad';
+      } else if (type === 'jogotop') {
+        title = 'JogoTop 3D';
+        iconName = 'trees';
+      }
+
       const newTab: TabItem = {
         id: newId,
         type: type,
-        title: type === 'mathrender' ? 'MathRender' : 'Snake Game',
-        iconName: type === 'mathrender' ? 'calculator' : 'gamepad',
+        title,
+        iconName,
         active: true,
         closable: true,
       };
@@ -99,7 +110,6 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#06080d] text-slate-100 selection:bg-cyan-500 selection:text-black">
-      
       {/* Top Window Tab Bar */}
       <TabBar
         tabs={tabs}
@@ -119,10 +129,8 @@ export function App() {
           <AppView type={currentTab.type} title={currentTab.title} />
         )}
       </main>
-
     </div>
   );
 }
 
 export default App;
-

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Calculator, Gamepad2, Plus, X, Maximize2, Minimize2, Sparkles, LayoutGrid } from 'lucide-react';
+import { Home, Calculator, Gamepad2, Trees, X, Maximize2, Minimize2 } from 'lucide-react';
 import { TabItem, TabType } from '../types';
 
 interface TabBarProps {
@@ -17,7 +17,6 @@ export const TabBar: React.FC<TabBarProps> = ({
   activeTabId,
   onSelectTab,
   onCloseTab,
-  onOpenNewTab,
   isFullscreen,
   onToggleFullscreen,
 }) => {
@@ -29,16 +28,16 @@ export const TabBar: React.FC<TabBarProps> = ({
         return <Calculator className="w-3.5 h-3.5 text-cyan-400" />;
       case 'snake':
         return <Gamepad2 className="w-3.5 h-3.5 text-purple-400" />;
+      case 'jogotop':
+        return <Trees className="w-3.5 h-3.5 text-emerald-400" />;
     }
   };
 
   return (
     <header className="w-full h-14 bg-[#090d16]/90 backdrop-blur-md border-b border-slate-800/60 px-3 flex items-center justify-between select-none z-50 sticky top-0">
-      
       {/* Left: App Branding */}
       <div className="flex items-center gap-3">
-        {/* Logo / Title */}
-        <div 
+        <div
           className="flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-lg hover:bg-slate-800/40 transition-colors"
           onClick={() => onSelectTab('tab-cover')}
         >
@@ -71,7 +70,7 @@ export const TabBar: React.FC<TabBarProps> = ({
               )}
 
               {renderIcon(tab.type)}
-              
+
               <span className="truncate flex-1 font-jakarta">{tab.title}</span>
 
               {/* Close Button if Closable */}
@@ -102,8 +101,6 @@ export const TabBar: React.FC<TabBarProps> = ({
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
       </div>
-
     </header>
   );
 };
-

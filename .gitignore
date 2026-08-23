@@ -21,3 +21,8 @@ appmanimrender/media_test/
 .vscode
 .idea
 *.log
+tmp/
+output/
+.codex/
+.codex-remote-attachments/
+
