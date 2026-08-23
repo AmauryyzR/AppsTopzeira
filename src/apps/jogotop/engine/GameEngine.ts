@@ -36,7 +36,7 @@ class DustSystem {
     g.fillRect(0, 0, 64, 64);
     this.tex = new THREE.CanvasTexture(c);
 
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 20; i++) {
       const mat = new THREE.SpriteMaterial({
         map: this.tex,
         color: 0xe0d2b4,
@@ -45,6 +45,8 @@ class DustSystem {
         depthWrite: false,
       });
       const sprite = new THREE.Sprite(mat);
+      sprite.castShadow = false;
+      sprite.receiveShadow = false;
       sprite.visible = false;
       scene.add(sprite);
       this.pool.push({ sprite, mat, life: 0, max: 1, vx: 0, vy: 0, vz: 0 });
@@ -121,7 +123,7 @@ export class GameEngine {
   private lastY = 0;
   private envTexture: THREE.Texture | null = null;
 
-  // Dedicated camera touch tracking (ignoring joystick and jump button)
+  // Dedicated camera touch tracking (ignoring joystick, jump, and fullscreen buttons)
   private camTouches = new Map<number, { x: number; y: number }>();
   private initialPinchDist = 0;
   private initialPinchCamDist = 0;
@@ -135,11 +137,10 @@ export class GameEngine {
     const h = container.clientHeight || window.innerHeight;
     const isPortrait = h > w;
 
-    // High performance renderer configuration
+    // High precision renderer (no mediump to prevent mobile shadow acne/black flickering triangles)
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
-      precision: 'mediump',
       stencil: false,
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -178,8 +179,8 @@ export class GameEngine {
     this.sun.shadow.camera.bottom = -32;
     this.sun.shadow.camera.near = 5;
     this.sun.shadow.camera.far = 115;
-    this.sun.shadow.bias = -0.0003;
-    this.sun.shadow.normalBias = 0.02;
+    this.sun.shadow.bias = -0.0004;
+    this.sun.shadow.normalBias = 0.05; // Generous normal bias eliminates mobile shadow acne completely
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
 
@@ -266,7 +267,7 @@ export class GameEngine {
     this.camDist = Math.min(34, Math.max(7, this.camDist * (1 + e.deltaY * 0.0011)));
   };
 
-  // Dedicated Mobile Camera Touch Control (Independent from Joystick / Jump)
+  // Dedicated Mobile Camera Touch Control (Independent from Joystick / Jump / Fullscreen UI)
   private isTouchOnUI = (touch: Touch): boolean => {
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     return !!el && !!(el.closest('.jt-joystick') || el.closest('.jt-touchbtn') || el.closest('.jt-fullscreen-btn'));

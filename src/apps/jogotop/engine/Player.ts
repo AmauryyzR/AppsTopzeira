@@ -42,7 +42,7 @@ export class Player {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    mesh.receiveShadow = false;
     parent.add(mesh);
     return mesh;
   }
