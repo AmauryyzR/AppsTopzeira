@@ -4,7 +4,6 @@ import { InputManager } from './InputManager';
 import { Player } from './Player';
 import { buildWorld, WorldRefs } from './WorldBuilder';
 
-const SUN_OFFSET = new THREE.Vector3(26, 40, 16);
 const MAX_SPEED = 5.6;
 const PLAYER_RADIUS = 0.45;
 const BOUNDS = 53.5;
@@ -137,7 +136,7 @@ export class GameEngine {
     const h = container.clientHeight || window.innerHeight;
     const isPortrait = h > w;
 
-    // High precision renderer (no mediump to prevent mobile shadow acne/black flickering triangles)
+    // High performance renderer configuration
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: 'high-performance',
@@ -155,7 +154,7 @@ export class GameEngine {
     container.appendChild(this.renderer.domElement);
 
     // Far fog
-    this.scene.fog = new THREE.Fog(0x8ecdf5, 80, 180);
+    this.scene.fog = new THREE.Fog(0x8ecdf5, 80, 200);
 
     // IBL Environment
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -164,25 +163,27 @@ export class GameEngine {
     this.scene.environment = this.envTexture;
     this.scene.environmentIntensity = 0.35;
 
-    // Camera with adaptive FOV for both Portrait and Landscape
-    this.camera = new THREE.PerspectiveCamera(isPortrait ? 58 : 46, w / h, 0.2, 500);
+    // Camera with high-precision near plane (0.5m) to prevent z-fighting on mobile depth buffers
+    this.camera = new THREE.PerspectiveCamera(isPortrait ? 58 : 46, w / h, 0.5, 350);
     this.camera.position.set(0, CAM_DIST * Math.sin(CAM_PITCH0), CAM_DIST * Math.cos(CAM_PITCH0));
 
     // Lights
     this.scene.add(new THREE.HemisphereLight(0xb5e2ff, 0x48a834, 1.0));
 
+    // Rock-solid fixed sun covering the entire park (zero shadow matrix recalculation during movement!)
     this.sun = new THREE.DirectionalLight(0xfff6de, 2.5);
-    this.sun.position.copy(SUN_OFFSET);
+    this.sun.position.set(38, 60, 24);
+    this.sun.target.position.set(0, 0, 0);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
-    this.sun.shadow.camera.left = -32;
-    this.sun.shadow.camera.right = 32;
-    this.sun.shadow.camera.top = 32;
-    this.sun.shadow.camera.bottom = -32;
-    this.sun.shadow.camera.near = 5;
-    this.sun.shadow.camera.far = 115;
+    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.camera.left = -58;
+    this.sun.shadow.camera.right = 58;
+    this.sun.shadow.camera.top = 58;
+    this.sun.shadow.camera.bottom = -58;
+    this.sun.shadow.camera.near = 10;
+    this.sun.shadow.camera.far = 160;
     this.sun.shadow.bias = -0.0004;
-    this.sun.shadow.normalBias = 0.05; // Generous normal bias eliminates mobile shadow acne completely
+    this.sun.shadow.normalBias = 0.04;
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
 
@@ -445,11 +446,7 @@ export class GameEngine {
     this.lookTarget.lerp(pos, 1 - Math.exp(-dt * 7));
     this.camera.lookAt(this.lookTarget.x, this.lookTarget.y + 0.85, this.lookTarget.z);
 
-    // Sun target tracking
-    this.sun.position.copy(pos).add(SUN_OFFSET);
-    this.sun.target.position.copy(pos);
-
-    // Render
+    // Render (Sun is statically placed over the park, zero matrix jitter!)
     this.renderer.render(this.scene, this.camera);
 
     if (!this.ready) {
