@@ -69,6 +69,7 @@ export default function JogoTopApp() {
   const [input] = useState(() => new InputManager());
   const [ready, setReady] = useState(false);
   const [hintVisible, setHintVisible] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const prevTitle = document.title;
@@ -78,13 +79,45 @@ export default function JogoTopApp() {
     const engine = new GameEngine(containerRef.current!, input, () => setReady(true));
     const timer = window.setTimeout(() => setHintVisible(false), 7000);
 
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+
     return () => {
       window.clearTimeout(timer);
+      document.removeEventListener('fullscreenchange', onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
       engine.dispose();
       input.dispose();
       document.title = prevTitle;
     };
   }, [input]);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      const docEl = document.documentElement as unknown as {
+        requestFullscreen?: () => Promise<void>;
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(() => {});
+      } else if (docEl.webkitRequestFullscreen) {
+        docEl.webkitRequestFullscreen().catch(() => {});
+      }
+    } else {
+      const doc = document as unknown as {
+        exitFullscreen?: () => Promise<void>;
+        webkitExitFullscreen?: () => Promise<void>;
+      };
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen().catch(() => {});
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#7dc5f5] select-none touch-none">
@@ -108,14 +141,35 @@ export default function JogoTopApp() {
         JOGOTOP · PARQUE
       </div>
 
+      {/* Mobile Fullscreen (F11) Button on top-right */}
+      <button
+        onClick={toggleFullscreen}
+        className="jt-fullscreen-btn absolute top-3 right-3 h-10 w-10 touch-none select-none rounded-full border border-white/40 bg-black/40 text-white backdrop-blur-md shadow-lg active:scale-90 transition-all flex items-center justify-center z-30"
+        style={{
+          top: 'max(0.75rem, env(safe-area-inset-top))',
+          right: 'max(0.75rem, env(safe-area-inset-right))',
+        }}
+        title="Tela Cheia (F11)"
+      >
+        {isFullscreen ? (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-white stroke-2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+          </svg>
+        )}
+      </button>
+
       {/* Context Hint */}
       <div
-        className={`absolute top-3 right-3 rounded-full bg-black/40 px-3.5 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur-md shadow-md transition-opacity duration-700 pointer-events-none z-20 ${
+        className={`absolute top-3 right-16 rounded-full bg-black/40 px-3.5 py-1.5 text-[11px] font-semibold text-white/90 backdrop-blur-md shadow-md transition-opacity duration-700 pointer-events-none z-20 ${
           ready && hintVisible ? 'opacity-100' : 'opacity-0'
         }`}
         style={{
           top: 'max(0.75rem, env(safe-area-inset-top))',
-          right: 'max(0.75rem, env(safe-area-inset-right))',
+          right: 'calc(max(0.75rem, env(safe-area-inset-right)) + 3.2rem)',
         }}
       >
         Mova pelo analógico · Toque para pular · Arraste a tela para girar a câmera

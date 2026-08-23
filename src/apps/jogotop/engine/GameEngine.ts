@@ -121,11 +121,10 @@ export class GameEngine {
   private lastY = 0;
   private envTexture: THREE.Texture | null = null;
 
-  // Touch Camera drag & pinch
-  private touchCamId: number | null = null;
-  private lastTouchX = 0;
-  private lastTouchY = 0;
-  private pinchDist = 0;
+  // Dedicated camera touch tracking (ignoring joystick and jump button)
+  private camTouches = new Map<number, { x: number; y: number }>();
+  private initialPinchDist = 0;
+  private initialPinchCamDist = 0;
 
   constructor(container: HTMLElement, input: InputManager, onReady?: () => void) {
     this.container = container;
@@ -206,10 +205,10 @@ export class GameEngine {
     document.addEventListener('pointerlockchange', this.onLockChange);
 
     // Mobile Touch Camera Listeners (Roblox swipe to orbit & pinch to zoom)
-    container.addEventListener('touchstart', this.onTouchStart, { passive: false });
-    container.addEventListener('touchmove', this.onTouchMove, { passive: false });
-    container.addEventListener('touchend', this.onTouchEnd, { passive: false });
-    container.addEventListener('touchcancel', this.onTouchEnd, { passive: false });
+    window.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    window.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    window.addEventListener('touchend', this.onTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', this.onTouchEnd, { passive: false });
 
     this.renderer.domElement.style.cursor = 'grab';
     window.addEventListener('resize', this.onResize);
@@ -267,55 +266,75 @@ export class GameEngine {
     this.camDist = Math.min(34, Math.max(7, this.camDist * (1 + e.deltaY * 0.0011)));
   };
 
-  // Mobile Touch Camera Controls (Roblox style swipe & pinch)
-  private onTouchStart = (e: TouchEvent) => {
-    if (e.touches.length === 1) {
-      const t = e.touches[0];
-      const target = e.target as HTMLElement;
-      if (target.closest('.jt-joystick') || target.closest('.jt-touchbtn')) return;
+  // Dedicated Mobile Camera Touch Control (Independent from Joystick / Jump)
+  private isTouchOnUI = (touch: Touch): boolean => {
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    return !!el && !!(el.closest('.jt-joystick') || el.closest('.jt-touchbtn') || el.closest('.jt-fullscreen-btn'));
+  };
 
-      this.touchCamId = t.identifier;
-      this.lastTouchX = t.clientX;
-      this.lastTouchY = t.clientY;
-    } else if (e.touches.length === 2) {
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      this.pinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+  private onTouchStart = (e: TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      if (!this.isTouchOnUI(t)) {
+        this.camTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+      }
+    }
+
+    if (this.camTouches.size === 2) {
+      const ids = Array.from(this.camTouches.keys());
+      const t1 = Array.from(e.touches).find((t) => t.identifier === ids[0]);
+      const t2 = Array.from(e.touches).find((t) => t.identifier === ids[1]);
+      if (t1 && t2) {
+        this.initialPinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        this.initialPinchCamDist = this.camDist;
+      }
     }
   };
 
   private onTouchMove = (e: TouchEvent) => {
-    if (e.touches.length === 1 && this.touchCamId !== null) {
-      const t = Array.from(e.touches).find((touch) => touch.identifier === this.touchCamId);
-      if (!t) return;
-      const dx = t.clientX - this.lastTouchX;
-      const dy = t.clientY - this.lastTouchY;
-      this.lastTouchX = t.clientX;
-      this.lastTouchY = t.clientY;
+    if (this.camTouches.size === 1) {
+      const [camId, last] = Array.from(this.camTouches.entries())[0];
+      const t = Array.from(e.touches).find((touch) => touch.identifier === camId);
+      if (t) {
+        const dx = t.clientX - last.x;
+        const dy = t.clientY - last.y;
+        last.x = t.clientX;
+        last.y = t.clientY;
 
-      this.camYaw -= dx * TOUCH_CAM_SENS;
-      this.camPitch = Math.min(PITCH_MAX, Math.max(PITCH_MIN, this.camPitch + dy * TOUCH_CAM_SENS));
-    } else if (e.touches.length === 2) {
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-      if (this.pinchDist > 0) {
-        const factor = this.pinchDist / dist;
-        this.camDist = Math.min(34, Math.max(7, this.camDist * factor));
+        this.camYaw -= dx * TOUCH_CAM_SENS;
+        this.camPitch = Math.min(PITCH_MAX, Math.max(PITCH_MIN, this.camPitch + dy * TOUCH_CAM_SENS));
       }
-      this.pinchDist = dist;
+    } else if (this.camTouches.size >= 2) {
+      const ids = Array.from(this.camTouches.keys());
+      const t1 = Array.from(e.touches).find((t) => t.identifier === ids[0]);
+      const t2 = Array.from(e.touches).find((t) => t.identifier === ids[1]);
+      if (t1 && t2) {
+        const curDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        if (this.initialPinchDist > 0 && curDist > 10) {
+          const ratio = this.initialPinchDist / curDist;
+          this.camDist = Math.min(34, Math.max(7, this.initialPinchCamDist * ratio));
+        }
+        const last1 = this.camTouches.get(t1.identifier);
+        const last2 = this.camTouches.get(t2.identifier);
+        if (last1) {
+          last1.x = t1.clientX;
+          last1.y = t1.clientY;
+        }
+        if (last2) {
+          last2.x = t2.clientX;
+          last2.y = t2.clientY;
+        }
+      }
     }
   };
 
   private onTouchEnd = (e: TouchEvent) => {
-    if (this.touchCamId !== null) {
-      const stillActive = Array.from(e.touches).some((t) => t.identifier === this.touchCamId);
-      if (!stillActive) {
-        this.touchCamId = null;
-      }
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      this.camTouches.delete(t.identifier);
     }
-    if (e.touches.length < 2) {
-      this.pinchDist = 0;
+    if (this.camTouches.size < 2) {
+      this.initialPinchDist = 0;
     }
   };
 
@@ -446,10 +465,10 @@ export class GameEngine {
     window.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('mouseup', this.onMouseUp);
     document.removeEventListener('pointerlockchange', this.onLockChange);
-    this.container.removeEventListener('touchstart', this.onTouchStart);
-    this.container.removeEventListener('touchmove', this.onTouchMove);
-    this.container.removeEventListener('touchend', this.onTouchEnd);
-    this.container.removeEventListener('touchcancel', this.onTouchEnd);
+    window.removeEventListener('touchstart', this.onTouchStart);
+    window.removeEventListener('touchmove', this.onTouchMove);
+    window.removeEventListener('touchend', this.onTouchEnd);
+    window.removeEventListener('touchcancel', this.onTouchEnd);
     this.envTexture?.dispose();
     this.player.dispose();
     this.world.dispose();
