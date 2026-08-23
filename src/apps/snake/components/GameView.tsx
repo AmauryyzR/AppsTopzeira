@@ -20,6 +20,8 @@ const MIN_FORBIDDEN_INTERVAL = 0.3; // keeps the late-game barrage playable
 export default function GameView({ mode, onStateChange }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+  const boardWrapperRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(mode === GameMode.TIME_ATTACK ? 60 : 0);
   const [multiplier, setMultiplier] = useState(1);
@@ -71,20 +73,40 @@ export default function GameView({ mode, onStateChange }: GameProps) {
   }, []);
 
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
+    if (!canvasRef.current) return;
+
+    const updateSize = () => {
+      const area = gameAreaRef.current;
+      const wrapper = boardWrapperRef.current;
+      if (!area || !wrapper) return;
+
+      const availableWidth = area.clientWidth;
+      const availableHeight = area.clientHeight;
+      if (availableWidth <= 0 || availableHeight <= 0) return;
+
+      const size = Math.floor(Math.min(availableWidth, availableHeight, 750));
+      wrapper.style.width = `${size}px`;
+      wrapper.style.height = `${size}px`;
+
+      if (rendererRef.current) {
+        rendererRef.current.resize(gridSize);
+      }
+    };
 
     // Initialize
     engineRef.current = new GameEngine(gridSize, gridSize, mode);
     rendererRef.current = new Renderer(canvasRef.current, gridSize);
     inputRef.current = new InputManager();
 
+    updateSize();
+
     // Resize observer
     const resizeObserver = new ResizeObserver(() => {
-      if (rendererRef.current) {
-        rendererRef.current.resize(gridSize);
-      }
+      updateSize();
     });
-    resizeObserver.observe(containerRef.current);
+    if (gameAreaRef.current) {
+      resizeObserver.observe(gameAreaRef.current);
+    }
 
     // Start music
     audioManager.startMusic();
@@ -294,10 +316,14 @@ export default function GameView({ mode, onStateChange }: GameProps) {
       </div>
 
       {/* Main Game Area */}
-      <div className="flex-1 w-full min-h-0 flex items-center justify-center mt-12 sm:mt-14 mb-4 pb-2 px-2 sm:px-4">
+      <div 
+        ref={gameAreaRef}
+        className="flex-1 w-full min-h-0 flex items-center justify-center mt-12 sm:mt-14 mb-4 pb-2 px-2 sm:px-4 overflow-hidden"
+      >
         <div 
-          className="relative rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-slate-800 bg-slate-900 flex items-center justify-center" 
-          style={{ width: '100%', maxWidth: '750px', aspectRatio: '1/1', maxHeight: 'calc(100% - 64px)' }}
+          ref={boardWrapperRef}
+          className="relative rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-slate-800 bg-slate-900 flex items-center justify-center aspect-square" 
+          style={{ maxWidth: '750px', maxHeight: '100%' }}
         >
           <canvas ref={canvasRef} className="block w-full h-full" />
 
