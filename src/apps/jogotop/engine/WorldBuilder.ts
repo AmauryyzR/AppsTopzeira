@@ -133,7 +133,7 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
     bucket.push(colorize(g, color));
   };
 
-  // --- 1. SKY ---
+  // --- 1. SKY SPHERE ---
   const skyMat = track(
     new THREE.ShaderMaterial({
       side: THREE.BackSide,
@@ -167,26 +167,30 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
       `,
     })
   );
-  const skyMesh = new THREE.Mesh(track(new THREE.SphereGeometry(320, 18, 10)), skyMat);
+  const skyMesh = new THREE.Mesh(track(new THREE.SphereGeometry(450, 24, 16)), skyMat);
   skyMesh.matrixAutoUpdate = false;
+  skyMesh.frustumCulled = false;
   skyMesh.updateMatrix();
   scene.add(skyMesh);
 
-  // --- 2. GROUND ---
+  // --- 2. GROUND & INFINITE GREEN HORIZON ---
   const grassTex = makeGrassTexture(rand);
   track(grassTex);
   const groundMat = track(new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.9, metalness: 0.0 }));
-  const ground = new THREE.Mesh(track(new THREE.CircleGeometry(58, 64).rotateX(-Math.PI / 2)), groundMat);
+  const ground = new THREE.Mesh(track(new THREE.CircleGeometry(64, 96).rotateX(-Math.PI / 2)), groundMat);
   ground.receiveShadow = true;
   ground.matrixAutoUpdate = false;
+  ground.frustumCulled = false;
   ground.updateMatrix();
   scene.add(ground);
 
-  const outerMat = track(new THREE.MeshStandardMaterial({ color: 0x3aa030, roughness: 1 }));
-  const outerMesh = new THREE.Mesh(track(new THREE.CircleGeometry(240, 24).rotateX(-Math.PI / 2)), outerMat);
+  // Massive seamless green ground plane (1200x1200m) stretching past the horizon in all directions
+  const outerMat = track(new THREE.MeshStandardMaterial({ color: 0x3aa830, roughness: 1.0, metalness: 0.0 }));
+  const outerMesh = new THREE.Mesh(track(new THREE.PlaneGeometry(1200, 1200).rotateX(-Math.PI / 2)), outerMat);
   outerMesh.position.y = -0.06;
   outerMesh.receiveShadow = false;
   outerMesh.matrixAutoUpdate = false;
+  outerMesh.frustumCulled = false;
   outerMesh.updateMatrix();
   scene.add(outerMesh);
 
@@ -352,12 +356,14 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
   const bottomWater = new THREE.Mesh(track(new THREE.CircleGeometry(2.26, 32).rotateX(-Math.PI / 2)), waterMat);
   bottomWater.position.set(PLAZA.x, 0.28, PLAZA.z);
   bottomWater.matrixAutoUpdate = false;
+  bottomWater.frustumCulled = false;
   bottomWater.updateMatrix();
   scene.add(bottomWater);
 
   const midWater = new THREE.Mesh(track(new THREE.CircleGeometry(0.9, 20).rotateX(-Math.PI / 2)), waterMat);
   midWater.position.set(PLAZA.x, 1.01, PLAZA.z);
   midWater.matrixAutoUpdate = false;
+  midWater.frustumCulled = false;
   midWater.updateMatrix();
   scene.add(midWater);
 
@@ -392,6 +398,7 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
   const pondMesh = new THREE.Mesh(track(new THREE.CircleGeometry(8.62, 48).rotateX(-Math.PI / 2)), pondWaterMat);
   pondMesh.position.set(POND.x, 0.04, POND.z);
   pondMesh.matrixAutoUpdate = false;
+  pondMesh.frustumCulled = false;
   pondMesh.updateMatrix();
   scene.add(pondMesh);
 
@@ -505,7 +512,7 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
   const props = buildProps({ scene, rand, addPart, buckets, findSpot, pathPoints, colliders });
   updaters.push(...props.updaters);
 
-  // --- 7. MERGE GEOMETRIES (Strict attribute normalization to prevent null/crash) ---
+  // --- 7. MERGE GEOMETRIES (Frustum culling disabled to prevent popping/black triangles) ---
   const matFor = (flat: boolean, rough: number, metal = 0.0) =>
     track(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: rough, metalness: metal, flatShading: flat }));
 
@@ -525,7 +532,6 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
     }
 
     track(merged);
-    merged.computeBoundingSphere();
     for (const g of list) g.dispose();
     list.length = 0;
 
@@ -533,6 +539,7 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
     mesh.castShadow = cast;
     mesh.receiveShadow = receive;
     mesh.matrixAutoUpdate = false;
+    mesh.frustumCulled = false; // Never cull merged world meshes
     mesh.updateMatrix();
     scene.add(mesh);
   };

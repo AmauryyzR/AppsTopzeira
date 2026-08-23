@@ -150,6 +150,8 @@ export class GameEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.setClearColor(0x8ecdf5, 1.0);
+    this.scene.background = new THREE.Color(0x8ecdf5);
     container.appendChild(this.renderer.domElement);
 
     // Far fog
