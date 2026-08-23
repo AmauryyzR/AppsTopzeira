@@ -390,7 +390,6 @@ export function MathRenderApp() {
               <h1 className="font-extrabold text-sm sm:text-lg text-white tracking-tight">
                 AppManim Render
               </h1>
-              <p className="text-[10px] sm:text-xs text-slate-400">renderização de Manim-Python</p>
             </div>
           </div>
 

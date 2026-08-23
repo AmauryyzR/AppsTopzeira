@@ -21,13 +21,10 @@ export const TemplatesGallery: React.FC<TemplatesGalleryProps> = ({ onSelectTemp
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center gap-2.5 text-sky-400 mb-1">
+          <div className="flex items-center gap-2.5 text-sky-400">
             <Sparkles className="w-6 h-6" />
             <h2 className="text-2xl font-bold text-white tracking-tight">Galeria de Templates & Animações</h2>
           </div>
-          <p className="text-slate-400 text-sm">
-            Explore animações Manim pré-configuradas cobrindo Cálculo, Álgebra Linear, 3D, Desmos e Redes Neurais.
-          </p>
         </div>
 
         {/* Category Filters */}

@@ -64,7 +64,6 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
             </div>
             <div>
               <h2 className="font-syne font-bold text-lg text-white">Configuração do Servidor Manim</h2>
-              <p className="text-xs text-slate-400 font-jakarta">Gerencie a conexão e hospedagem do motor de renderização Python</p>
             </div>
           </div>
           <button
