@@ -33,7 +33,7 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
   };
 
   return (
-    <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-slate-950 relative custom-scrollbar flex flex-col items-center py-6 px-4 pb-16 justify-start sm:justify-center">
+    <div className="w-full h-full overflow-y-auto overflow-x-hidden bg-slate-950 relative custom-scrollbar flex flex-col items-center py-6 px-4 pb-28 sm:pb-16 justify-start sm:justify-center">
       {/* Top Header Bar (Mobile only) */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/50 flex items-center justify-between px-6 z-30 sm:hidden">
         <h1 className="text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500">
@@ -113,13 +113,14 @@ export default function MainMenu({ selectedMode, onSelectMode, onStartGame, onNa
           <button
             onClick={handleStart}
             className={cn(
-              "w-full sm:w-auto sm:flex-1 py-3.5 px-8 font-black text-base sm:text-lg tracking-wider rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] text-center cursor-pointer flex items-center justify-center gap-2",
+              "fixed bottom-5 left-5 z-40 sm:static sm:bottom-auto sm:left-auto sm:z-auto w-auto sm:flex-1 py-3.5 px-6 sm:px-8 font-black text-base sm:text-lg tracking-wider rounded-2xl transition-all hover:scale-105 active:scale-95 text-center cursor-pointer flex items-center justify-center gap-2.5 shadow-2xl backdrop-blur-md",
               selectedMode === GameMode.FORBIDDEN
-                ? "bg-rose-500 hover:bg-rose-400 text-white shadow-[0_4px_24px_rgba(244,63,94,0.35)]"
-                : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_4px_20px_rgba(16,185,129,0.3)]",
+                ? "bg-rose-500 hover:bg-rose-400 text-white shadow-[0_0_30px_rgba(244,63,94,0.5)] border border-rose-300/40 ring-2 ring-rose-500/20"
+                : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_30px_rgba(16,185,129,0.5)] border border-emerald-300/40 ring-2 ring-emerald-500/20",
             )}
           >
-            <span>▶</span> PLAY NOW
+            <span className="text-lg">▶</span>
+            <span>PLAY NOW</span>
           </button>
 
           <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
