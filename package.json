@@ -7,7 +7,10 @@
     "dev": "vite --port 5000",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "capture": "node scripts/capture-game.js"
+    "capture": "node scripts/capture-game.js",
+    "test:jogotop:unit": "vitest run src/apps/jogotop/v2",
+    "test:jogotop:graphics": "node scripts/test-jogotop-graphics.mjs",
+    "test:jogotop": "npm run test:jogotop:unit && npm run build && npm run test:jogotop:graphics"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -25,11 +28,14 @@
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.13.4",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "playwright": "^1.62.1",
+    "pngjs": "^7.0.0",
     "typescript": "^5.7.3",
-    "vite": "^6.1.1"
+    "vite": "^6.1.1",
+    "vitest": "^4.1.11"
   }
 }
