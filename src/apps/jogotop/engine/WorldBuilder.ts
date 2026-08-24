@@ -61,6 +61,27 @@ function makeGrassTexture(rand: () => number): THREE.CanvasTexture {
   return tex;
 }
 
+function makeSkyTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 512;
+
+  const context = canvas.getContext('2d')!;
+  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#288be6');
+  gradient.addColorStop(0.62, '#8ecdf5');
+  gradient.addColorStop(1, '#caefff');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  return texture;
+}
+
 export function buildWorld(scene: THREE.Scene): WorldRefs {
   const rand = mulberry32(20260823);
   const disposables: { dispose(): void }[] = [];
@@ -133,44 +154,14 @@ export function buildWorld(scene: THREE.Scene): WorldRefs {
     bucket.push(colorize(g, color));
   };
 
-  // --- 1. SKY SPHERE (Safe normalized coordinates, highp precision, zero float overflow) ---
-  const skyMat = track(
-    new THREE.ShaderMaterial({
-      side: THREE.BackSide,
-      depthWrite: false,
-      depthTest: false,
-      fog: false,
-      uniforms: {
-        topColor: { value: new THREE.Color(0x288be6) },
-        bottomColor: { value: new THREE.Color(0xcaefff) },
-      },
-      vertexShader: `
-        precision highp float;
-        varying vec3 vPos;
-        void main() {
-          vPos = normalize(position);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        precision highp float;
-        uniform vec3 topColor;
-        uniform vec3 bottomColor;
-        varying vec3 vPos;
-        void main() {
-          float h = clamp(vPos.y * 0.8 + 0.2, 0.0, 1.0);
-          vec3 sky = mix(bottomColor, topColor, pow(h, 0.7));
-          gl_FragColor = vec4(sky, 1.0);
-        }
-      `,
-    })
-  );
-  const skyMesh = new THREE.Mesh(track(new THREE.SphereGeometry(300, 32, 16)), skyMat);
-  skyMesh.renderOrder = -1000;
-  skyMesh.matrixAutoUpdate = false;
-  skyMesh.frustumCulled = false;
-  skyMesh.updateMatrix();
-  scene.add(skyMesh);
+  // --- 1. SKY BACKGROUND ---
+  // Keep the sky out of the 3D geometry pass. The former BackSide sphere used a
+  // custom shader and intermittently produced invalid projected triangles on
+  // some Android GPU drivers, leaving large black wedges while the camera moved.
+  // A screen-space background texture preserves the gradient without vertices,
+  // clipping, depth state, or shader varyings that can corrupt on those devices.
+  const skyTexture = track(makeSkyTexture());
+  scene.background = skyTexture;
 
   // --- 2. GROUND & INFINITE GREEN HORIZON ---
   const grassTex = makeGrassTexture(rand);
