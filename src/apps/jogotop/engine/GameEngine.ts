@@ -137,17 +137,23 @@ export class GameEngine {
     const w = container.clientWidth || window.innerWidth;
     const h = container.clientHeight || window.innerHeight;
     const isPortrait = h > w;
+    const useMobileSafeGraphics =
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      w <= 600 ||
+      (navigator.maxTouchPoints > 0 && Math.min(w, h) < 768);
 
-    // High performance renderer configuration
+    // Mobile tile-based GPUs are more sensitive to the combination of MSAA,
+    // filtered shadow maps and PMREM/PBR sampling. Keep the full pipeline on
+    // desktop and use a stable single-pass configuration on touch devices.
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
+      antialias: !useMobileSafeGraphics,
+      powerPreference: useMobileSafeGraphics ? 'default' : 'high-performance',
       stencil: false,
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, useMobileSafeGraphics ? 1.25 : 1.5));
     this.renderer.setSize(w, h);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = !useMobileSafeGraphics;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -158,12 +164,15 @@ export class GameEngine {
     // Far fog
     this.scene.fog = new THREE.Fog(0x8ecdf5, 80, 250);
 
-    // IBL Environment
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
-    this.scene.environment = this.envTexture;
-    this.scene.environmentIntensity = 0.35;
+    // IBL Environment. Avoid the PMREM cubemap path on mobile GPUs where
+    // double-sided/animated geometry can produce corrupted black primitives.
+    if (!useMobileSafeGraphics) {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.envTexture = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+      this.scene.environment = this.envTexture;
+      this.scene.environmentIntensity = 0.35;
+    }
 
     // Perspective Camera with near plane 0.1 to prevent any near-plane clipping
     this.camera = new THREE.PerspectiveCamera(isPortrait ? 56 : 46, w / h, 0.1, 600);
@@ -176,7 +185,7 @@ export class GameEngine {
     this.sun = new THREE.DirectionalLight(0xfff6de, 2.5);
     this.sun.position.set(38, 60, 24);
     this.sun.target.position.set(0, 0, 0);
-    this.sun.castShadow = true;
+    this.sun.castShadow = !useMobileSafeGraphics;
     this.sun.shadow.mapSize.set(2048, 2048);
     this.sun.shadow.camera.left = -58;
     this.sun.shadow.camera.right = 58;

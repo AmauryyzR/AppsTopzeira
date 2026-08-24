@@ -405,7 +405,10 @@ export function buildProps(ctx: PropContext): WorldPropsResult {
     const spot = findSpot(6, 42, 0);
     const [ax, az] = spot ?? [0, -10];
     const g = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color: bColors[i % bColors.length], roughness: 0.5, side: THREE.DoubleSide });
+    // Animated DoubleSide PBR planes can generate corrupted giant triangles on
+    // some Android/Adreno drivers when an environment map is active. Wings do
+    // not need PBR, so keep them on the small and deterministic unlit shader.
+    const mat = new THREE.MeshBasicMaterial({ color: bColors[i % bColors.length], side: THREE.DoubleSide });
     const wl = new THREE.Mesh(wingGeoL, mat);
     const wr = new THREE.Mesh(wingGeoR, mat);
     const bb = new THREE.Mesh(bodyGeoB, bBodyMat);
