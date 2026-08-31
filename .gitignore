@@ -25,4 +25,5 @@ tmp/
 output/
 .codex/
 .codex-remote-attachments/
+artifacts/
 
