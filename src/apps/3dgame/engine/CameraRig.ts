@@ -3,37 +3,37 @@ import * as THREE from 'three';
 export class CameraRig {
   public readonly camera: THREE.PerspectiveCamera;
 
-  // Spherical Coordinates (Roblox Standard)
+  // Spherical Angles (Roblox Standard)
   public yaw = 0; // Horizontal orbit angle (radians)
-  public pitch = 0.38; // Vertical elevation angle (~22 degrees)
-  public distance = 8.5; // Distance from character (meters)
+  public pitch = 0.28; // Natural 3rd-person eye angle (~16 degrees)
+  public distance = 6.5; // Distance from character (meters)
 
   private targetYaw = 0;
-  private targetPitch = 0.38;
-  private targetDistance = 8.5;
+  private targetPitch = 0.28;
+  private targetDistance = 6.5;
 
-  private readonly minPitch = 0.04;
-  private readonly maxPitch = 1.35; // ~77 degrees elevation
-  private readonly minDistance = 3.0;
-  private readonly maxDistance = 22.0;
+  private readonly minPitch = -0.10; // Can look slightly up
+  private readonly maxPitch = 1.10; // ~63 degrees max elevation
+  private readonly minDistance = 2.8;
+  private readonly maxDistance = 16.0;
 
   // Smooth follow focus target
-  public currentFocus = new THREE.Vector3(0, 1.2, 0);
-  private desiredFocus = new THREE.Vector3(0, 1.2, 0);
+  public currentFocus = new THREE.Vector3(0, 1.1, 8);
+  private desiredFocus = new THREE.Vector3(0, 1.1, 8);
 
-  // Interaction State
+  // Desktop Mouse State
   private isMouseDown = false;
   private lastMouseX = 0;
   private lastMouseY = 0;
 
-  // Mobile Multi-Touch State
-  private activeTouches = new Map<number, { x: number; y: number }>();
+  // Mobile Touch State (Tracks camera drag touches specifically)
+  private cameraTouches = new Map<number, { x: number; y: number }>();
   private initialPinchDist = 0;
-  private initialPinchDistance = 8.5;
+  private initialPinchDistance = 6.5;
 
   private domElement: HTMLElement | null = null;
 
-  constructor(fov = 60, aspect = 16 / 9, near = 0.1, far = 500) {
+  constructor(fov = 56, aspect = 16 / 9, near = 0.1, far = 500) {
     this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     this.updatePositionImmediate();
   }
@@ -41,14 +41,14 @@ export class CameraRig {
   public attach(domElement: HTMLElement) {
     this.domElement = domElement;
 
-    // 1. Mouse Events (Desktop Orbit & Zoom)
+    // 1. Desktop Mouse Handlers
     domElement.addEventListener('mousedown', this.onMouseDown);
     window.addEventListener('mousemove', this.onMouseMove);
     window.addEventListener('mouseup', this.onMouseUp);
     domElement.addEventListener('wheel', this.onWheel, { passive: false });
     domElement.addEventListener('contextmenu', this.onContextMenu);
 
-    // 2. Touch Events (Mobile Orbit & Pinch Zoom)
+    // 2. Mobile Touch Handlers
     domElement.addEventListener('touchstart', this.onTouchStart, { passive: false });
     domElement.addEventListener('touchmove', this.onTouchMove, { passive: false });
     domElement.addEventListener('touchend', this.onTouchEnd);
@@ -68,6 +68,7 @@ export class CameraRig {
     }
     window.removeEventListener('mousemove', this.onMouseMove);
     window.removeEventListener('mouseup', this.onMouseUp);
+    this.cameraTouches.clear();
   }
 
   private onContextMenu = (e: MouseEvent) => {
@@ -75,7 +76,6 @@ export class CameraRig {
   };
 
   private onMouseDown = (e: MouseEvent) => {
-    // Right click (2) or left click (0) on 3D canvas
     this.isMouseDown = true;
     this.lastMouseX = e.clientX;
     this.lastMouseY = e.clientY;
@@ -89,7 +89,6 @@ export class CameraRig {
     this.lastMouseX = e.clientX;
     this.lastMouseY = e.clientY;
 
-    // Roblox Mouse Orbit Mapping
     const sensitivity = 0.0055;
     this.applyOrbitDelta(dx * sensitivity, dy * sensitivity);
   };
@@ -100,7 +99,7 @@ export class CameraRig {
 
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
-    const zoomDelta = e.deltaY * 0.006;
+    const zoomDelta = e.deltaY * 0.005;
     this.targetDistance = THREE.MathUtils.clamp(
       this.targetDistance + zoomDelta,
       this.minDistance,
@@ -108,15 +107,23 @@ export class CameraRig {
     );
   };
 
-  // Mobile Touch Gestures
+  // Mobile Touch Gestures (Independent from Joystick)
   private onTouchStart = (e: TouchEvent) => {
+    // Only capture touches that are on the canvas outside UI buttons
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
-      this.activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+      // Ignore touch if it started in the bottom-left joystick zone (x < 35% width, y > 60% height)
+      const isJoystickZone = t.clientX < window.innerWidth * 0.35 && t.clientY > window.innerHeight * 0.55;
+      // Ignore touch if it started on bottom-right jump button zone
+      const isJumpZone = t.clientX > window.innerWidth * 0.78 && t.clientY > window.innerHeight * 0.70;
+
+      if (!isJoystickZone && !isJumpZone) {
+        this.cameraTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+      }
     }
 
-    if (this.activeTouches.size === 2) {
-      const touches = Array.from(this.activeTouches.values());
+    if (this.cameraTouches.size === 2) {
+      const touches = Array.from(this.cameraTouches.values());
       this.initialPinchDist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
       this.initialPinchDistance = this.targetDistance;
     }
@@ -125,42 +132,47 @@ export class CameraRig {
   private onTouchMove = (e: TouchEvent) => {
     if (e.cancelable) e.preventDefault();
 
-    if (this.activeTouches.size === 1) {
-      const t = e.changedTouches[0];
-      const prev = this.activeTouches.get(t.identifier);
-      if (prev) {
-        const dx = t.clientX - prev.x;
-        const dy = t.clientY - prev.y;
-        this.activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
-
-        const touchSens = 0.007;
-        this.applyOrbitDelta(dx * touchSens, dy * touchSens);
-      }
-    } else if (this.activeTouches.size === 2) {
+    if (this.cameraTouches.size >= 1) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
-        if (this.activeTouches.has(t.identifier)) {
-          this.activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+        const prev = this.cameraTouches.get(t.identifier);
+        if (prev) {
+          if (this.cameraTouches.size === 1) {
+            // Single finger camera orbit
+            const dx = t.clientX - prev.x;
+            const dy = t.clientY - prev.y;
+            this.cameraTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+
+            const touchSens = 0.0065;
+            this.applyOrbitDelta(dx * touchSens, dy * touchSens);
+          } else {
+            // Update touch position
+            this.cameraTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+          }
         }
       }
-      const touches = Array.from(this.activeTouches.values());
-      const currentDist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
-      if (this.initialPinchDist > 5 && currentDist > 5) {
-        const ratio = this.initialPinchDist / currentDist;
-        this.targetDistance = THREE.MathUtils.clamp(
-          this.initialPinchDistance * ratio,
-          this.minDistance,
-          this.maxDistance
-        );
+
+      if (this.cameraTouches.size === 2) {
+        // Two-finger pinch zoom on camera area
+        const touches = Array.from(this.cameraTouches.values());
+        const currentDist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
+        if (this.initialPinchDist > 8 && currentDist > 8) {
+          const ratio = this.initialPinchDist / currentDist;
+          this.targetDistance = THREE.MathUtils.clamp(
+            this.initialPinchDistance * ratio,
+            this.minDistance,
+            this.maxDistance
+          );
+        }
       }
     }
   };
 
   private onTouchEnd = (e: TouchEvent) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
-      this.activeTouches.delete(e.changedTouches[i].identifier);
+      this.cameraTouches.delete(e.changedTouches[i].identifier);
     }
-    if (this.activeTouches.size < 2) {
+    if (this.cameraTouches.size < 2) {
       this.initialPinchDist = 0;
     }
   };
@@ -175,14 +187,18 @@ export class CameraRig {
   }
 
   public update(playerPos: THREE.Vector3, dt: number) {
-    // 1. Smoothly follow target position (Head / torso height offset)
-    this.desiredFocus.set(playerPos.x, playerPos.y + 1.25, playerPos.z);
-    this.currentFocus.lerp(this.desiredFocus, 1 - Math.exp(-14 * dt));
+    // 1. Smoothly follow target position (Torso / eye height)
+    this.desiredFocus.set(playerPos.x, playerPos.y + 1.15, playerPos.z);
+    this.currentFocus.lerp(this.desiredFocus, 1 - Math.exp(-16 * dt));
 
     // 2. Smooth spring interpolation for angles & distance
-    this.yaw += (this.targetYaw - this.yaw) * Math.min(1, 20 * dt);
-    this.pitch += (this.targetPitch - this.pitch) * Math.min(1, 18 * dt);
-    this.distance += (this.targetDistance - this.distance) * Math.min(1, 14 * dt);
+    let diffYaw = this.targetYaw - this.yaw;
+    while (diffYaw > Math.PI) diffYaw -= 2 * Math.PI;
+    while (diffYaw < -Math.PI) diffYaw += 2 * Math.PI;
+    this.yaw += diffYaw * Math.min(1, 22 * dt);
+
+    this.pitch += (this.targetPitch - this.pitch) * Math.min(1, 20 * dt);
+    this.distance += (this.targetDistance - this.distance) * Math.min(1, 16 * dt);
 
     // 3. Compute spherical camera world position
     const cosP = Math.cos(this.pitch);
