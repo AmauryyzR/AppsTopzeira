@@ -108,9 +108,14 @@ export class GameEngine {
     this.scene.add(sunLight);
 
     // Subtle Fill Light from opposite angle
-    const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.5);
+    const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
+
+    // Stylized Rim / Backlight for character edge pop (Blender aesthetic)
+    const rimLight = new THREE.DirectionalLight(0xfff1e6, 1.1);
+    rimLight.position.set(-25, 45, -40);
+    this.scene.add(rimLight);
   }
 
   private handleResize() {
