@@ -144,7 +144,14 @@ export class GameEngine {
       this.physics.position.z
     );
     this.playerCharacter.setFacingAngle(this.physics.facingAngle, dt);
-    this.playerCharacter.updateAnimation(this.physics.speed, this.physics.isGrounded, dt);
+    this.playerCharacter.updateAnimation({
+      speed: this.physics.speed,
+      isGrounded: this.physics.isGrounded,
+      verticalVelocity: this.physics.verticalVelocity,
+      jumpSquash: this.physics.jumpSquash,
+      turnRate: this.physics.turnRate,
+      dt,
+    });
 
     // 4. Update Roblox-Style Orbital Camera
     this.cameraRig.update(this.physics.position, dt);
