@@ -45,12 +45,23 @@ export class GameEngine {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.renderer.setPixelRatio(dpr);
+
     const width = Math.max(320, container.clientWidth);
     const height = Math.max(240, container.clientHeight);
-    this.renderer.setSize(width, height, false);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setSize(width, height, true);
 
-    container.appendChild(this.renderer.domElement);
+    const canvas = this.renderer.domElement;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    canvas.style.touchAction = 'none';
+
+    container.appendChild(canvas);
 
     // 4. Lighting Rig
     this.setupLighting();
@@ -109,7 +120,8 @@ export class GameEngine {
 
     this.cameraRig.camera.aspect = w / h;
     this.cameraRig.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h, false);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setSize(w, h, true);
   }
 
   private loop = () => {

@@ -32,15 +32,24 @@ export default function App3DGame() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#7dc5f5] select-none touch-none">
-      {/* Hide mobile controls when fine mouse pointer is used */}
+      {/* Global CSS for full-screen WebGL canvas and mobile controls */}
       <style>{`
+        canvas {
+          width: 100% !important;
+          height: 100% !important;
+          display: block !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          touch-action: none !important;
+        }
         @media (hover: hover) and (pointer: fine) {
           .tg-mobile-controls { display: none !important; }
         }
       `}</style>
 
       {/* 3D WebGL Canvas Viewport */}
-      <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      <div ref={containerRef} className="absolute inset-0 w-full h-full overflow-hidden" />
 
       {/* Mobile Touch Controls Layer */}
       <div className="tg-mobile-controls">
