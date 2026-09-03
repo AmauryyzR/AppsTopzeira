@@ -7,6 +7,7 @@ import { InputManager } from '../input/InputManager';
 import { SkyDome } from './shaders/SkyDomeShader';
 import { disposeToonCache } from './shaders/ToonMaterial';
 import { AtmosphericVFXSystem } from './vfx/AtmosphericVFXSystem';
+import { SoundEffectsEngine } from './audio/SoundEffectsEngine';
 
 export class GameEngine {
   public readonly scene: THREE.Scene;
@@ -18,13 +19,18 @@ export class GameEngine {
   public readonly input: InputManager;
   public readonly skyDome: SkyDome;
   public readonly vfx: AtmosphericVFXSystem;
+  public readonly audio: SoundEffectsEngine;
   public sunLight!: THREE.DirectionalLight;
+  public hemiLight!: THREE.HemisphereLight;
+  public fillLight!: THREE.DirectionalLight;
 
   private container: HTMLElement;
   private resizeObserver: ResizeObserver | null = null;
   private animFrameId: number | null = null;
   private lastTime = 0;
   private isDisposed = false;
+  private wasGroundedLastFrame = true;
+  private footstepTimer = 0;
 
   constructor(container: HTMLElement, input: InputManager, onReady?: () => void) {
     this.container = container;
@@ -87,6 +93,9 @@ export class GameEngine {
     this.vfx = new AtmosphericVFXSystem();
     this.scene.add(this.vfx.group);
 
+    // Procedural Web Audio Soundscapes (Loop 9: Jump, Land, Footsteps)
+    this.audio = new SoundEffectsEngine();
+
     this.physics = new PhysicsSimulation(0, 0, 8);
 
     // 6. Responsive Resize Handling
@@ -107,6 +116,7 @@ export class GameEngine {
     const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x86efac, 1.0);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
+    this.hemiLight = hemiLight;
 
     // Directional Sunlight with Soft Shadows (Warm welcoming anime sun)
     const sunLight = new THREE.DirectionalLight(0xfff6e6, 2.0);
@@ -128,6 +138,7 @@ export class GameEngine {
     const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
+    this.fillLight = fillLight;
 
     // Stylized Rim / Backlight for character edge pop (Blender aesthetic)
     const rimLight = new THREE.DirectionalLight(0xfff1e6, 1.1);
@@ -178,8 +189,15 @@ export class GameEngine {
     // 4. Update Roblox-Style Orbital Camera
     this.cameraRig.update(this.physics.position, dt);
 
-    // 5. Update Anime SkyDome & Atmosphere
-    this.skyDome.update(dt, this.sunLight?.position, this.cameraRig.camera.position);
+    // 5. Update Dynamic Sun & Sky Atmosphere (Loop 8: Diurnal Celestial Progression)
+    const timeSec = performance.now() * 0.001;
+    const sunOrbAngle = timeSec * 0.016 + 0.95;
+    const sunX = Math.cos(sunOrbAngle) * 55;
+    const sunY = Math.max(14, Math.sin(sunOrbAngle) * 60 + 22);
+    const sunZ = Math.sin(sunOrbAngle * 0.7) * 45;
+    this.sunLight.position.set(sunX, sunY, sunZ);
+
+    this.skyDome.update(dt, this.sunLight.position, this.cameraRig.camera.position);
 
     // 6. Update Instanced Living GrassField (Wind Waves & Player Interaction)
     this.parkWorld.grassField.update(dt, this.physics.position, this.sunLight?.position);
@@ -195,7 +213,25 @@ export class GameEngine {
       this.physics.speed
     );
 
-    // 9. Render Scene
+    // 9. Procedural Web Audio Sensory Triggers (Loop 9: Jump, Land, Footsteps)
+    if (!this.wasGroundedLastFrame && this.physics.isGrounded) {
+      this.audio.playLand(Math.abs(this.physics.verticalVelocity));
+    } else if (this.wasGroundedLastFrame && !this.physics.isGrounded && this.physics.verticalVelocity > 2.0) {
+      this.audio.playJump();
+    }
+    this.wasGroundedLastFrame = this.physics.isGrounded;
+
+    if (this.physics.isGrounded && this.physics.speed > 1.2) {
+      this.footstepTimer += dt;
+      const isSprinting = inputState.isSprinting;
+      const stepInterval = isSprinting ? 0.26 : 0.36;
+      if (this.footstepTimer >= stepInterval) {
+        this.footstepTimer = 0;
+        this.audio.playFootstep(isSprinting);
+      }
+    }
+
+    // 10. Render Scene
     this.renderer.render(this.scene, this.cameraRig.camera);
 
     this.animFrameId = requestAnimationFrame(this.loop);
@@ -215,6 +251,7 @@ export class GameEngine {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+    this.audio.dispose();
     this.vfx.dispose();
     this.skyDome.dispose();
     this.cameraRig.dispose();

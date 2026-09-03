@@ -6,6 +6,8 @@ import { StylizedWater } from './shaders/StylizedWaterShader';
 import { ToriiGate } from './world/ToriiGate';
 import { PagodaGazebo } from './world/PagodaGazebo';
 import { ArchedBridge } from './world/ArchedBridge';
+import { LanternLightingManager } from './world/LanternLightingManager';
+import { ZenRockGarden } from './world/ZenRockGarden';
 
 export interface CollisionBox {
   min: THREE.Vector3;
@@ -19,6 +21,7 @@ export interface CollisionBox {
  * - SculptedTreesManager with organic curved trunks and cloud-like volumetric foliage canopies.
  * - StylizedWater with Trochoidal waves, Voronoi caustics, shoreline foam rim, and fountain cascades/jets.
  * - Architectural Triad: Monumental Torii Gate (South), Pagoda Gazebo (East), and Taiko Bashi Arched Bridge (West).
+ * - Authentic Zen Rock Garden (Karesansui) with raked quartz sand & sacred boulders (Loop 10).
  * - Architectural chamfering on stone plazas, curbs, benches, fountain basins, and parkour platforms.
  * - Comprehensive geometry & material tracking for strict zero-leak disposal.
  */
@@ -31,6 +34,8 @@ export class ParkWorld {
   public readonly toriiGate: ToriiGate;
   public readonly pagodaGazebo: PagodaGazebo;
   public readonly archedBridge: ArchedBridge;
+  public readonly lanterns: LanternLightingManager;
+  public readonly zenRockGarden: ZenRockGarden;
 
   private geometries: THREE.BufferGeometry[] = [];
   private materials: THREE.Material[] = [];
@@ -47,6 +52,9 @@ export class ParkWorld {
 
     this.water = new StylizedWater();
     this.group.add(this.water.group);
+
+    this.lanterns = new LanternLightingManager();
+    this.group.add(this.lanterns.group);
 
     this.buildBenches();
     this.buildStreetLamps();
@@ -77,6 +85,13 @@ export class ParkWorld {
       (x, y, z, w, h, d) => this.addCollision(x, y, z, w, h, d)
     );
     this.group.add(this.archedBridge.group);
+
+    // 4. Authentic Zen Rock Garden (Karesansui) & Stepping Stones (Loop 10)
+    this.zenRockGarden = new ZenRockGarden(
+      18, 20,
+      (x, y, z, w, h, d) => this.addCollision(x, y, z, w, h, d)
+    );
+    this.group.add(this.zenRockGarden.group);
   }
 
   private track<T extends THREE.BufferGeometry>(geo: T): T {
@@ -583,9 +598,12 @@ export class ParkWorld {
 
   public update(dt: number, sunDir?: THREE.Vector3) {
     this.water.update(dt, sunDir);
+    this.lanterns.update(performance.now() * 0.001);
   }
 
   public dispose() {
+    this.zenRockGarden.dispose();
+    this.lanterns.dispose();
     this.toriiGate.dispose();
     this.pagodaGazebo.dispose();
     this.archedBridge.dispose();
