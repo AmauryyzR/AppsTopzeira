@@ -1,5 +1,11 @@
 import * as THREE from 'three';
 import { createToonMaterial } from './shaders/ToonMaterial';
+import {
+  createFabricTexture,
+  createDenimTexture,
+  createLeatherTexture,
+  createRubberSoleTexture,
+} from './textures/ProceduralTextures';
 
 export interface CharacterAnimState {
   speed: number;
@@ -20,6 +26,24 @@ export interface CharacterAnimState {
  * - Iconic chunky Brawl Stars red & white sneakers with thick soles and shell toe-caps
  * - Volume-preserving squash & stretch, running bounce, and banking physics
  */
+class CandySpiralCurve extends THREE.Curve<THREE.Vector3> {
+  private sphereR: number;
+  private maxTurns: number;
+
+  constructor(sphereR: number, maxTurns = 2.4) {
+    super();
+    this.sphereR = sphereR;
+    this.maxTurns = maxTurns;
+  }
+
+  getPoint(t: number, optionalTarget = new THREE.Vector3()): THREE.Vector3 {
+    const angle = t * Math.PI * 2 * this.maxTurns;
+    const r = 0.006 + t * (this.sphereR * 0.88);
+    const z = Math.sqrt(Math.max(0, this.sphereR * this.sphereR - r * r));
+    return optionalTarget.set(Math.cos(angle) * r, Math.sin(angle) * r, z);
+  }
+}
+
 export class PlayerCharacter {
   public readonly group = new THREE.Group();
 
@@ -45,9 +69,15 @@ export class PlayerCharacter {
   private currentBankAngle = 0;
   private currentForwardLean = 0;
 
-  // Tracked Geometries & Materials for Clean Cleanup
+  // Secondary Dynamic Inertia Physics Elements (Loop 5)
+  private drawstringPivots: { group: THREE.Group; baseRotZ: number; side: number }[] = [];
+  private zipperPullerPivot = new THREE.Group();
+  private sneakerAgletPivots: { pivot: THREE.Group; baseRotX: number; baseRotZ: number; isLeftShoe: boolean; side: number }[] = [];
+
+  // Tracked Geometries, Materials & Textures for Clean Cleanup (Zero Leaks)
   private geometries: THREE.BufferGeometry[] = [];
   private materials: THREE.Material[] = [];
+  private textures: THREE.Texture[] = [];
 
   constructor() {
     this.group.name = 'PlayerCharacter_Verdinho_Leon';
@@ -66,14 +96,26 @@ export class PlayerCharacter {
     return mat;
   }
 
+  private trackTex<T extends THREE.Texture>(tex: T): T {
+    this.textures.push(tex);
+    return tex;
+  }
+
   private buildCharacterModel() {
     // ==========================================
-    // 1. CEL-SHADED ANIME TOON PALETTE (Genshin / BotW)
+    // 1. CEL-SHADED ANIME TOON PALETTE & PROCEDURAL TEXTURES (Genshin / BotW)
     // ==========================================
+    const fabricTex = this.trackTex(createFabricTexture({ repeatX: 8, repeatY: 8 }));
+    const denimTex = this.trackTex(createDenimTexture({ repeatX: 6, repeatY: 6 }));
+    const leatherSneakerTex = this.trackTex(createLeatherTexture({ repeatX: 4, repeatY: 4 }));
+    const leatherGloveTex = this.trackTex(createLeatherTexture({ repeatX: 3, repeatY: 3 }));
+    const rubberSoleTex = this.trackTex(createRubberSoleTexture({ repeatX: 5, repeatY: 5 }));
+
     const hoodieGreenMat = this.trackMat(
       createToonMaterial({
         color: 0x10b981, // Vibrant Emerald Chameleon Green
         gradientBands: 4,
+        map: fabricTex,
         rimColor: 0x86efac,
         rimPower: 2.8,
         rimIntensity: 0.65,
@@ -96,6 +138,7 @@ export class PlayerCharacter {
       createToonMaterial({
         color: 0x2563eb, // Royal Blue Kangaroo Pouch & Crest
         gradientBands: 4,
+        map: fabricTex,
         rimColor: 0x93c5fd,
         rimPower: 2.9,
         rimIntensity: 0.60,
@@ -173,6 +216,7 @@ export class PlayerCharacter {
       createToonMaterial({
         color: 0x1e293b, // Dark indigo slate denim
         gradientBands: 4,
+        map: denimTex,
         rimColor: 0x94a3b8,
         rimPower: 2.8,
         rimIntensity: 0.60,
@@ -184,6 +228,7 @@ export class PlayerCharacter {
       createToonMaterial({
         color: 0xef4444, // Crimson Brawler Sneaker Upper
         gradientBands: 4,
+        map: leatherSneakerTex,
         rimColor: 0xfca5a5,
         rimPower: 2.7,
         rimIntensity: 0.65,
@@ -195,6 +240,7 @@ export class PlayerCharacter {
       createToonMaterial({
         color: 0xffffff, // Thick White Sole & Rubber Shell-Toe
         gradientBands: 4,
+        map: rubberSoleTex,
         rimColor: 0xffffff,
         rimPower: 2.6,
         rimIntensity: 0.75,
@@ -214,28 +260,204 @@ export class PlayerCharacter {
       })
     );
 
-    // Eyes on Top of Hood (Chameleon Eye Turrets)
-    const chamEyeYellowMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-    const chamEyePupilMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0f172a }));
-    const chamEyeHighlightMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    // Eyes on Top of Hood (Chameleon Eye Turrets with Heavy Volumetric Eyelids)
+    const chamEyeYellowMat = this.trackMat(
+      createToonMaterial({
+        color: 0xfacc15, // Vibrant chameleon amber-yellow
+        gradientBands: 3,
+        rimColor: 0xfef08a,
+        rimPower: 2.2,
+        rimIntensity: 0.70,
+        shadowColor: 0xd97706,
+        shadowIntensity: 0.45,
+      })
+    );
+    const chamEyePupilMat = this.trackMat(
+      createToonMaterial({
+        color: 0x090d16,
+        gradientBands: 3,
+        rimColor: 0x1e293b,
+        rimPower: 3.5,
+        rimIntensity: 0.35,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.70,
+      })
+    );
+    const chamEyePupilBorderMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf59e0b,
+        gradientBands: 3,
+        rimColor: 0xfef08a,
+        rimPower: 2.6,
+        rimIntensity: 0.65,
+        shadowColor: 0xb45309,
+        shadowIntensity: 0.50,
+      })
+    );
+    const chamEyeHighlightMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.50,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 1.8,
+        rimIntensity: 0.90,
+        shadowColor: 0xdbeafe,
+        shadowIntensity: 0.20,
+      })
+    );
+    const chamLidShadowMat = this.trackMat(
+      createToonMaterial({
+        color: 0x022c22,
+        gradientBands: 2,
+        rimColor: 0x064e3b,
+        rimPower: 3.2,
+        rimIntensity: 0.30,
+        shadowColor: 0x011a14,
+        shadowIntensity: 0.75,
+      })
+    );
 
-    // Anime Face & Hair Materials (Leon's Signature Brawler Face)
+    // Anime Face & Multi-Layer Hair Materials (Leon's Signature Brawler Face)
     const hairTealMat = this.trackMat(
       createToonMaterial({
         color: 0x0284c7, // Vibrant cyan-teal anime hair
-        gradientBands: 3,
+        gradientBands: 4,
         rimColor: 0x38bdf8,
-        rimPower: 2.5,
-        rimIntensity: 0.70,
+        rimPower: 2.4,
+        rimIntensity: 0.75,
         shadowColor: 0x075985,
         shadowIntensity: 0.50,
       })
     );
-    const eyeScleraWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eyeIrisCyanMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
-    const eyePupilBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
-    const eyeHighlightWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eyeBrowBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
+    const hairShadowTealMat = this.trackMat(
+      createToonMaterial({
+        color: 0x0c4a6e, // Deep petrol teal depth/ambient-occlusion hair layer
+        gradientBands: 3,
+        rimColor: 0x0369a1,
+        rimPower: 2.8,
+        rimIntensity: 0.50,
+        shadowColor: 0x082f49,
+        shadowIntensity: 0.60,
+      })
+    );
+    const hairHighlightCyanMat = this.trackMat(
+      createToonMaterial({
+        color: 0x38bdf8, // Luminous sky-cyan anime highlight crest
+        gradientBands: 3,
+        rimColor: 0xbae6fd,
+        rimPower: 2.2,
+        rimIntensity: 0.85,
+        shadowColor: 0x0284c7,
+        shadowIntensity: 0.40,
+      })
+    );
+
+    // Heroic Expressive Face Eyes Materials
+    const eyeScleraWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        gradientBands: 3,
+        rimColor: 0xe0f2fe,
+        rimPower: 2.8,
+        rimIntensity: 0.60,
+        shadowColor: 0xcfd8dc,
+        shadowIntensity: 0.45,
+      })
+    );
+    const eyeScleraShadowMat = this.trackMat(
+      createToonMaterial({
+        color: 0xcfd8dc,
+        gradientBands: 3,
+        rimColor: 0x94a3b8,
+        rimPower: 3.2,
+        rimIntensity: 0.40,
+        shadowColor: 0x64748b,
+        shadowIntensity: 0.55,
+      })
+    );
+    const eyeLimbalRingMat = this.trackMat(
+      createToonMaterial({
+        color: 0x034f75,
+        gradientBands: 3,
+        rimColor: 0x0ea5e9,
+        rimPower: 2.6,
+        rimIntensity: 0.55,
+        shadowColor: 0x082f49,
+        shadowIntensity: 0.60,
+      })
+    );
+    const eyeIrisCyanMat = this.trackMat(
+      createToonMaterial({
+        color: 0x0284c7,
+        gradientBands: 4,
+        rimColor: 0x38bdf8,
+        rimPower: 2.4,
+        rimIntensity: 0.75,
+        shadowColor: 0x075985,
+        shadowIntensity: 0.50,
+      })
+    );
+    const eyeIrisGlowMat = this.trackMat(
+      createToonMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.35,
+        gradientBands: 3,
+        rimColor: 0xbae6fd,
+        rimPower: 2.2,
+        rimIntensity: 0.85,
+        shadowColor: 0x0284c7,
+        shadowIntensity: 0.35,
+      })
+    );
+    const eyePupilBlackMat = this.trackMat(
+      createToonMaterial({
+        color: 0x090d16,
+        gradientBands: 3,
+        rimColor: 0x1e293b,
+        rimPower: 3.5,
+        rimIntensity: 0.30,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.70,
+      })
+    );
+    const eyeHighlightWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.55,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 1.8,
+        rimIntensity: 0.95,
+        shadowColor: 0xdbeafe,
+        shadowIntensity: 0.20,
+      })
+    );
+    const eyeLashBlackMat = this.trackMat(
+      createToonMaterial({
+        color: 0x090d16,
+        gradientBands: 3,
+        rimColor: 0x334155,
+        rimPower: 2.8,
+        rimIntensity: 0.45,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.65,
+      })
+    );
+    const eyeBrowBlackMat = this.trackMat(
+      createToonMaterial({
+        color: 0x090d16,
+        gradientBands: 3,
+        rimColor: 0x334155,
+        rimPower: 2.8,
+        rimIntensity: 0.45,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.65,
+      })
+    );
     const blushPeachMat = this.trackMat(
       createToonMaterial({
         color: 0xf43f5e,
@@ -244,15 +466,294 @@ export class PlayerCharacter {
         opacity: 0.38,
       })
     );
-    const lollipopCherryMat = this.trackMat(
+
+    // Detailed Candy Lollipop Materials (Translucent Glaze, Cream Swirl, Cellophane Knot & Tie)
+    const lollipopCandyMat = this.trackMat(
       createToonMaterial({
-        color: 0xe11d48, // Vibrant glossy red lollipop
+        color: 0xf43f5e, // Glossy caramel-strawberry candy tone
         gradientBands: 4,
         rimColor: 0xfecdd3,
+        rimPower: 2.0,
+        rimIntensity: 0.95,
+        shadowColor: 0x9f1239,
+        shadowIntensity: 0.55,
+      })
+    );
+    const lollipopGlossMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.45,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 1.8,
+        rimIntensity: 0.95,
+        shadowColor: 0xfecdd3,
+        shadowIntensity: 0.20,
+      })
+    );
+    const lollipopSwirlWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xfffbeb, // Sweet vanilla cream candy swirl
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 2.6,
+        rimIntensity: 0.70,
+        shadowColor: 0xfde68a,
+        shadowIntensity: 0.40,
+      })
+    );
+    const lollipopStickMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf8fafc,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 3.0,
+        rimIntensity: 0.55,
+        shadowColor: 0xcbd5e1,
+        shadowIntensity: 0.45,
+      })
+    );
+    const cellophaneMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        gradientBands: 3,
+        rimColor: 0x93c5fd,
+        rimPower: 2.2,
+        rimIntensity: 0.90,
+        transparent: true,
+        opacity: 0.68,
+        shadowColor: 0xcbd5e1,
+        shadowIntensity: 0.35,
+      })
+    );
+    const twistTieGoldMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf59e0b, // Golden foil wrapper tie
+        gradientBands: 3,
+        rimColor: 0xfef08a,
         rimPower: 2.2,
         rimIntensity: 0.85,
-        shadowColor: 0x881337,
+        shadowColor: 0xb45309,
+        shadowIntensity: 0.45,
+      })
+    );
+
+    // Anatomical Structural Materials (Loop 1: Waistband, Cuffs, Socks, Sneaker Collar)
+    const denimStitchMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf59e0b, // Warm golden-amber denim contrast stitching
+        gradientBands: 3,
+        rimColor: 0xfef3c7,
+        rimPower: 2.6,
+        rimIntensity: 0.65,
+        shadowColor: 0x78350f,
+        shadowIntensity: 0.50,
+      })
+    );
+    const cuffRibbedBlueMat = this.trackMat(
+      createToonMaterial({
+        color: 0x1d4ed8, // Deep royal blue ribbed knit texture for hoodie cuffs
+        gradientBands: 4,
+        rimColor: 0x60a5fa,
+        rimPower: 2.8,
+        rimIntensity: 0.65,
+        shadowColor: 0x172554,
         shadowIntensity: 0.55,
+      })
+    );
+    const hemRibbedGreenMat = this.trackMat(
+      createToonMaterial({
+        color: 0x0f766e, // Deep emerald teal ribbed band tone
+        gradientBands: 4,
+        rimColor: 0x5eead4,
+        rimPower: 2.8,
+        rimIntensity: 0.65,
+        shadowColor: 0x042f2e,
+        shadowIntensity: 0.55,
+      })
+    );
+    const sockWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf8fafc, // Crisp clean athletic white crew sock
+        gradientBands: 4,
+        rimColor: 0xffffff,
+        rimPower: 3.0,
+        rimIntensity: 0.70,
+        shadowColor: 0x94a3b8,
+        shadowIntensity: 0.45,
+      })
+    );
+    const sockStripeBlueMat = this.trackMat(
+      createToonMaterial({
+        color: 0x2563eb, // Retro athletic blue sock stripe
+        gradientBands: 3,
+        rimColor: 0x93c5fd,
+        rimPower: 2.8,
+        rimIntensity: 0.60,
+        shadowColor: 0x1e3a8a,
+        shadowIntensity: 0.50,
+      })
+    );
+    const sneakerCollarMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff, // Padded white ankle collar rim for skate sneaker
+        gradientBands: 4,
+        rimColor: 0xffffff,
+        rimPower: 2.6,
+        rimIntensity: 0.75,
+        shadowColor: 0x94a3b8,
+        shadowIntensity: 0.45,
+      })
+    );
+
+    // ==========================================
+    // LOOP 4: COMBAT BRAWLER GLOVES & CHUNKY SNEAKER MATERIALS
+    // ==========================================
+    const gloveMainMat = this.trackMat(
+      createToonMaterial({
+        color: 0x1e293b, // Dark charcoal slate brawler glove leather
+        gradientBands: 4,
+        map: leatherGloveTex,
+        rimColor: 0x475569,
+        rimPower: 2.8,
+        rimIntensity: 0.65,
+        shadowColor: 0x0f172a,
+        shadowIntensity: 0.60,
+      })
+    );
+    const gloveTrimMat = this.trackMat(
+      createToonMaterial({
+        color: 0x2563eb, // Royal blue piping / contrast debrum (matching Leon's crest & pouch)
+        gradientBands: 3,
+        rimColor: 0x60a5fa,
+        rimPower: 2.6,
+        rimIntensity: 0.70,
+        shadowColor: 0x1d4ed8,
+        shadowIntensity: 0.50,
+      })
+    );
+    const glovePadMat = this.trackMat(
+      createToonMaterial({
+        color: 0x0f172a, // High-density shock absorption palm grip pads & knuckle base
+        gradientBands: 3,
+        rimColor: 0x334155,
+        rimPower: 3.0,
+        rimIntensity: 0.50,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.65,
+      })
+    );
+    const gloveKnuckleArmorMat = this.trackMat(
+      createToonMaterial({
+        color: 0x3b82f6, // Reinforced combat knuckle strike plates (luminous cobalt armor)
+        gradientBands: 4,
+        rimColor: 0x93c5fd,
+        rimPower: 2.3,
+        rimIntensity: 0.85,
+        shadowColor: 0x1e3a8a,
+        shadowIntensity: 0.55,
+      })
+    );
+    const gloveStrapMat = this.trackMat(
+      createToonMaterial({
+        color: 0x1e293b, // Padded wrist strap
+        gradientBands: 3,
+        rimColor: 0x64748b,
+        rimPower: 2.8,
+        rimIntensity: 0.60,
+        shadowColor: 0x0f172a,
+        shadowIntensity: 0.55,
+      })
+    );
+    const gloveBuckleGoldMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf59e0b, // Golden metallic buckle & strap accents
+        gradientBands: 3,
+        rimColor: 0xfef08a,
+        rimPower: 2.2,
+        rimIntensity: 0.90,
+        shadowColor: 0xb45309,
+        shadowIntensity: 0.45,
+      })
+    );
+    const sneakerDarkRedMat = this.trackMat(
+      createToonMaterial({
+        color: 0x991b1b, // Deep crimson leather heel-counter & quarter overlay
+        gradientBands: 4,
+        map: leatherSneakerTex,
+        rimColor: 0xef4444,
+        rimPower: 2.8,
+        rimIntensity: 0.55,
+        shadowColor: 0x450a0a,
+        shadowIntensity: 0.60,
+      })
+    );
+    const sneakerLaceWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf8fafc, // Crisp athletic woven 3D shoelaces & tied bow
+        gradientBands: 4,
+        rimColor: 0xffffff,
+        rimPower: 2.6,
+        rimIntensity: 0.80,
+        shadowColor: 0xcbd5e1,
+        shadowIntensity: 0.45,
+      })
+    );
+    const sneakerEyeletGoldMat = this.trackMat(
+      createToonMaterial({
+        color: 0xfbbf24, // Metallic golden lace eyelet rings & aglet tips
+        gradientBands: 3,
+        rimColor: 0xfef08a,
+        rimPower: 2.2,
+        rimIntensity: 0.90,
+        shadowColor: 0xb45309,
+        shadowIntensity: 0.45,
+      })
+    );
+    const sneakerTongueTagMat = this.trackMat(
+      createToonMaterial({
+        color: 0x2563eb, // Royal blue woven athletic tongue patch
+        gradientBands: 3,
+        rimColor: 0x93c5fd,
+        rimPower: 2.6,
+        rimIntensity: 0.70,
+        shadowColor: 0x1e3a8a,
+        shadowIntensity: 0.50,
+      })
+    );
+    const sneakerTreadBlackMat = this.trackMat(
+      createToonMaterial({
+        color: 0x090d16, // Heavy-duty rugged rubber outsole & grip lugs
+        gradientBands: 3,
+        map: rubberSoleTex,
+        rimColor: 0x334155,
+        rimPower: 3.2,
+        rimIntensity: 0.40,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.70,
+      })
+    );
+    const sneakerStitchWhiteMat = this.trackMat(
+      createToonMaterial({
+        color: 0xffffff,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 2.5,
+        rimIntensity: 0.70,
+        shadowColor: 0xcfd8dc,
+        shadowIntensity: 0.40,
+      })
+    );
+    const sneakerShellGrooveMat = this.trackMat(
+      createToonMaterial({
+        color: 0x94a3b8,
+        gradientBands: 3,
+        rimColor: 0xcbd5e1,
+        rimPower: 3.0,
+        rimIntensity: 0.50,
+        shadowColor: 0x475569,
+        shadowIntensity: 0.60,
       })
     );
 
@@ -282,28 +783,336 @@ export class PlayerCharacter {
     torsoMesh.receiveShadow = true;
     this.torsoGroup.add(torsoMesh);
 
-    // Royal Blue Kangaroo Front Pouch Pocket
-    const pouchGeo = this.track(new THREE.CylinderGeometry(0.315, 0.335, 0.26, 16, 1, false, -0.85, 1.70));
-    pouchGeo.scale(1.03, 1.0, 0.93);
+    // --- 1. PADDED HOODIE COWL / COLLAR ROLL (Seamless Neck-to-Torso Transition) ---
+    // Thick curved padded collar roll wrapping the neck aperture
+    const collarCowlGeo = this.track(new THREE.TorusGeometry(0.24, 0.056, 16, 32));
+    collarCowlGeo.scale(1.08, 0.86, 1.16);
+    const collarCowl = new THREE.Mesh(collarCowlGeo, hoodieGreenMat);
+    collarCowl.position.set(0, 0.335, 0.04);
+    collarCowl.rotation.x = 0.18; // Tilted forward to rest naturally over the upper chest
+    collarCowl.castShadow = true;
+    collarCowl.receiveShadow = true;
+    this.torsoGroup.add(collarCowl);
+
+    // Dark green decorative collar accent trim rim
+    const collarRimGeo = this.track(new THREE.TorusGeometry(0.26, 0.032, 12, 28));
+    collarRimGeo.scale(1.08, 0.82, 1.18);
+    const collarRim = new THREE.Mesh(collarRimGeo, hoodTrimDarkGreenMat);
+    collarRim.position.set(0, 0.320, 0.04);
+    collarRim.rotation.x = 0.16;
+    collarRim.castShadow = true;
+    this.torsoGroup.add(collarRim);
+
+    // Solid inner neck plug bridging torso interior directly to hood cavity (zero voids)
+    const neckPlugGeo = this.track(new THREE.CylinderGeometry(0.21, 0.19, 0.20, 20));
+    const neckPlug = new THREE.Mesh(neckPlugGeo, hoodieGreenMat);
+    neckPlug.position.set(0, 0.36, 0.01);
+    this.torsoGroup.add(neckPlug);
+
+    // --- 2. TORSO DELTOID SOCKETS (Natural Trapezius Slope & Shoulder Base) ---
+    for (const xSign of [-1, 1]) {
+      const socketGeo = this.track(new THREE.SphereGeometry(0.185, 16, 14));
+      socketGeo.scale(1.15, 0.90, 1.10);
+      const socket = new THREE.Mesh(socketGeo, hoodieGreenMat);
+      socket.position.set(xSign * 0.31, 0.25, 0.0);
+      socket.castShadow = true;
+      this.torsoGroup.add(socket);
+    }
+
+    // --- 4. PELVIS & ANATOMICAL SHORTS WAISTBAND (Zero-Gap Crotch & Thick Cós) ---
+    // Solid denim crotch saddle connecting hip sockets (never reveals a void during strides)
+    const crotchGussetGeo = this.track(new THREE.SphereGeometry(0.24, 18, 16));
+    crotchGussetGeo.scale(1.08, 0.72, 0.92);
+    const crotchGusset = new THREE.Mesh(crotchGussetGeo, shortsIndigoMat);
+    crotchGusset.position.set(0, -0.33, 0.01);
+    crotchGusset.castShadow = true;
+    this.torsoGroup.add(crotchGusset);
+
+    // Groin lower filler plug
+    const crotchLowerGeo = this.track(new THREE.CylinderGeometry(0.20, 0.18, 0.14, 16));
+    crotchLowerGeo.scale(1.0, 0.85, 0.85);
+    const crotchLower = new THREE.Mesh(crotchLowerGeo, shortsIndigoMat);
+    crotchLower.position.set(0, -0.38, 0.0);
+    this.torsoGroup.add(crotchLower);
+
+    // Chunky anatomical waistband (cós com espessura real)
+    const waistbandGeo = this.track(new THREE.TorusGeometry(0.305, 0.034, 14, 28));
+    waistbandGeo.scale(1.02, 0.82, 0.88);
+    const waistband = new THREE.Mesh(waistbandGeo, shortsIndigoMat);
+    waistband.position.set(0, -0.27, 0.01);
+    waistband.castShadow = true;
+    this.torsoGroup.add(waistband);
+
+    // Golden-amber contrast denim stitching along waistband (upper and lower seams)
+    const topStitchGeo = this.track(new THREE.TorusGeometry(0.312, 0.006, 6, 28));
+    topStitchGeo.scale(1.02, 0.82, 0.88);
+    const topStitch = new THREE.Mesh(topStitchGeo, denimStitchMat);
+    topStitch.position.set(0, -0.25, 0.01);
+    this.torsoGroup.add(topStitch);
+
+    const botStitchGeo = this.track(new THREE.TorusGeometry(0.312, 0.006, 6, 28));
+    botStitchGeo.scale(1.02, 0.82, 0.88);
+    const botStitch = new THREE.Mesh(botStitchGeo, denimStitchMat);
+    botStitch.position.set(0, -0.29, 0.01);
+    this.torsoGroup.add(botStitch);
+
+    // Denim belt loops (passadeiras) around the waistband
+    const loopAngles = [-1.15, -0.42, 0.42, 1.15, Math.PI];
+    for (const ang of loopAngles) {
+      const loopGeo = this.track(new THREE.BoxGeometry(0.024, 0.065, 0.02));
+      const loopMesh = new THREE.Mesh(loopGeo, shortsIndigoMat);
+      const lx = Math.sin(ang) * 0.315 * 1.02;
+      const lz = Math.cos(ang) * 0.315 * 0.88;
+      loopMesh.position.set(lx, -0.27, lz + 0.01);
+      loopMesh.rotation.y = ang;
+      loopMesh.castShadow = true;
+      this.torsoGroup.add(loopMesh);
+    }
+
+    // Front denim fly (braguilha) with golden J-stitch
+    const flySeamGeo = this.track(new THREE.BoxGeometry(0.014, 0.10, 0.015));
+    const flySeam = new THREE.Mesh(flySeamGeo, denimStitchMat);
+    flySeam.position.set(0.01, -0.33, 0.28);
+    this.torsoGroup.add(flySeam);
+
+    const jStitchGeo = this.track(new THREE.TorusGeometry(0.028, 0.006, 6, 12, Math.PI * 0.5));
+    jStitchGeo.rotateZ(Math.PI * 0.5);
+    const jStitch = new THREE.Mesh(jStitchGeo, denimStitchMat);
+    jStitch.position.set(0.022, -0.38, 0.28);
+    this.torsoGroup.add(jStitch);
+
+    // Front waistband brass button / buckle
+    const buttonGeo = this.track(new THREE.CylinderGeometry(0.030, 0.030, 0.016, 14));
+    buttonGeo.rotateX(Math.PI / 2);
+    const buttonMesh = new THREE.Mesh(buttonGeo, zipperYellowMat);
+    buttonMesh.position.set(0, -0.27, 0.29);
+    buttonMesh.castShadow = true;
+    this.torsoGroup.add(buttonMesh);
+
+    // --- 5. HOODIE HEM RIB (Thick Ribbed Elastic Knit Hem hugging the shorts) ---
+    const hemGroup = new THREE.Group();
+    hemGroup.position.set(0, -0.275, 0.01);
+
+    // Thick padded toroidal elastic hem band
+    const hemRibGeo = this.track(new THREE.TorusGeometry(0.324, 0.040, 16, 32));
+    hemRibGeo.scale(1.03, 0.84, 0.90);
+    const hemRib = new THREE.Mesh(hemRibGeo, hemRibbedGreenMat);
+    hemRib.castShadow = true;
+    hemRib.receiveShadow = true;
+    hemGroup.add(hemRib);
+
+    // Solid inner elastic cylinder seal
+    const hemBandGeo = this.track(new THREE.CylinderGeometry(0.330, 0.322, 0.075, 24));
+    hemBandGeo.scale(1.02, 1.0, 0.89);
+    const hemBand = new THREE.Mesh(hemBandGeo, hemRibbedGreenMat);
+    hemGroup.add(hemBand);
+
+    // Horizontal compression trim rings
+    const ringTopGeo = this.track(new THREE.TorusGeometry(0.332, 0.008, 8, 32));
+    ringTopGeo.scale(1.03, 0.84, 0.90);
+    const ringTop = new THREE.Mesh(ringTopGeo, hoodTrimDarkGreenMat);
+    ringTop.position.set(0, 0.026, 0);
+    hemGroup.add(ringTop);
+
+    const ringBotGeo = this.track(new THREE.TorusGeometry(0.328, 0.008, 8, 32));
+    ringBotGeo.scale(1.03, 0.84, 0.90);
+    const ringBot = new THREE.Mesh(ringBotGeo, hoodTrimDarkGreenMat);
+    ringBot.position.set(0, -0.026, 0);
+    hemGroup.add(ringBot);
+
+    // Ribbed knit vertical micro-ribs around the hem circumference
+    const ribBarGeo = this.track(new THREE.BoxGeometry(0.014, 0.060, 0.016));
+    for (let a = 0; a < 24; a++) {
+      const ang = (a / 24) * Math.PI * 2;
+      const rx = Math.sin(ang) * 0.331 * 1.03;
+      const rz = Math.cos(ang) * 0.331 * 0.90;
+      const ribMesh = new THREE.Mesh(ribBarGeo, hoodTrimDarkGreenMat);
+      ribMesh.position.set(rx, 0, rz);
+      ribMesh.rotation.y = ang;
+      hemGroup.add(ribMesh);
+    }
+    this.torsoGroup.add(hemGroup);
+
+    // --- 6. ROYAL BLUE KANGAROO POUCH POCKET WITH WELTED ENTRIES & DOUBLE STITCHING ---
+    const kangarooPocketGroup = new THREE.Group();
+
+    // Curved volumetric pouch shell wrapped across the lower abdomen
+    const pouchGeo = this.track(new THREE.CylinderGeometry(0.330, 0.352, 0.22, 20, 1, false, -0.75, 1.50));
+    pouchGeo.scale(1.03, 1.0, 0.94);
     const pouchMesh = new THREE.Mesh(pouchGeo, pocketBlueMat);
-    pouchMesh.position.set(0, -0.16, 0.03);
+    pouchMesh.position.set(0, -0.165, 0.035);
     pouchMesh.castShadow = true;
-    this.torsoGroup.add(pouchMesh);
+    pouchMesh.receiveShadow = true;
+    kangarooPocketGroup.add(pouchMesh);
 
-    // Golden Front Zipper Line
-    const zipperGeo = this.track(new THREE.BoxGeometry(0.045, 0.54, 0.03));
-    const zipperMesh = new THREE.Mesh(zipperGeo, zipperYellowMat);
-    zipperMesh.position.set(0, 0.04, 0.32);
-    zipperMesh.castShadow = true;
-    this.torsoGroup.add(zipperMesh);
+    // Padded curved upper pocket hem roll
+    const pocketTopRimGeo = this.track(new THREE.TorusGeometry(0.328, 0.016, 8, 24, 1.42));
+    pocketTopRimGeo.rotateZ(Math.PI * 0.5 - 0.71);
+    pocketTopRimGeo.scale(1.03, 0.94, 1.0);
+    pocketTopRimGeo.rotateX(Math.PI / 2);
+    const pocketTopRim = new THREE.Mesh(pocketTopRimGeo, pocketBlueMat);
+    pocketTopRim.position.set(0, -0.055, 0.035);
+    pocketTopRim.castShadow = true;
+    kangarooPocketGroup.add(pocketTopRim);
 
-    // Golden Zipper Pull Tab
-    const pullerGeo = this.track(new THREE.BoxGeometry(0.06, 0.08, 0.04));
+    // Double top-stitching along the upper rim
+    for (let s = 0; s < 2; s++) {
+      const topStitchGeo = this.track(new THREE.TorusGeometry(0.330, 0.0035, 4, 24, 1.38));
+      topStitchGeo.rotateZ(Math.PI * 0.5 - 0.69);
+      topStitchGeo.scale(1.03, 0.94, 1.0);
+      topStitchGeo.rotateX(Math.PI / 2);
+      const topStitch = new THREE.Mesh(topStitchGeo, denimStitchMat);
+      topStitch.position.set(0, -0.062 - s * 0.012, 0.036);
+      kangarooPocketGroup.add(topStitch);
+    }
+
+    // Inclined hand entry slits with padded blue welts and double edge stitching
+    for (const xSign of [-1, 1]) {
+      // Padded ribbed welt rim (debrum acolchoado)
+      const weltGeo = this.track(new THREE.CapsuleGeometry(0.018, 0.18, 8, 12));
+      const weltMesh = new THREE.Mesh(weltGeo, cuffRibbedBlueMat);
+      weltMesh.position.set(xSign * 0.252, -0.155, 0.245);
+      weltMesh.rotation.set(-0.12, xSign * 0.48, xSign * -0.65);
+      weltMesh.castShadow = true;
+      kangarooPocketGroup.add(weltMesh);
+
+      // Deep interior shadow cavity for the hand opening
+      const slitGeo = this.track(new THREE.CapsuleGeometry(0.012, 0.16, 6, 8));
+      const slitMesh = new THREE.Mesh(slitGeo, faceShadowMat);
+      slitMesh.position.set(xSign * 0.246, -0.155, 0.238);
+      slitMesh.rotation.set(-0.12, xSign * 0.48, xSign * -0.65);
+      kangarooPocketGroup.add(slitMesh);
+
+      // Double top-stitching alongside the welt opening
+      for (let s = 0; s < 2; s++) {
+        const offset = 0.014 + s * 0.010;
+        const weltStitchGeo = this.track(new THREE.CapsuleGeometry(0.0035, 0.18, 4, 8));
+        const weltStitch = new THREE.Mesh(weltStitchGeo, denimStitchMat);
+        weltStitch.position.set(
+          xSign * (0.252 - offset * 0.65),
+          -0.155 + offset * 0.35,
+          0.245 + offset * 0.20
+        );
+        weltStitch.rotation.set(-0.12, xSign * 0.48, xSign * -0.65);
+        kangarooPocketGroup.add(weltStitch);
+      }
+    }
+    this.torsoGroup.add(kangarooPocketGroup);
+
+    // --- 7. FRONT ZIPPER TRACK WITH 3D INTERLOCKING TEETH & HOLLOW TEARDROP PULLER ---
+    // Dark green textile zipper tape base
+    const zipperTapeGeo = this.track(new THREE.BoxGeometry(0.062, 0.58, 0.012));
+    const zipperTape = new THREE.Mesh(zipperTapeGeo, hoodTrimDarkGreenMat);
+    zipperTape.position.set(0, 0.02, 0.324);
+    zipperTape.receiveShadow = true;
+    this.torsoGroup.add(zipperTape);
+
+    // 3D Interlocking metallic golden zipper teeth
+    const numTeeth = 28;
+    const toothGeo = this.track(new THREE.BoxGeometry(0.018, 0.014, 0.016));
+    for (let i = 0; i < numTeeth; i++) {
+      const ty = -0.24 + (i / (numTeeth - 1)) * 0.53;
+      const toothX = i % 2 === 0 ? -0.011 : 0.011;
+      const toothMesh = new THREE.Mesh(toothGeo, zipperYellowMat);
+      toothMesh.position.set(toothX, ty, 0.328);
+      toothMesh.castShadow = true;
+      this.torsoGroup.add(toothMesh);
+    }
+
+    // Central continuous golden zipper guide rail
+    const zipperRailGeo = this.track(new THREE.BoxGeometry(0.012, 0.55, 0.018));
+    const zipperRail = new THREE.Mesh(zipperRailGeo, zipperYellowMat);
+    zipperRail.position.set(0, 0.02, 0.328);
+    this.torsoGroup.add(zipperRail);
+
+    // Golden Top Stopper at collar notch
+    const zipperStopperGeo = this.track(new THREE.BoxGeometry(0.054, 0.032, 0.036));
+    const zipperStopper = new THREE.Mesh(zipperStopperGeo, zipperYellowMat);
+    zipperStopper.position.set(0, 0.315, 0.328);
+    zipperStopper.castShadow = true;
+    this.torsoGroup.add(zipperStopper);
+
+    // Golden Bottom Stopper at hem notch
+    const zipperBotStopperGeo = this.track(new THREE.BoxGeometry(0.050, 0.024, 0.030));
+    const zipperBotStopper = new THREE.Mesh(zipperBotStopperGeo, zipperYellowMat);
+    zipperBotStopper.position.set(0, -0.260, 0.330);
+    zipperBotStopper.castShadow = true;
+    this.torsoGroup.add(zipperBotStopper);
+
+    // Zipper Slider Assembly (Body, guide slots, bridge crown, and teardrop hollow puller)
+    const sliderGroup = new THREE.Group();
+    sliderGroup.position.set(0, 0.24, 0.345);
+
+    // Slider wedge body
+    const sliderBodyGeo = this.track(new THREE.BoxGeometry(0.065, 0.075, 0.042));
+    const sliderBody = new THREE.Mesh(sliderBodyGeo, zipperYellowMat);
+    sliderBody.castShadow = true;
+    sliderGroup.add(sliderBody);
+
+    // Side guide slots
+    const slotGeo = this.track(new THREE.BoxGeometry(0.012, 0.065, 0.030));
+    for (const xSign of [-1, 1]) {
+      const slotMesh = new THREE.Mesh(slotGeo, hoodTrimDarkGreenMat);
+      slotMesh.position.set(xSign * 0.030, 0, 0);
+      sliderGroup.add(slotMesh);
+    }
+
+    // Slider bridge crown loop
+    const bridgeGeo = this.track(new THREE.TorusGeometry(0.015, 0.005, 8, 14, Math.PI));
+    bridgeGeo.rotateZ(Math.PI * 0.5);
+    const bridgeMesh = new THREE.Mesh(bridgeGeo, zipperYellowMat);
+    bridgeMesh.position.set(0, 0.01, 0.022);
+    sliderGroup.add(bridgeMesh);
+
+    // Teardrop Puller Tab with realistic hollow engagement ring and decorative teardrop hole
+    const pullerShape = new THREE.Shape();
+    pullerShape.moveTo(-0.022, 0.038);
+    pullerShape.quadraticCurveTo(-0.022, 0.060, 0, 0.060);
+    pullerShape.quadraticCurveTo(0.022, 0.060, 0.022, 0.038);
+    pullerShape.quadraticCurveTo(0.028, 0.010, 0.025, -0.035);
+    pullerShape.quadraticCurveTo(0.018, -0.068, 0, -0.068);
+    pullerShape.quadraticCurveTo(-0.018, -0.068, -0.025, -0.035);
+    pullerShape.quadraticCurveTo(-0.028, 0.010, -0.022, 0.038);
+
+    // Top hollow hinge ring (where puller engages with the slider bridge)
+    const ringHole = new THREE.Path();
+    ringHole.absarc(0, 0.040, 0.009, 0, Math.PI * 2, true);
+    pullerShape.holes.push(ringHole);
+
+    // Stylized hollow teardrop cutout
+    const teardropHole = new THREE.Path();
+    teardropHole.moveTo(0, -0.012);
+    teardropHole.quadraticCurveTo(0.011, -0.025, 0.010, -0.046);
+    teardropHole.quadraticCurveTo(0, -0.054, -0.010, -0.046);
+    teardropHole.quadraticCurveTo(-0.011, -0.025, 0, -0.012);
+    pullerShape.holes.push(teardropHole);
+
+    const pullerGeo = this.track(
+      new THREE.ExtrudeGeometry(pullerShape, {
+        depth: 0.010,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.003,
+        bevelThickness: 0.003,
+      })
+    );
+    pullerGeo.center();
+    this.zipperPullerPivot.clear();
+    this.zipperPullerPivot.position.set(0, 0.010, 0.026);
+    this.zipperPullerPivot.rotation.set(0, 0, 0);
+    sliderGroup.add(this.zipperPullerPivot);
+
     const pullerMesh = new THREE.Mesh(pullerGeo, zipperYellowMat);
-    pullerMesh.position.set(0, 0.26, 0.34);
-    this.torsoGroup.add(pullerMesh);
+    pullerMesh.position.set(0, -0.048, 0.002);
+    pullerMesh.rotation.x = 0.12; // natural hanging dangle
+    pullerMesh.castShadow = true;
+    this.zipperPullerPivot.add(pullerMesh);
+
+    this.torsoGroup.add(sliderGroup);
 
     // Cream Hoodie Drawstrings with Golden Tips (accurately connected)
+    this.drawstringPivots = [];
     for (const xSign of [-1, 1]) {
       const drawstringGroup = new THREE.Group();
       drawstringGroup.position.set(xSign * 0.095, 0.22, 0.31);
@@ -322,26 +1131,68 @@ export class PlayerCharacter {
       drawstringGroup.add(tipMesh);
 
       this.torsoGroup.add(drawstringGroup);
+      this.drawstringPivots.push({ group: drawstringGroup, baseRotZ: xSign * -0.07, side: xSign });
+    }
+
+    // --- 8. DORSAL BACK SPIKES (Continuing the hood crest line down to the tail root) ---
+    const backSpikesData = [
+      { y: 0.20, z: -0.345, rotX: -0.38, r: 0.054, h: 0.11 },
+      { y: 0.04, z: -0.340, rotX: -0.26, r: 0.050, h: 0.10 },
+      { y: -0.12, z: -0.315, rotX: -0.16, r: 0.046, h: 0.09 },
+    ];
+    for (const cfg of backSpikesData) {
+      const spikeGeo = this.track(new THREE.ConeGeometry(cfg.r, cfg.h, 6));
+      spikeGeo.rotateX(Math.PI / 2);
+      const spike = new THREE.Mesh(spikeGeo, pocketBlueMat);
+      spike.position.set(0, cfg.y, cfg.z);
+      spike.rotation.x = cfg.rotX;
+      spike.castShadow = true;
+      this.torsoGroup.add(spike);
     }
 
     // ==========================================
-    // 3. CHAMELEON TAIL (Attached at back of hips)
+    // 3. PREHENSILE SPIRAL CHAMELEON TAIL (7 progressive curled segments)
     // ==========================================
     const tailRoot = new THREE.Group();
-    tailRoot.position.set(0, -0.28, -0.30);
+    tailRoot.position.set(0, -0.26, -0.29);
     this.torsoGroup.add(tailRoot);
 
+    const numTailSegs = 7;
     let prevTail = tailRoot;
-    for (let t = 0; t < 4; t++) {
-      const seg = new THREE.Group();
-      if (t > 0) seg.position.set(0, -0.14, -0.09);
 
-      const r = 0.12 - t * 0.022;
-      const segGeo = this.track(new THREE.SphereGeometry(r, 12, 10));
-      segGeo.scale(1.0, 0.85, 1.25);
-      const segMesh = new THREE.Mesh(segGeo, t % 2 === 0 ? hoodieGreenMat : pocketBlueMat);
+    for (let t = 0; t < numTailSegs; t++) {
+      const seg = new THREE.Group();
+      const r = 0.115 - t * 0.012; // 0.115 down to 0.043
+
+      if (t === 0) {
+        seg.position.set(0, 0, 0);
+      } else {
+        const prevR = 0.115 - (t - 1) * 0.012;
+        const stepDist = (prevR + r) * 0.76;
+        seg.position.set(0, stepDist * 0.20, -stepDist * 0.95);
+      }
+
+      // Smooth overlapping node body with alternating emerald green & cobalt blue bands
+      const segGeo = this.track(new THREE.SphereGeometry(r, 14, 12));
+      segGeo.scale(1.0, 0.92, 1.22);
+      const isBlue = t % 2 === 1;
+      const segMesh = new THREE.Mesh(segGeo, isBlue ? pocketBlueMat : hoodieGreenMat);
+      segMesh.position.set(0, 0, -r * 0.35);
       segMesh.castShadow = true;
       seg.add(segMesh);
+
+      // Dorsal ridge spikes along the tail (tailDorsalSpikes) connecting with hood and back crests
+      if (t < 6) {
+        const spikeH = r * 0.85;
+        const spikeR = r * 0.36;
+        const spikeGeo = this.track(new THREE.ConeGeometry(spikeR, spikeH, 5));
+        spikeGeo.rotateX(Math.PI * 0.5);
+        const spikeMesh = new THREE.Mesh(spikeGeo, pocketBlueMat);
+        spikeMesh.position.set(0, r * 0.88, -r * 0.35);
+        spikeMesh.rotation.x = -0.25;
+        spikeMesh.castShadow = true;
+        seg.add(spikeMesh);
+      }
 
       prevTail.add(seg);
       prevTail = seg;
@@ -362,6 +1213,15 @@ export class PlayerCharacter {
     hoodMesh.castShadow = true;
     hoodMesh.receiveShadow = true;
     this.headGroup.add(hoodMesh);
+
+    // Padded lower cowl hem on hood base that nests continuously into the torso collar roll
+    const hoodCowlBaseGeo = this.track(new THREE.TorusGeometry(0.255, 0.042, 12, 28));
+    hoodCowlBaseGeo.scale(1.05, 0.82, 1.10);
+    const hoodCowlBase = new THREE.Mesh(hoodCowlBaseGeo, hoodieGreenMat);
+    hoodCowlBase.position.set(0, -0.32, 0.02);
+    hoodCowlBase.rotation.x = 0.14;
+    hoodCowlBase.castShadow = true;
+    this.headGroup.add(hoodCowlBase);
 
     // Shaded Inner Cavity of Hood (Deep dark recess framing face)
     const cavityGeo = this.track(new THREE.SphereGeometry(0.42, 24, 18));
@@ -421,89 +1281,292 @@ export class PlayerCharacter {
       this.headGroup.add(tooth);
     }
 
-    // Leon's Signature Vibrant Anime Hair Bangs peeking from under the visor
+    // Helper to sculpt curved 3D anime hair strands with lozenge facet spine and forward curvature
+    const createCurvedHairStrand = (
+      widthRoot: number,
+      widthMid: number,
+      thickness: number,
+      length: number,
+      archZ: number,      // Forward bulge/arch away from forehead
+      sweepX: number,     // Lateral curve/sweep
+      tipCurlZ: number,   // Sharp forward/inward tip curl
+      fraySplit: number = 0 // Optional feathered/split tip angle
+    ): THREE.BufferGeometry => {
+      // 8 radial segments create a crisp anime spine with beveled 45-degree facets
+      // 12 height segments provide organic, buttery-smooth curvature
+      const geo = this.track(new THREE.CylinderGeometry(0.002, widthRoot, length, 8, 12, true));
+      geo.translate(0, -length / 2, 0);
+
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const yVal = pos.getY(i);
+        const t = THREE.MathUtils.clamp(-yVal / length, 0, 1); // 0 at root, 1 at tip
+
+        // Swell width to widthMid at t ~ 0.35, then smoothly taper to sharp blade tip
+        const widthScale = t < 0.35
+          ? THREE.MathUtils.lerp(1.0, widthMid / Math.max(0.001, widthRoot), t / 0.35)
+          : THREE.MathUtils.lerp(widthMid / Math.max(0.001, widthRoot), 0.06, (t - 0.35) / 0.65);
+
+        // Scale X and Z for flattened anime knife/blade cross-section with center crest
+        let x = pos.getX(i) * widthScale;
+        let z = pos.getZ(i) * (thickness / Math.max(0.001, widthRoot)) * widthScale;
+
+        // Dynamic 3D bending:
+        // 1. Arch forward in Z away from the brow
+        z += Math.sin(t * Math.PI * 0.85) * archZ + (t * t) * tipCurlZ;
+
+        // 2. Lateral aerodynamic sweep in X
+        x += Math.pow(t, 1.35) * sweepX;
+
+        // 3. Fray split tip accentuation
+        if (t > 0.70 && fraySplit !== 0) {
+          const frayT = (t - 0.70) / 0.30;
+          x += frayT * fraySplit;
+        }
+
+        pos.setXYZ(i, x, yVal, z);
+      }
+
+      geo.computeVertexNormals();
+      return geo;
+    };
+
+    // ==========================================
+    // 4.1. LEON'S 8-STRAND LAYERED ANIME HAIR BANGS (Multi-Camadas com Destaques Cel-Shaded)
+    // ==========================================
     const bangsGroup = new THREE.Group();
-    bangsGroup.position.set(0, 0.04, 0.42);
+    bangsGroup.position.set(0, 0.052, 0.422);
 
-    // Central sweeping anime hair spike
-    const centerBangGeo = this.track(new THREE.ConeGeometry(0.042, 0.13, 6));
-    centerBangGeo.rotateZ(0.12);
-    centerBangGeo.rotateX(0.25);
-    const centerBang = new THREE.Mesh(centerBangGeo, hairTealMat);
-    centerBang.position.set(0.01, -0.01, 0.02);
-    centerBang.castShadow = true;
-    bangsGroup.add(centerBang);
+    // --- LAYER 1: 2 DEEP SHADOW STRANDS IN PETROL TEAL (Ambient Occlusion Depth) ---
+    // Strand 7: Deep Shadow Strand Left (Petroleum teal undertone)
+    const s7Geo = createCurvedHairStrand(0.038, 0.046, 0.024, 0.130, 0.016, -0.032, 0.010);
+    const s7Mesh = new THREE.Mesh(s7Geo, hairShadowTealMat);
+    s7Mesh.position.set(-0.045, 0.010, -0.012);
+    s7Mesh.rotation.set(0.12, 0, 0.05);
+    bangsGroup.add(s7Mesh);
 
-    // Left sweeping hair spike
-    const leftBangGeo = this.track(new THREE.ConeGeometry(0.036, 0.10, 6));
-    leftBangGeo.rotateZ(0.35);
-    leftBangGeo.rotateX(0.20);
-    const leftBang = new THREE.Mesh(leftBangGeo, hairTealMat);
-    leftBang.position.set(-0.075, 0.01, 0.01);
-    leftBang.castShadow = true;
-    bangsGroup.add(leftBang);
+    // Strand 8: Deep Shadow Strand Right (Petroleum teal undertone)
+    const s8Geo = createCurvedHairStrand(0.040, 0.048, 0.024, 0.135, 0.016, 0.034, 0.010);
+    const s8Mesh = new THREE.Mesh(s8Geo, hairShadowTealMat);
+    s8Mesh.position.set(0.050, 0.010, -0.012);
+    s8Mesh.rotation.set(0.12, 0, -0.05);
+    bangsGroup.add(s8Mesh);
 
-    // Right sweeping hair spike
-    const rightBangGeo = this.track(new THREE.ConeGeometry(0.038, 0.11, 6));
-    rightBangGeo.rotateZ(-0.25);
-    rightBangGeo.rotateX(0.22);
-    const rightBang = new THREE.Mesh(rightBangGeo, hairTealMat);
-    rightBang.position.set(0.08, 0.01, 0.01);
-    rightBang.castShadow = true;
-    bangsGroup.add(rightBang);
+    // --- LAYER 2: 2 VOLUMINOUS CENTRAL LOCKS (Forward Curvature & Frayed Tips) ---
+    // Strand 1: Central Left Dominant Lock (voluminous forward arch, frayed tip)
+    const s1Geo = createCurvedHairStrand(0.052, 0.068, 0.038, 0.165, 0.038, 0.026, 0.022, 0.014);
+    const s1Mesh = new THREE.Mesh(s1Geo, hairTealMat);
+    s1Mesh.position.set(-0.014, 0.015, 0.016);
+    s1Mesh.rotation.set(0.16, -0.05, 0.04);
+    s1Mesh.castShadow = true;
+    bangsGroup.add(s1Mesh);
+
+    // Frayed split tip companion feather for Strand 1
+    const s1FrayGeo = createCurvedHairStrand(0.022, 0.028, 0.018, 0.075, 0.020, -0.018, 0.016);
+    const s1FrayMesh = new THREE.Mesh(s1FrayGeo, hairTealMat);
+    s1FrayMesh.position.set(-0.008, -0.070, 0.028);
+    s1FrayMesh.rotation.set(0.18, 0, -0.15);
+    s1FrayMesh.castShadow = true;
+    bangsGroup.add(s1FrayMesh);
+
+    // Volumetric cel-shaded highlight crest on Strand 1 spine
+    const s1HlGeo = createCurvedHairStrand(0.026, 0.032, 0.014, 0.100, 0.040, 0.018, 0.012);
+    const s1HlMesh = new THREE.Mesh(s1HlGeo, hairHighlightCyanMat);
+    s1HlMesh.position.set(-0.014, 0.015, 0.025);
+    s1HlMesh.rotation.set(0.16, -0.05, 0.04);
+    bangsGroup.add(s1HlMesh);
+
+    // Strand 2: Central Right Crossing Lock (forward arch, crossing center, frayed tip)
+    const s2Geo = createCurvedHairStrand(0.048, 0.062, 0.036, 0.150, 0.034, -0.030, 0.020, -0.012);
+    const s2Mesh = new THREE.Mesh(s2Geo, hairTealMat);
+    s2Mesh.position.set(0.022, 0.012, 0.012);
+    s2Mesh.rotation.set(0.15, 0.04, -0.06);
+    s2Mesh.castShadow = true;
+    bangsGroup.add(s2Mesh);
+
+    // Frayed split tip companion feather for Strand 2
+    const s2FrayGeo = createCurvedHairStrand(0.020, 0.026, 0.016, 0.068, 0.018, 0.016, 0.014);
+    const s2FrayMesh = new THREE.Mesh(s2FrayGeo, hairTealMat);
+    s2FrayMesh.position.set(0.012, -0.065, 0.024);
+    s2FrayMesh.rotation.set(0.16, 0, 0.14);
+    s2FrayMesh.castShadow = true;
+    bangsGroup.add(s2FrayMesh);
+
+    // Volumetric cel-shaded highlight crest on Strand 2 spine
+    const s2HlGeo = createCurvedHairStrand(0.024, 0.030, 0.014, 0.092, 0.036, -0.018, 0.012);
+    const s2HlMesh = new THREE.Mesh(s2HlGeo, hairHighlightCyanMat);
+    s2HlMesh.position.set(0.022, 0.012, 0.021);
+    s2HlMesh.rotation.set(0.15, 0.04, -0.06);
+    bangsGroup.add(s2HlMesh);
+
+    // --- LAYER 3: 2 AERODYNAMIC LATERAL LOCKS (Framing Temples) ---
+    // Strand 3: Lateral Left Lock
+    const s3Geo = createCurvedHairStrand(0.044, 0.054, 0.030, 0.145, 0.028, -0.058, 0.018);
+    const s3Mesh = new THREE.Mesh(s3Geo, hairTealMat);
+    s3Mesh.position.set(-0.082, 0.008, 0.004);
+    s3Mesh.rotation.set(0.14, -0.10, 0.28);
+    s3Mesh.castShadow = true;
+    bangsGroup.add(s3Mesh);
+
+    // Strand 4: Lateral Right Lock
+    const s4Geo = createCurvedHairStrand(0.045, 0.055, 0.030, 0.148, 0.028, 0.056, 0.018);
+    const s4Mesh = new THREE.Mesh(s4Geo, hairTealMat);
+    s4Mesh.position.set(0.085, 0.008, 0.004);
+    s4Mesh.rotation.set(0.14, 0.10, -0.28);
+    s4Mesh.castShadow = true;
+    bangsGroup.add(s4Mesh);
+
+    // --- LAYER 4: 2 WISPY ACCENT TIPS (Playful Anime Asymmetry) ---
+    // Strand 5: Fine Wispy Tip Left
+    const s5Geo = createCurvedHairStrand(0.026, 0.032, 0.018, 0.115, 0.024, -0.022, 0.026);
+    const s5Mesh = new THREE.Mesh(s5Geo, hairTealMat);
+    s5Mesh.position.set(-0.050, 0.005, 0.018);
+    s5Mesh.rotation.set(0.18, -0.06, 0.12);
+    s5Mesh.castShadow = true;
+    bangsGroup.add(s5Mesh);
+
+    // Strand 6: Fine Wispy Tip Right
+    const s6Geo = createCurvedHairStrand(0.028, 0.034, 0.018, 0.120, 0.025, 0.020, 0.028);
+    const s6Mesh = new THREE.Mesh(s6Geo, hairTealMat);
+    s6Mesh.position.set(0.055, 0.006, 0.018);
+    s6Mesh.rotation.set(0.18, 0.06, -0.10);
+    s6Mesh.castShadow = true;
+    bangsGroup.add(s6Mesh);
 
     this.headGroup.add(bangsGroup);
 
-    // Expressive Anime Hero Eyes (White Sclera + Glowing Cyan Iris + Pupil + Catchlight + Eyelash + Brow)
+    // Expressive Hero Eyes under the Hood (Thick anime eyelashes, heroic brows, multi-gradient iris, double catchlights)
     const buildExpressiveHeroEye = (xSign: number) => {
       const eyeGroup = new THREE.Group();
-      eyeGroup.position.set(xSign * 0.115, -0.02, 0.44);
-      eyeGroup.rotation.z = xSign * -0.10; // Heroic determined slant
+      eyeGroup.position.set(xSign * 0.115, -0.022, 0.442);
+      eyeGroup.rotation.z = xSign * -0.08; // Heroic determined slant
 
-      // Crisp White Sclera
-      const scleraGeo = this.track(new THREE.SphereGeometry(0.044, 16, 14));
-      scleraGeo.scale(1.15, 0.95, 0.25);
+      // --- 1. CRISP WHITE SCLERA BASE WITH EYELID SHADOW ---
+      const scleraGeo = this.track(new THREE.SphereGeometry(0.045, 18, 14));
+      scleraGeo.scale(1.18, 0.98, 0.22);
       const sclera = new THREE.Mesh(scleraGeo, eyeScleraWhiteMat);
       eyeGroup.add(sclera);
 
-      // Glowing Cyan Anime Iris
-      const irisGeo = this.track(new THREE.SphereGeometry(0.032, 16, 14));
-      irisGeo.scale(1.0, 1.05, 0.15);
+      // Upper sclera shadow (soft shading under the heavy anime upper eyelash)
+      const scleraShadowGeo = this.track(new THREE.SphereGeometry(0.044, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.45));
+      scleraShadowGeo.scale(1.16, 0.96, 0.23);
+      const scleraShadow = new THREE.Mesh(scleraShadowGeo, eyeScleraShadowMat);
+      scleraShadow.position.set(0, 0.008, 0.002);
+      eyeGroup.add(scleraShadow);
+
+      // --- 2. MULTI-TONE VIBRANT CYAN IRIS ---
+      // Dark navy-cyan limbal ring for crisp anime perimeter contrast
+      const limbalGeo = this.track(new THREE.CylinderGeometry(0.034, 0.034, 0.005, 20));
+      limbalGeo.rotateX(Math.PI / 2);
+      const limbal = new THREE.Mesh(limbalGeo, eyeLimbalRingMat);
+      limbal.position.set(xSign * -0.004, -0.002, 0.010);
+      eyeGroup.add(limbal);
+
+      // Core Vibrant Cyan Iris
+      const irisGeo = this.track(new THREE.CylinderGeometry(0.031, 0.031, 0.006, 20));
+      irisGeo.rotateX(Math.PI / 2);
       const iris = new THREE.Mesh(irisGeo, eyeIrisCyanMat);
-      iris.position.set(xSign * -0.005, -0.002, 0.012);
+      iris.position.set(xSign * -0.004, -0.002, 0.012);
       eyeGroup.add(iris);
 
-      // Deep Midnight Pupil
-      const pupilGeo = this.track(new THREE.SphereGeometry(0.018, 12, 10));
-      pupilGeo.scale(1.0, 1.15, 0.15);
+      // Lower Glowing Crescent / Caustic Bounce Light
+      const glowGeo = this.track(new THREE.CylinderGeometry(0.028, 0.028, 0.007, 16, 1, false, 0, Math.PI));
+      glowGeo.rotateX(Math.PI / 2);
+      glowGeo.rotateZ(Math.PI);
+      const glowMesh = new THREE.Mesh(glowGeo, eyeIrisGlowMat);
+      glowMesh.position.set(xSign * -0.004, -0.005, 0.014);
+      eyeGroup.add(glowMesh);
+
+      // Deep Obsidian Anime Pupil
+      const pupilGeo = this.track(new THREE.CylinderGeometry(0.017, 0.017, 0.008, 16));
+      pupilGeo.scale(1.0, 1.25, 1.0);
+      pupilGeo.rotateX(Math.PI / 2);
       const pupil = new THREE.Mesh(pupilGeo, eyePupilBlackMat);
-      pupil.position.set(xSign * -0.005, -0.002, 0.016);
+      pupil.position.set(xSign * -0.004, 0.001, 0.016);
       eyeGroup.add(pupil);
 
-      // Main Glossy Specular Sparkle
-      const sparkleMainGeo = this.track(new THREE.CircleGeometry(0.010, 10));
-      const sparkleMain = new THREE.Mesh(sparkleMainGeo, eyeHighlightWhiteMat);
-      sparkleMain.position.set(xSign * 0.008, 0.012, 0.022);
-      eyeGroup.add(sparkleMain);
+      // --- 3. DUPLO CATCHLIGHT SPECULAR (Vivid Double Highlights) ---
+      // Primary large crisp circular catchlight
+      const hlMainGeo = this.track(new THREE.CircleGeometry(0.011, 12));
+      const hlMain = new THREE.Mesh(hlMainGeo, eyeHighlightWhiteMat);
+      hlMain.position.set(xSign * 0.010, 0.013, 0.022);
+      eyeGroup.add(hlMain);
 
-      // Secondary Subtle Sparkle
-      const sparkleSubGeo = this.track(new THREE.CircleGeometry(0.005, 8));
-      const sparkleSub = new THREE.Mesh(sparkleSubGeo, eyeHighlightWhiteMat);
-      sparkleSub.position.set(xSign * -0.010, -0.010, 0.022);
-      eyeGroup.add(sparkleSub);
+      // Secondary diamond/circular spark catchlight
+      const hlSubGeo = this.track(new THREE.CircleGeometry(0.0055, 10));
+      const hlSub = new THREE.Mesh(hlSubGeo, eyeHighlightWhiteMat);
+      hlSub.position.set(xSign * -0.012, -0.011, 0.022);
+      eyeGroup.add(hlSub);
 
-      // Sharp Top Eyelash / Eyelid Arc
-      const lashGeo = this.track(new THREE.TorusGeometry(0.046, 0.008, 6, 14, Math.PI * 0.72));
-      lashGeo.rotateZ(Math.PI * 0.14);
-      const lash = new THREE.Mesh(lashGeo, eyeBrowBlackMat);
-      lash.position.set(0, 0.024, 0.018);
+      // Micro star sparkle accent
+      const hlStarGeo = this.track(new THREE.CircleGeometry(0.003, 6));
+      const hlStar = new THREE.Mesh(hlStarGeo, eyeHighlightWhiteMat);
+      hlStar.position.set(xSign * -0.002, 0.018, 0.022);
+      eyeGroup.add(hlStar);
+
+      // --- 4. CÍLIOS SUPERIORES GROSSOS MARCADOS EM PRETO ANIME ---
+      // Bold upper anime eyelash wing: extruded curved wing thicker in center with outer flick
+      const lashShape = new THREE.Shape();
+      lashShape.moveTo(-0.048, -0.004);
+      lashShape.quadraticCurveTo(0, 0.020, 0.052, 0.010);
+      lashShape.quadraticCurveTo(0.054, 0.016, 0.046, 0.018);
+      lashShape.quadraticCurveTo(0, 0.030, -0.048, 0.004);
+      lashShape.closePath();
+
+      const lashGeo = this.track(
+        new THREE.ExtrudeGeometry(lashShape, {
+          depth: 0.010,
+          bevelEnabled: true,
+          bevelSegments: 2,
+          steps: 1,
+          bevelSize: 0.002,
+          bevelThickness: 0.002,
+        })
+      );
+      lashGeo.center();
+      const lash = new THREE.Mesh(lashGeo, eyeLashBlackMat);
+      if (xSign < 0) {
+        lash.scale.set(-1, 1, 1);
+      }
+      lash.position.set(0, 0.026, 0.019);
+      lash.rotation.z = xSign * 0.08;
       eyeGroup.add(lash);
 
-      // Determined Hero Eyebrow above eye
-      const browGeo = this.track(new THREE.BoxGeometry(0.065, 0.014, 0.015));
+      // Lower eyeliner tick/accent
+      const lowerTickGeo = this.track(new THREE.TorusGeometry(0.036, 0.004, 4, 10, Math.PI * 0.35));
+      lowerTickGeo.rotateZ(xSign > 0 ? -Math.PI * 0.70 : -Math.PI * 0.65);
+      const lowerTick = new THREE.Mesh(lowerTickGeo, eyeLashBlackMat);
+      lowerTick.position.set(xSign * 0.014, -0.024, 0.016);
+      eyeGroup.add(lowerTick);
+
+      // --- 5. SOBRANCELHA ANGULAR HERÓICA ---
+      // Faceted heroic brow with inner hook and sharp outer flick
+      const browShape = new THREE.Shape();
+      browShape.moveTo(-0.042, -0.008);
+      browShape.lineTo(-0.044, 0.012);
+      browShape.lineTo(0.010, 0.016);
+      browShape.lineTo(0.045, 0.004);
+      browShape.lineTo(0.042, -0.004);
+      browShape.lineTo(0.008, 0.006);
+      browShape.closePath();
+
+      const browGeo = this.track(
+        new THREE.ExtrudeGeometry(browShape, {
+          depth: 0.012,
+          bevelEnabled: true,
+          bevelSegments: 2,
+          steps: 1,
+          bevelSize: 0.0025,
+          bevelThickness: 0.0025,
+        })
+      );
+      browGeo.center();
       const brow = new THREE.Mesh(browGeo, eyeBrowBlackMat);
-      brow.position.set(xSign * 0.005, 0.055, 0.010);
-      brow.rotation.z = xSign * 0.22; // Inward tilt for fierce determination
+      if (xSign < 0) {
+        brow.scale.set(-1, 1, 1);
+      }
+      brow.position.set(xSign * 0.006, 0.058, 0.014);
+      brow.rotation.z = xSign * 0.24; // Determined hero furrow
       eyeGroup.add(brow);
 
       return eyeGroup;
@@ -528,65 +1591,204 @@ export class PlayerCharacter {
     mouth.position.set(0.01, -0.12, 0.435);
     this.headGroup.add(mouth);
 
-    // Iconic Round Candy Lollipop (Leon's Signature Chupa-Chups)
+    // ==========================================
+    // 4.2. DETAILED CARAMEL/STRAWBERRY CANDY LOLLIPOP (3D Spiral & Cellophane Knot)
+    // ==========================================
     const lollipopGroup = new THREE.Group();
-    lollipopGroup.position.set(0.065, -0.115, 0.45);
-    lollipopGroup.rotation.set(0.15, 0.22, -0.32);
+    // Positioned at the right corner of Leon's confident smirk
+    lollipopGroup.position.set(0.042, -0.118, 0.440);
+    // Rebellious cocky angle: tilted forward and downward-right
+    lollipopGroup.rotation.set(0.18, 0.32, -0.36);
 
-    // Glossy Red Round Lollipop Sphere
-    const candyGeo = this.track(new THREE.SphereGeometry(0.042, 16, 14));
-    candyGeo.scale(1.0, 1.0, 0.82);
-    const candyMesh = new THREE.Mesh(candyGeo, lollipopCherryMat);
-    candyMesh.castShadow = true;
-    lollipopGroup.add(candyMesh);
-
-    // Lollipop Candy Swirl Accent
-    const swirlGeo = this.track(new THREE.TorusGeometry(0.024, 0.005, 6, 14));
-    const swirlMesh = new THREE.Mesh(swirlGeo, teethWhiteMat);
-    swirlMesh.position.set(0, 0, 0.032);
-    lollipopGroup.add(swirlMesh);
-
-    // Clean White Lollipop Stick
-    const stickGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, 0.13, 8));
+    // 1. Clean White Plastic Stick
+    const stickGeo = this.track(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 12));
     stickGeo.rotateZ(Math.PI / 2);
-    const stickMesh = new THREE.Mesh(stickGeo, teethWhiteMat);
-    stickMesh.position.set(-0.065, -0.005, 0);
+    const stickMesh = new THREE.Mesh(stickGeo, lollipopStickMat);
+    stickMesh.position.set(0.048, 0, 0);
+    stickMesh.castShadow = true;
     lollipopGroup.add(stickMesh);
+
+    // Hollow safety opening at the outer tip of the plastic stick
+    const stickHoleGeo = this.track(new THREE.CylinderGeometry(0.0035, 0.0035, 0.006, 8));
+    stickHoleGeo.rotateZ(Math.PI / 2);
+    const stickHole = new THREE.Mesh(stickHoleGeo, chamLidShadowMat);
+    stickHole.position.set(0.129, 0, 0);
+    lollipopGroup.add(stickHole);
+
+    // Mouth entry socket seal where stick enters mouth
+    const mouthSocketGeo = this.track(new THREE.SphereGeometry(0.009, 8, 8));
+    mouthSocketGeo.scale(0.8, 1.2, 0.8);
+    const mouthSocket = new THREE.Mesh(mouthSocketGeo, skinToneMat);
+    mouthSocket.position.set(-0.032, 0, 0);
+    lollipopGroup.add(mouthSocket);
+
+    // 2. Cellophane Knot Stopper at Base of Candy Globe (Crinkled Wrapper Twist)
+    // Golden foil wrapper twist-tie
+    const twistTieGeo = this.track(new THREE.TorusGeometry(0.008, 0.0028, 8, 14));
+    twistTieGeo.rotateY(Math.PI / 2);
+    const twistTie = new THREE.Mesh(twistTieGeo, twistTieGoldMat);
+    twistTie.position.set(0.076, 0, 0);
+    twistTie.castShadow = true;
+    lollipopGroup.add(twistTie);
+
+    // Translucent crimped cellophane knot collar
+    const crimpGeo = this.track(new THREE.TorusGeometry(0.011, 0.0038, 8, 16));
+    crimpGeo.rotateY(Math.PI / 2);
+    const crimpMesh = new THREE.Mesh(crimpGeo, cellophaneMat);
+    crimpMesh.position.set(0.074, 0, 0);
+    lollipopGroup.add(crimpMesh);
+
+    // Radiating crinkled cellophane tail flairs / folds
+    for (let f = 0; f < 4; f++) {
+      const flareGeo = this.track(new THREE.ConeGeometry(0.007, 0.020, 4));
+      flareGeo.rotateZ(-Math.PI * 0.5);
+      const flareMesh = new THREE.Mesh(flareGeo, cellophaneMat);
+      const flareAngle = (f / 4) * Math.PI * 2;
+      flareMesh.position.set(0.066, Math.sin(flareAngle) * 0.006, Math.cos(flareAngle) * 0.006);
+      flareMesh.rotation.set(Math.sin(flareAngle) * 0.28, 0, Math.cos(flareAngle) * 0.28);
+      lollipopGroup.add(flareMesh);
+    }
+
+    // 3. Translucent Caramel/Strawberry Candy Globe with Gloss
+    const candyCenter = 0.118;
+    const candyGlobeGeo = this.track(new THREE.SphereGeometry(0.046, 22, 18));
+    candyGlobeGeo.scale(1.0, 1.0, 0.92);
+    const candyGlobe = new THREE.Mesh(candyGlobeGeo, lollipopCandyMat);
+    candyGlobe.position.set(candyCenter, 0, 0);
+    candyGlobe.castShadow = true;
+    lollipopGroup.add(candyGlobe);
+
+    // Specular wet gloss highlights on candy shell
+    const glossMainGeo = this.track(new THREE.SphereGeometry(0.012, 10, 8));
+    glossMainGeo.scale(1.0, 0.6, 0.3);
+    const glossMain = new THREE.Mesh(glossMainGeo, lollipopGlossMat);
+    glossMain.position.set(candyCenter + 0.016, 0.022, 0.035);
+    glossMain.rotation.set(0.2, -0.3, 0.4);
+    lollipopGroup.add(glossMain);
+
+    const glossSubGeo = this.track(new THREE.SphereGeometry(0.006, 8, 6));
+    glossSubGeo.scale(1.0, 0.6, 0.3);
+    const glossSub = new THREE.Mesh(glossSubGeo, lollipopGlossMat);
+    glossSub.position.set(candyCenter - 0.014, -0.018, 0.036);
+    lollipopGroup.add(glossSub);
+
+    // 4. 3D Modeled Sweet Cream Swirl Spiral on Candy Shell
+    const spiralPath = new CandySpiralCurve(0.0462, 2.3);
+    const spiralGeo = this.track(new THREE.TubeGeometry(spiralPath, 48, 0.0034, 6, false));
+    const spiralMesh = new THREE.Mesh(spiralGeo, lollipopSwirlWhiteMat);
+    spiralMesh.position.set(candyCenter, 0, 0);
+    spiralMesh.castShadow = true;
+    lollipopGroup.add(spiralMesh);
+
+    // Creamy swirl nucleus button in center
+    const swirlCenterGeo = this.track(new THREE.SphereGeometry(0.008, 10, 8));
+    swirlCenterGeo.scale(1.0, 1.0, 0.4);
+    const swirlCenter = new THREE.Mesh(swirlCenterGeo, lollipopSwirlWhiteMat);
+    swirlCenter.position.set(candyCenter, 0, 0.045);
+    lollipopGroup.add(swirlCenter);
 
     this.headGroup.add(lollipopGroup);
 
     // ==========================================
-    // 5. LARGE CHAMELEON EYES ON TOP OF HOOD (Leon's Signature)
+    // 5. LARGE CHAMELEON EYES ON TOP OF HOOD (Volumetric Eyelids & Sarcastic Slit)
     // ==========================================
     const buildChamEyeTurret = (xSign: number) => {
       const turretRoot = new THREE.Group();
       turretRoot.position.set(xSign * 0.27, 0.33, 0.16);
       turretRoot.rotation.set(-0.18, xSign * 0.32, xSign * 0.22);
 
-      // Green Eyeball Turret Socket
-      const turretGeo = this.track(new THREE.SphereGeometry(0.15, 18, 16));
-      const turret = new THREE.Mesh(turretGeo, hoodieGreenMat);
-      turret.castShadow = true;
-      turretRoot.add(turret);
+      // --- 1. BASE TRANSITION COLLAR (Seamless Connection to Hood) ---
+      const baseCollarGeo = this.track(new THREE.TorusGeometry(0.145, 0.024, 12, 24));
+      baseCollarGeo.scale(1.05, 0.85, 1.05);
+      const baseCollar = new THREE.Mesh(baseCollarGeo, hoodieGreenMat);
+      baseCollar.position.set(0, 0, -0.01);
+      turretRoot.add(baseCollar);
 
-      // Big Vibrant Yellow Eyeball
-      const eyeballGeo = this.track(new THREE.SphereGeometry(0.125, 18, 16));
-      eyeballGeo.scale(1.0, 1.0, 0.65);
+      // --- 2. GREEN EYEBALL TURRET DOME / HOUSING ---
+      const turretDomeGeo = this.track(new THREE.SphereGeometry(0.155, 20, 18));
+      turretDomeGeo.scale(1.02, 0.98, 1.05);
+      const turretDome = new THREE.Mesh(turretDomeGeo, hoodieGreenMat);
+      turretDome.castShadow = true;
+      turretDome.receiveShadow = true;
+      turretRoot.add(turretDome);
+
+      // --- 3. DEEP INTERNAL EYE SOCKET CAVITY ---
+      const cavityGeo = this.track(new THREE.SphereGeometry(0.136, 18, 16));
+      cavityGeo.scale(0.98, 0.95, 0.85);
+      const cavityMesh = new THREE.Mesh(cavityGeo, chamLidShadowMat);
+      cavityMesh.position.set(0, 0, 0.035);
+      turretRoot.add(cavityMesh);
+
+      // --- 4. NESTED VIBRANT YELLOW EYEBALL (Deep inside socket) ---
+      const eyeballGeo = this.track(new THREE.SphereGeometry(0.128, 20, 18));
+      eyeballGeo.scale(1.0, 1.0, 0.72);
       const eyeball = new THREE.Mesh(eyeballGeo, chamEyeYellowMat);
-      eyeball.position.set(0, 0, 0.075);
+      eyeball.position.set(0, 0, 0.055);
       turretRoot.add(eyeball);
 
-      // Black Slit Pupil
-      const pupilGeo = this.track(new THREE.CapsuleGeometry(0.028, 0.065, 6, 8));
+      // --- 5. VERTICAL SLIT PUPIL WITH SOFT MICRO-BORDER ---
+      // Soft amber/golden micro-border halo around the pupil
+      const pupilHaloGeo = this.track(new THREE.CapsuleGeometry(0.028, 0.076, 8, 10));
+      pupilHaloGeo.scale(1.15, 1.05, 0.35);
+      const pupilHalo = new THREE.Mesh(pupilHaloGeo, chamEyePupilBorderMat);
+      pupilHalo.position.set(0, 0, 0.138);
+      turretRoot.add(pupilHalo);
+
+      // Deep Obsidian Slit Pupil
+      const pupilGeo = this.track(new THREE.CapsuleGeometry(0.020, 0.070, 8, 10));
+      pupilGeo.scale(1.0, 1.0, 0.35);
       const pupil = new THREE.Mesh(pupilGeo, chamEyePupilMat);
-      pupil.position.set(0, 0, 0.15);
+      pupil.position.set(0, 0, 0.142);
       turretRoot.add(pupil);
 
-      // Glossy Specular Catchlight
-      const hlGeo = this.track(new THREE.SphereGeometry(0.028, 10, 10));
-      const hl = new THREE.Mesh(hlGeo, chamEyeHighlightMat);
-      hl.position.set(xSign * 0.03, 0.03, 0.16);
-      turretRoot.add(hl);
+      // --- 6. VIVID SPECULAR CATCHLIGHTS ---
+      const hlMainGeo = this.track(new THREE.SphereGeometry(0.024, 12, 12));
+      hlMainGeo.scale(1.0, 1.0, 0.4);
+      const hlMain = new THREE.Mesh(hlMainGeo, chamEyeHighlightMat);
+      hlMain.position.set(xSign * 0.035, 0.038, 0.148);
+      turretRoot.add(hlMain);
+
+      const hlSubGeo = this.track(new THREE.SphereGeometry(0.012, 10, 10));
+      hlSubGeo.scale(1.0, 1.0, 0.4);
+      const hlSub = new THREE.Mesh(hlSubGeo, chamEyeHighlightMat);
+      hlSub.position.set(xSign * -0.030, -0.035, 0.148);
+      turretRoot.add(hlSub);
+
+      // --- 7. HEAVY VOLUMETRIC UPPER EYELID (Sarcastic Hooded Crease) ---
+      const upperLidGeo = this.track(new THREE.SphereGeometry(0.158, 20, 14, 0, Math.PI, 0, Math.PI * 0.58));
+      upperLidGeo.rotateX(Math.PI * 0.55);
+      upperLidGeo.rotateZ(xSign * 0.18);
+      const upperLid = new THREE.Mesh(upperLidGeo, hoodieGreenMat);
+      upperLid.position.set(0, 0.022, 0.045);
+      upperLid.castShadow = true;
+      turretRoot.add(upperLid);
+
+      // Thick padded upper eyelid rim roll
+      const upperRimGeo = this.track(new THREE.TorusGeometry(0.142, 0.022, 10, 20, Math.PI * 0.88));
+      upperRimGeo.rotateZ(Math.PI * 0.06 + xSign * 0.18);
+      const upperRim = new THREE.Mesh(upperRimGeo, hoodTrimDarkGreenMat);
+      upperRim.position.set(0, 0.030, 0.088);
+      upperRim.rotation.x = -0.18;
+      upperRim.castShadow = true;
+      turretRoot.add(upperRim);
+
+      // --- 8. VOLUMETRIC LOWER EYELID (Squint Shelf) ---
+      const lowerLidGeo = this.track(new THREE.SphereGeometry(0.156, 18, 12, 0, Math.PI, 0, Math.PI * 0.38));
+      lowerLidGeo.rotateX(-Math.PI * 0.45);
+      lowerLidGeo.rotateZ(xSign * -0.12);
+      const lowerLid = new THREE.Mesh(lowerLidGeo, hoodieGreenMat);
+      lowerLid.position.set(0, -0.035, 0.045);
+      lowerLid.castShadow = true;
+      turretRoot.add(lowerLid);
+
+      // Lower eyelid rim fold
+      const lowerRimGeo = this.track(new THREE.TorusGeometry(0.136, 0.018, 8, 18, Math.PI * 0.78));
+      lowerRimGeo.rotateZ(Math.PI * 1.11 - xSign * 0.12);
+      const lowerRim = new THREE.Mesh(lowerRimGeo, hoodTrimDarkGreenMat);
+      lowerRim.position.set(0, -0.045, 0.085);
+      lowerRim.rotation.x = 0.15;
+      lowerRim.castShadow = true;
+      turretRoot.add(lowerRim);
 
       return turretRoot;
     };
@@ -609,67 +1811,407 @@ export class PlayerCharacter {
     // 6. ARMS & CARTOON HANDS
     // ==========================================
     const buildLeonArm = (xSign: number, pivot: THREE.Group) => {
-      // Natural shoulder attachment
-      pivot.position.set(xSign * 0.38, 1.14, 0);
-      this.modelRoot.add(pivot);
+      // Natural anatomical shoulder attachment connected to torsoGroup (moves seamlessly with torso bounce)
+      pivot.position.set(xSign * 0.35, 0.26, 0);
+      this.torsoGroup.add(pivot);
 
-      // Smooth Rounded Shoulder
-      const shoulderGeo = this.track(new THREE.SphereGeometry(0.16, 16, 16));
+      // --- 2. VOLUMINOUS HOODIE DELTOID SHOULDER & NATURAL DRAPE ---
+      // Voluminous deltoid shoulder cap with puffy fabric fullness
+      const shoulderGeo = this.track(new THREE.SphereGeometry(0.18, 18, 16));
+      shoulderGeo.scale(1.14, 1.02, 1.12);
       const shoulder = new THREE.Mesh(shoulderGeo, hoodieGreenMat);
       shoulder.castShadow = true;
       pivot.add(shoulder);
 
-      // Upper Arm (Green hoodie sleeve)
-      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.14, 0.12, 0.30, 16));
-      upperArmGeo.translate(0, -0.17, 0);
+      // Raglan hoodie shoulder seam ridge
+      const raglanGeo = this.track(new THREE.TorusGeometry(0.165, 0.020, 10, 20));
+      raglanGeo.rotateZ(xSign * 0.25);
+      const raglan = new THREE.Mesh(raglanGeo, hoodTrimDarkGreenMat);
+      raglan.castShadow = true;
+      pivot.add(raglan);
+
+      // Upper sleeve with loose fabric drape
+      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.162, 0.138, 0.24, 18));
+      upperArmGeo.translate(0, -0.14, 0);
       const upperArm = new THREE.Mesh(upperArmGeo, hoodieGreenMat);
       upperArm.castShadow = true;
       pivot.add(upperArm);
 
-      // Blue Sleeve Cuff
-      const cuffGeo = this.track(new THREE.TorusGeometry(0.125, 0.035, 10, 20));
-      cuffGeo.rotateX(Math.PI / 2);
-      const cuff = new THREE.Mesh(cuffGeo, pocketBlueMat);
-      cuff.position.set(0, -0.30, 0);
-      cuff.castShadow = true;
-      pivot.add(cuff);
+      // Elbow fabric gathering fold (natural oversized hoodie fold)
+      const elbowFoldGeo = this.track(new THREE.TorusGeometry(0.142, 0.026, 12, 22));
+      elbowFoldGeo.scale(1.05, 0.90, 1.05);
+      const elbowFold = new THREE.Mesh(elbowFoldGeo, hoodieGreenMat);
+      elbowFold.position.set(0, -0.22, 0);
+      elbowFold.castShadow = true;
+      pivot.add(elbowFold);
 
-      // Solid Peach Forearm / Wrist (bridges sleeve cuff directly into hand with zero gap)
-      const wristGeo = this.track(new THREE.CylinderGeometry(0.090, 0.082, 0.18, 14));
-      wristGeo.translate(0, -0.36, 0.01);
-      const wrist = new THREE.Mesh(wristGeo, skinToneMat);
-      wrist.castShadow = true;
-      pivot.add(wrist);
+      // Lower sleeve section entering cuff
+      const lowerArmGeo = this.track(new THREE.CylinderGeometry(0.140, 0.126, 0.12, 18));
+      lowerArmGeo.translate(0, -0.28, 0);
+      const lowerArm = new THREE.Mesh(lowerArmGeo, hoodieGreenMat);
+      lowerArm.castShadow = true;
+      pivot.add(lowerArm);
 
-      // Cartoon Hand / Fist attached directly at end of wrist
+      // --- 3. BLUE RIBBED CUFF & ANATOMICALLY TAPERED FOREARM TRANSITION ---
+      // Thick royal blue ribbed sleeve cuff cylinder
+      const cuffCylGeo = this.track(new THREE.CylinderGeometry(0.134, 0.126, 0.075, 18));
+      cuffCylGeo.translate(0, -0.32, 0);
+      const cuffCyl = new THREE.Mesh(cuffCylGeo, pocketBlueMat);
+      cuffCyl.castShadow = true;
+      pivot.add(cuffCyl);
+
+      // Beveled outer cuff rim with rich ribbed toon shader
+      const cuffRimGeo = this.track(new THREE.TorusGeometry(0.130, 0.032, 12, 22));
+      cuffRimGeo.rotateX(Math.PI / 2);
+      const cuffRim = new THREE.Mesh(cuffRimGeo, cuffRibbedBlueMat);
+      cuffRim.position.set(0, -0.34, 0);
+      cuffRim.castShadow = true;
+      pivot.add(cuffRim);
+
+      // Dark interior shadow liner sealing the sleeve cuff opening
+      const cuffLinerGeo = this.track(new THREE.CylinderGeometry(0.10, 0.10, 0.04, 16));
+      cuffLinerGeo.translate(0, -0.31, 0);
+      const cuffLiner = new THREE.Mesh(cuffLinerGeo, faceShadowMat);
+      pivot.add(cuffLiner);
+
+      // Anatomically tapered peach forearm emerging from deep inside sleeve cuff (-0.26 down to -0.45)
+      const forearmGeo = this.track(new THREE.CylinderGeometry(0.088, 0.068, 0.19, 16));
+      forearmGeo.scale(1.04, 1.0, 0.94);
+      forearmGeo.translate(0, -0.355, 0.008);
+      const forearm = new THREE.Mesh(forearmGeo, skinToneMat);
+      forearm.castShadow = true;
+      pivot.add(forearm);
+
+      // Subtle carpal wrist styloid process ring right before meeting hand
+      const wristHeadGeo = this.track(new THREE.TorusGeometry(0.070, 0.012, 8, 16));
+      wristHeadGeo.rotateX(Math.PI / 2);
+      const wristHead = new THREE.Mesh(wristHeadGeo, skinToneMat);
+      wristHead.position.set(0, -0.425, 0.010);
+      pivot.add(wristHead);
+
+      // ==========================================
+      // LOOP 4: COMBAT BRAWLER GLOVE & 4 ARTICULATED FINGERS
+      // ==========================================
       const handGroup = new THREE.Group();
       handGroup.position.set(0, -0.44, 0.015);
       pivot.add(handGroup);
 
-      // Rounded Cartoon Fist / Palm
-      const palmGeo = this.track(new THREE.SphereGeometry(0.105, 16, 14));
-      palmGeo.scale(1.0, 0.92, 0.90);
-      const palm = new THREE.Mesh(palmGeo, skinToneMat);
+      // --- 1. PADDED WRIST STRAP, CONTRAST PIPING & CLOSURE TAB ---
+      // Wrist cuff cylinder wrapped around carpal joint
+      const wristCuffGeo = this.track(new THREE.CylinderGeometry(0.076, 0.072, 0.046, 18));
+      wristCuffGeo.translate(0, 0.008, 0);
+      const wristCuff = new THREE.Mesh(wristCuffGeo, gloveStrapMat);
+      wristCuff.castShadow = true;
+      handGroup.add(wristCuff);
+
+      // Upper & lower contrast royal blue debrum / piping rims
+      const wristTrimTopGeo = this.track(new THREE.TorusGeometry(0.074, 0.007, 8, 20));
+      wristTrimTopGeo.rotateX(Math.PI / 2);
+      const wristTrimTop = new THREE.Mesh(wristTrimTopGeo, gloveTrimMat);
+      wristTrimTop.position.set(0, 0.028, 0);
+      wristTrimTop.castShadow = true;
+      handGroup.add(wristTrimTop);
+
+      const wristTrimBotGeo = this.track(new THREE.TorusGeometry(0.073, 0.007, 8, 20));
+      wristTrimBotGeo.rotateX(Math.PI / 2);
+      const wristTrimBot = new THREE.Mesh(wristTrimBotGeo, gloveTrimMat);
+      wristTrimBot.position.set(0, -0.012, 0);
+      wristTrimBot.castShadow = true;
+      handGroup.add(wristTrimBot);
+
+      // Lateral wrist velcro strap tab with golden clasp / buckle
+      const strapTabGeo = this.track(new THREE.BoxGeometry(0.018, 0.034, 0.042));
+      const strapTab = new THREE.Mesh(strapTabGeo, gloveMainMat);
+      strapTab.position.set(xSign * 0.072, 0.008, 0.012);
+      strapTab.castShadow = true;
+      handGroup.add(strapTab);
+
+      const strapBuckleGeo = this.track(new THREE.BoxGeometry(0.020, 0.022, 0.016));
+      const strapBuckle = new THREE.Mesh(strapBuckleGeo, gloveBuckleGoldMat);
+      strapBuckle.position.set(xSign * 0.074, 0.008, 0.022);
+      handGroup.add(strapBuckle);
+
+      // Dark interior wrist liner sealing forearm to glove (zero visual voids)
+      const wristLinerGeo = this.track(new THREE.CylinderGeometry(0.065, 0.065, 0.03, 14));
+      wristLinerGeo.translate(0, 0.020, 0);
+      const wristLiner = new THREE.Mesh(wristLinerGeo, faceShadowMat);
+      handGroup.add(wristLiner);
+
+      // --- 2. SCULPTED GLOVE PALM CHASSIS & DORSAL IMPACT PLATE ---
+      // Sculpted glove palm sphere
+      const palmGeo = this.track(new THREE.SphereGeometry(0.096, 16, 14));
+      palmGeo.scale(1.12, 0.90, 0.94);
+      const palm = new THREE.Mesh(palmGeo, gloveMainMat);
+      palm.position.set(0, -0.040, 0.005);
       palm.castShadow = true;
       handGroup.add(palm);
 
-      // Knuckle ridges for cartoon brawl glove/fist
-      for (let k = 0; k < 3; k++) {
-        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.024, 0.048, 6, 8));
-        knuckleGeo.rotateZ(Math.PI / 2);
-        const knuckle = new THREE.Mesh(knuckleGeo, skinToneMat);
-        knuckle.position.set((k - 1) * 0.042, -0.040, 0.065);
-        knuckle.castShadow = true;
-        handGroup.add(knuckle);
+      // Dorsal hand padded armor shield plate (placa dorsal acolchoada da luva)
+      const dorsalPlateGeo = this.track(new THREE.BoxGeometry(0.126, 0.066, 0.026));
+      const dorsalPlate = new THREE.Mesh(dorsalPlateGeo, gloveMainMat);
+      dorsalPlate.position.set(0, -0.036, 0.052);
+      dorsalPlate.rotation.x = -0.15;
+      dorsalPlate.castShadow = true;
+      handGroup.add(dorsalPlate);
+
+      // Piping accent framing dorsal armor plate
+      const dorsalTrimTopGeo = this.track(new THREE.CapsuleGeometry(0.006, 0.108, 4, 8));
+      dorsalTrimTopGeo.rotateZ(Math.PI / 2);
+      const dorsalTrimTop = new THREE.Mesh(dorsalTrimTopGeo, gloveTrimMat);
+      dorsalTrimTop.position.set(0, -0.012, 0.056);
+      handGroup.add(dorsalTrimTop);
+
+      // --- 3. 3D ERGONOMIC PALM GRIP PADS (High-Friction Grip Pads) ---
+      // Thenar eminence grip pad (almofada tenar, base do polegar no lado medial)
+      const thenarPadGeo = this.track(new THREE.SphereGeometry(0.036, 10, 8));
+      thenarPadGeo.scale(1.0, 1.35, 0.50);
+      const thenarPad = new THREE.Mesh(thenarPadGeo, glovePadMat);
+      thenarPad.position.set(-xSign * 0.042, -0.044, -0.050);
+      thenarPad.castShadow = true;
+      handGroup.add(thenarPad);
+
+      // Hypothenar grip pad (almofada hipotenar no lado lateral)
+      const hypoPadGeo = this.track(new THREE.SphereGeometry(0.032, 10, 8));
+      hypoPadGeo.scale(0.90, 1.40, 0.50);
+      const hypoPad = new THREE.Mesh(hypoPadGeo, glovePadMat);
+      hypoPad.position.set(xSign * 0.042, -0.044, -0.050);
+      hypoPad.castShadow = true;
+      handGroup.add(hypoPad);
+
+      // Transverse palm grip bar across metacarpal heads (barra transversal de pegada)
+      const palmGripBarGeo = this.track(new THREE.CapsuleGeometry(0.015, 0.072, 6, 10));
+      palmGripBarGeo.rotateZ(Math.PI / 2);
+      const palmGripBar = new THREE.Mesh(palmGripBarGeo, glovePadMat);
+      palmGripBar.position.set(0, -0.068, -0.046);
+      palmGripBar.castShadow = true;
+      handGroup.add(palmGripBar);
+
+      // --- 4. 3D REINFORCED KNUCKLE ARMOR (Nós dos Dedos em Relevo) ---
+      // Transverse knuckle bridge ridge
+      const knuckleBridgeGeo = this.track(new THREE.BoxGeometry(0.138, 0.028, 0.024));
+      const knuckleBridge = new THREE.Mesh(knuckleBridgeGeo, gloveMainMat);
+      knuckleBridge.position.set(0, -0.060, 0.062);
+      knuckleBridge.rotation.x = 0.15;
+      knuckleBridge.castShadow = true;
+      handGroup.add(knuckleBridge);
+
+      // 3 Raised 3D knuckle cushions (Index, Middle, Pinky)
+      // Index knuckle cushion (medial)
+      const indexKnuckleGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.024, 6, 8));
+      indexKnuckleGeo.rotateZ(Math.PI / 2);
+      const indexKnuckle = new THREE.Mesh(indexKnuckleGeo, gloveKnuckleArmorMat);
+      indexKnuckle.position.set(-xSign * 0.044, -0.060, 0.070);
+      indexKnuckle.castShadow = true;
+      handGroup.add(indexKnuckle);
+
+      // Middle knuckle cushion (prominent apex of strike fist)
+      const midKnuckleGeo = this.track(new THREE.CapsuleGeometry(0.019, 0.028, 6, 8));
+      midKnuckleGeo.rotateZ(Math.PI / 2);
+      const midKnuckle = new THREE.Mesh(midKnuckleGeo, gloveKnuckleArmorMat);
+      midKnuckle.position.set(0.0, -0.064, 0.076);
+      midKnuckle.castShadow = true;
+      handGroup.add(midKnuckle);
+
+      // Pinky knuckle cushion (lateral)
+      const pinkyKnuckleGeo = this.track(new THREE.CapsuleGeometry(0.015, 0.022, 6, 8));
+      pinkyKnuckleGeo.rotateZ(Math.PI / 2);
+      const pinkyKnuckle = new THREE.Mesh(pinkyKnuckleGeo, gloveKnuckleArmorMat);
+      pinkyKnuckle.position.set(xSign * 0.044, -0.060, 0.068);
+      pinkyKnuckle.castShadow = true;
+      handGroup.add(pinkyKnuckle);
+
+      // Metallic impact rivets on each knuckle cushion
+      const knucklePositions = [
+        new THREE.Vector3(-xSign * 0.044, -0.060, 0.078),
+        new THREE.Vector3(0.0, -0.064, 0.084),
+        new THREE.Vector3(xSign * 0.044, -0.060, 0.076),
+      ];
+      for (const pos of knucklePositions) {
+        const rivetGeo = this.track(new THREE.SphereGeometry(0.005, 6, 6));
+        const rivet = new THREE.Mesh(rivetGeo, gloveBuckleGoldMat);
+        rivet.position.copy(pos);
+        handGroup.add(rivet);
       }
 
-      // Articulated Thumb
-      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.038, 0.075, 6, 8));
-      const thumb = new THREE.Mesh(thumbGeo, skinToneMat);
-      thumb.position.set(xSign * -0.065, 0.012, 0.045);
-      thumb.rotation.set(-0.25, 0, xSign * -0.55);
-      thumb.castShadow = true;
-      handGroup.add(thumb);
+      // --- 5. 4 ARTICULATED CARTOON BRAWLER FINGERS IN ATHLETIC COMBAT GRIP ---
+      // 1) POLEGAR OPOSITOR VOLUMOSO (Voluminous Opposable Thumb with multi-phalanx articulation)
+      const thumbRoot = new THREE.Group();
+      thumbRoot.position.set(-xSign * 0.064, -0.018, 0.032);
+      thumbRoot.rotation.set(-0.24, -xSign * 0.48, -xSign * 0.62);
+      handGroup.add(thumbRoot);
+
+      // Voluminous thenar glove sleeve
+      const thumbSleeveGeo = this.track(new THREE.CylinderGeometry(0.035, 0.031, 0.042, 10));
+      thumbSleeveGeo.translate(0, -0.014, 0);
+      const thumbSleeve = new THREE.Mesh(thumbSleeveGeo, gloveMainMat);
+      thumbSleeve.castShadow = true;
+      thumbRoot.add(thumbSleeve);
+
+      // Thumb sleeve contrast debrum ring
+      const thumbTrimGeo = this.track(new THREE.TorusGeometry(0.033, 0.005, 6, 12));
+      thumbTrimGeo.rotateX(Math.PI / 2);
+      const thumbTrim = new THREE.Mesh(thumbTrimGeo, gloveTrimMat);
+      thumbTrim.position.set(0, -0.020, 0);
+      thumbRoot.add(thumbTrim);
+
+      // Proximal phalanx (falange proximal)
+      const thumbProxGeo = this.track(new THREE.CapsuleGeometry(0.027, 0.036, 8, 10));
+      thumbProxGeo.translate(0, -0.034, 0);
+      const thumbProx = new THREE.Mesh(thumbProxGeo, gloveMainMat);
+      thumbProx.castShadow = true;
+      thumbRoot.add(thumbProx);
+
+      // Interphalangeal joint cushion (nó articulado do polegar)
+      const thumbJointGeo = this.track(new THREE.SphereGeometry(0.026, 8, 8));
+      const thumbJoint = new THREE.Mesh(thumbJointGeo, gloveKnuckleArmorMat);
+      thumbJoint.position.set(0, -0.048, 0.008);
+      thumbJoint.castShadow = true;
+      thumbRoot.add(thumbJoint);
+
+      // Distal phalanx group curving naturally inward across fist into combat lock
+      const thumbDistGroup = new THREE.Group();
+      thumbDistGroup.position.set(0, -0.048, 0);
+      thumbDistGroup.rotation.set(-0.52, 0, -xSign * 0.22);
+      thumbRoot.add(thumbDistGroup);
+
+      const thumbDistGeo = this.track(new THREE.CapsuleGeometry(0.024, 0.034, 8, 10));
+      thumbDistGeo.translate(0, -0.018, 0);
+      const thumbDist = new THREE.Mesh(thumbDistGeo, skinToneMat);
+      thumbDist.castShadow = true;
+      thumbDistGroup.add(thumbDist);
+
+      // Sculpted thumb pad (almofada carnosa do polegar)
+      const thumbPadGeo = this.track(new THREE.SphereGeometry(0.018, 8, 6));
+      thumbPadGeo.scale(1.0, 1.2, 0.6);
+      const thumbPad = new THREE.Mesh(thumbPadGeo, skinToneMat);
+      thumbPad.position.set(0, -0.024, -0.012);
+      thumbDistGroup.add(thumbPad);
+
+      // 2) DEDO INDICADOR (Index Finger with proximal/distal phalanges in athletic semi-closed curl)
+      const indexRoot = new THREE.Group();
+      indexRoot.position.set(-xSign * 0.044, -0.074, 0.050);
+      handGroup.add(indexRoot);
+
+      const indexTrimGeo = this.track(new THREE.TorusGeometry(0.023, 0.005, 6, 12));
+      indexTrimGeo.rotateX(Math.PI / 2);
+      const indexTrim = new THREE.Mesh(indexTrimGeo, gloveTrimMat);
+      indexRoot.add(indexTrim);
+
+      const indexProxGroup = new THREE.Group();
+      indexProxGroup.rotation.set(-0.72, 0, -xSign * 0.08);
+      indexRoot.add(indexProxGroup);
+
+      const indexProxGeo = this.track(new THREE.CapsuleGeometry(0.023, 0.038, 8, 10));
+      indexProxGeo.translate(0, -0.020, 0);
+      const indexProx = new THREE.Mesh(indexProxGeo, gloveMainMat);
+      indexProx.castShadow = true;
+      indexProxGroup.add(indexProx);
+
+      const indexPipGeo = this.track(new THREE.SphereGeometry(0.022, 8, 8));
+      const indexPip = new THREE.Mesh(indexPipGeo, glovePadMat);
+      indexPip.position.set(0, -0.040, 0);
+      indexProxGroup.add(indexPip);
+
+      const indexDistGroup = new THREE.Group();
+      indexDistGroup.position.set(0, -0.040, 0);
+      indexDistGroup.rotation.set(-0.75, 0, 0);
+      indexProxGroup.add(indexDistGroup);
+
+      const indexDistGeo = this.track(new THREE.CapsuleGeometry(0.020, 0.032, 8, 10));
+      indexDistGeo.translate(0, -0.016, 0);
+      const indexDist = new THREE.Mesh(indexDistGeo, skinToneMat);
+      indexDist.castShadow = true;
+      indexDistGroup.add(indexDist);
+
+      const indexPadGeo = this.track(new THREE.SphereGeometry(0.016, 8, 6));
+      indexPadGeo.scale(1.0, 1.1, 0.6);
+      const indexPad = new THREE.Mesh(indexPadGeo, skinToneMat);
+      indexPad.position.set(0, -0.022, -0.010);
+      indexDistGroup.add(indexPad);
+
+      // 3) DEDO MÉDIO (Middle Finger - Longest, most powerful central knuckle)
+      const midRoot = new THREE.Group();
+      midRoot.position.set(0.0, -0.080, 0.056);
+      handGroup.add(midRoot);
+
+      const midTrimGeo = this.track(new THREE.TorusGeometry(0.025, 0.005, 6, 12));
+      midTrimGeo.rotateX(Math.PI / 2);
+      const midTrim = new THREE.Mesh(midTrimGeo, gloveTrimMat);
+      midRoot.add(midTrim);
+
+      const midProxGroup = new THREE.Group();
+      midProxGroup.rotation.set(-0.78, 0, 0);
+      midRoot.add(midProxGroup);
+
+      const midProxGeo = this.track(new THREE.CapsuleGeometry(0.025, 0.044, 8, 10));
+      midProxGeo.translate(0, -0.022, 0);
+      const midProx = new THREE.Mesh(midProxGeo, gloveMainMat);
+      midProx.castShadow = true;
+      midProxGroup.add(midProx);
+
+      const midPipGeo = this.track(new THREE.SphereGeometry(0.024, 8, 8));
+      const midPip = new THREE.Mesh(midPipGeo, glovePadMat);
+      midPip.position.set(0, -0.044, 0);
+      midProxGroup.add(midPip);
+
+      const midDistGroup = new THREE.Group();
+      midDistGroup.position.set(0, -0.044, 0);
+      midDistGroup.rotation.set(-0.80, 0, 0);
+      midProxGroup.add(midDistGroup);
+
+      const midDistGeo = this.track(new THREE.CapsuleGeometry(0.022, 0.036, 8, 10));
+      midDistGeo.translate(0, -0.018, 0);
+      const midDist = new THREE.Mesh(midDistGeo, skinToneMat);
+      midDist.castShadow = true;
+      midDistGroup.add(midDist);
+
+      const midPadGeo = this.track(new THREE.SphereGeometry(0.017, 8, 6));
+      midPadGeo.scale(1.0, 1.1, 0.6);
+      const midPad = new THREE.Mesh(midPadGeo, skinToneMat);
+      midPad.position.set(0, -0.024, -0.010);
+      midDistGroup.add(midPad);
+
+      // 4) DEDO MÍNIMO (Pinky Finger - Compact athletic lateral curl)
+      const pinkyRoot = new THREE.Group();
+      pinkyRoot.position.set(xSign * 0.044, -0.074, 0.046);
+      handGroup.add(pinkyRoot);
+
+      const pinkyTrimGeo = this.track(new THREE.TorusGeometry(0.021, 0.005, 6, 12));
+      pinkyTrimGeo.rotateX(Math.PI / 2);
+      const pinkyTrim = new THREE.Mesh(pinkyTrimGeo, gloveTrimMat);
+      pinkyRoot.add(pinkyTrim);
+
+      const pinkyProxGroup = new THREE.Group();
+      pinkyProxGroup.rotation.set(-0.72, 0, xSign * 0.10);
+      pinkyRoot.add(pinkyProxGroup);
+
+      const pinkyProxGeo = this.track(new THREE.CapsuleGeometry(0.021, 0.034, 8, 10));
+      pinkyProxGeo.translate(0, -0.018, 0);
+      const pinkyProx = new THREE.Mesh(pinkyProxGeo, gloveMainMat);
+      pinkyProx.castShadow = true;
+      pinkyProxGroup.add(pinkyProx);
+
+      const pinkyPipGeo = this.track(new THREE.SphereGeometry(0.020, 8, 8));
+      const pinkyPip = new THREE.Mesh(pinkyPipGeo, glovePadMat);
+      pinkyPip.position.set(0, -0.036, 0);
+      pinkyProxGroup.add(pinkyPip);
+
+      const pinkyDistGroup = new THREE.Group();
+      pinkyDistGroup.position.set(0, -0.036, 0);
+      pinkyDistGroup.rotation.set(-0.82, 0, 0);
+      pinkyProxGroup.add(pinkyDistGroup);
+
+      const pinkyDistGeo = this.track(new THREE.CapsuleGeometry(0.019, 0.030, 8, 10));
+      pinkyDistGeo.translate(0, -0.015, 0);
+      const pinkyDist = new THREE.Mesh(pinkyDistGeo, skinToneMat);
+      pinkyDist.castShadow = true;
+      pinkyDistGroup.add(pinkyDist);
+
+      const pinkyPadGeo = this.track(new THREE.SphereGeometry(0.015, 8, 6));
+      pinkyPadGeo.scale(1.0, 1.1, 0.6);
+      const pinkyPad = new THREE.Mesh(pinkyPadGeo, skinToneMat);
+      pinkyPad.position.set(0, -0.020, -0.009);
+      pinkyDistGroup.add(pinkyPad);
     };
 
     buildLeonArm(-1, this.leftArmPivot);
@@ -679,75 +2221,533 @@ export class PlayerCharacter {
     // 7. LEGS & CHUNKY BRAWLER SNEAKERS
     // ==========================================
     const buildLeonLeg = (xSign: number, pivot: THREE.Group) => {
-      // Hip joint
+      // Hip joint pivot on modelRoot
       pivot.position.set(xSign * 0.17, 0.60, 0);
       this.modelRoot.add(pivot);
 
-      // Dark Indigo Shorts
-      const shortGeo = this.track(new THREE.CylinderGeometry(0.17, 0.15, 0.24, 16));
-      shortGeo.translate(0, -0.12, 0);
+      // --- 4. SHORTS LEG & EXPOSED LEG WITH SUBTLE KNEE ---
+      // Hip socket dome sealing the leg top into pelvis
+      const hipCapGeo = this.track(new THREE.SphereGeometry(0.18, 16, 14));
+      const hipCap = new THREE.Mesh(hipCapGeo, shortsIndigoMat);
+      hipCap.position.set(0, 0.02, 0);
+      hipCap.castShadow = true;
+      pivot.add(hipCap);
+
+      // Chunky Dark Indigo Denim Shorts Leg
+      const shortGeo = this.track(new THREE.CylinderGeometry(0.182, 0.168, 0.23, 18));
+      shortGeo.translate(0, -0.11, 0);
       const shorts = new THREE.Mesh(shortGeo, shortsIndigoMat);
       shorts.castShadow = true;
       pivot.add(shorts);
 
-      // Exposed Peach Leg
-      const legGeo = this.track(new THREE.CylinderGeometry(0.11, 0.10, 0.18, 14));
-      legGeo.translate(0, -0.28, 0);
-      const leg = new THREE.Mesh(legGeo, skinToneMat);
-      leg.castShadow = true;
-      pivot.add(leg);
+      // Thick folded denim hem cuff (bainha dobrada da bermuda)
+      const cuffGeo = this.track(new THREE.TorusGeometry(0.168, 0.026, 10, 22));
+      cuffGeo.rotateX(Math.PI / 2);
+      const cuff = new THREE.Mesh(cuffGeo, shortsIndigoMat);
+      cuff.position.set(0, -0.21, 0);
+      cuff.castShadow = true;
+      pivot.add(cuff);
 
-      // CHUNKY BRAWL SNEAKER
+      // Golden denim hem stitch line
+      const hemStitchGeo = this.track(new THREE.TorusGeometry(0.171, 0.006, 6, 22));
+      hemStitchGeo.rotateX(Math.PI / 2);
+      const hemStitch = new THREE.Mesh(hemStitchGeo, denimStitchMat);
+      hemStitch.position.set(0, -0.20, 0);
+      pivot.add(hemStitch);
+
+      // Dark interior cavity shadow liner inside shorts hem
+      const legLinerGeo = this.track(new THREE.CylinderGeometry(0.145, 0.145, 0.05, 16));
+      legLinerGeo.translate(0, -0.20, 0);
+      const legLiner = new THREE.Mesh(legLinerGeo, faceShadowMat);
+      pivot.add(legLiner);
+
+      // Upper thigh starting deep inside shorts (-0.05) to ensure zero skin gaps
+      const thighGeo = this.track(new THREE.CylinderGeometry(0.125, 0.115, 0.18, 16));
+      thighGeo.translate(0, -0.14, 0);
+      const thigh = new THREE.Mesh(thighGeo, skinToneMat);
+      thigh.castShadow = true;
+      pivot.add(thigh);
+
+      // Knee joint with subtle anatomical contour
+      const kneeGeo = this.track(new THREE.CylinderGeometry(0.115, 0.108, 0.10, 16));
+      kneeGeo.translate(0, -0.24, 0);
+      const knee = new THREE.Mesh(kneeGeo, skinToneMat);
+      knee.castShadow = true;
+      pivot.add(knee);
+
+      // Subtle Patella / Knee Cap curvature
+      const patellaGeo = this.track(new THREE.SphereGeometry(0.048, 12, 10));
+      patellaGeo.scale(1.1, 1.2, 0.6);
+      const patella = new THREE.Mesh(patellaGeo, skinToneMat);
+      patella.position.set(0, -0.235, 0.098);
+      patella.castShadow = true;
+      pivot.add(patella);
+
+      // Smooth anatomical calf tapering towards ankle
+      const calfGeo = this.track(new THREE.CylinderGeometry(0.106, 0.088, 0.16, 16));
+      calfGeo.translate(0, -0.32, 0.008);
+      const calf = new THREE.Mesh(calfGeo, skinToneMat);
+      calf.castShadow = true;
+      pivot.add(calf);
+
+      // --- 5. ATHLETIC ANKLE SOCK & PADDED SNEAKER COLLAR RIM ---
+      // White athletic crew sock body entering deep into the shoe collar
+      const sockGeo = this.track(new THREE.CylinderGeometry(0.094, 0.090, 0.12, 16));
+      sockGeo.translate(0, -0.38, 0.02);
+      const sock = new THREE.Mesh(sockGeo, sockWhiteMat);
+      sock.castShadow = true;
+      pivot.add(sock);
+
+      // Padded ribbed sock cuff at top of sock
+      const sockCuffGeo = this.track(new THREE.TorusGeometry(0.096, 0.020, 10, 20));
+      sockCuffGeo.rotateX(Math.PI / 2);
+      const sockCuff = new THREE.Mesh(sockCuffGeo, sockWhiteMat);
+      sockCuff.position.set(0, -0.34, 0.015);
+      sockCuff.castShadow = true;
+      pivot.add(sockCuff);
+
+      // Retro athletic blue sock stripe
+      const sockStripeGeo = this.track(new THREE.TorusGeometry(0.098, 0.007, 6, 20));
+      sockStripeGeo.rotateX(Math.PI / 2);
+      const sockStripe = new THREE.Mesh(sockStripeGeo, sockStripeBlueMat);
+      sockStripe.position.set(0, -0.345, 0.015);
+      pivot.add(sockStripe);
+
+      // ==========================================
+      // LOOP 4: DETAILED CHUNKY BRAWLER SNEAKER
+      // ==========================================
       const shoeGroup = new THREE.Group();
       shoeGroup.position.set(0, -0.36, 0.04);
       pivot.add(shoeGroup);
 
-      // Thick White Molded Rubber Sole
-      const soleGeo = this.track(new THREE.BoxGeometry(0.28, 0.09, 0.48));
-      soleGeo.translate(0, -0.22, 0.09);
-      const sole = new THREE.Mesh(soleGeo, sneakerWhiteMat);
-      sole.castShadow = true;
-      shoeGroup.add(sole);
+      // --- 1. PADDED SNEAKER COLLAR, ACHILLES TAB & INTERIOR CAVITY ---
+      // Padded white sneaker collar / opening rim (gola acolchoada do cano do tênis)
+      const shoeCollarGeo = this.track(new THREE.TorusGeometry(0.122, 0.038, 12, 24));
+      shoeCollarGeo.scale(0.96, 0.88, 1.15);
+      const shoeCollar = new THREE.Mesh(shoeCollarGeo, sneakerCollarMat);
+      shoeCollar.position.set(0, -0.045, 0.08);
+      shoeCollar.rotation.x = 0.16;
+      shoeCollar.castShadow = true;
+      shoeGroup.add(shoeCollar);
 
-      // Sole Dark Stripe
-      const stripeGeo = this.track(new THREE.BoxGeometry(0.285, 0.018, 0.46));
-      stripeGeo.translate(0, -0.22, 0.09);
-      const stripe = new THREE.Mesh(stripeGeo, sneakerStripeMat);
-      shoeGroup.add(stripe);
+      // Padded Achilles heel cushion / collar tab at rear of sneaker opening
+      const heelTabGeo = this.track(new THREE.BoxGeometry(0.13, 0.065, 0.04));
+      const heelTab = new THREE.Mesh(heelTabGeo, sneakerCollarMat);
+      heelTab.position.set(0, -0.025, -0.045);
+      heelTab.rotation.x = -0.15;
+      heelTab.castShadow = true;
+      shoeGroup.add(heelTab);
 
-      // Crimson Red Sneaker Body
-      const upperGeo = this.track(new THREE.CapsuleGeometry(0.13, 0.22, 10, 16));
+      // Dark interior cavity shadow sealing the shoe collar around the sock
+      const shoeSocketGeo = this.track(new THREE.CylinderGeometry(0.092, 0.092, 0.06, 14));
+      shoeSocketGeo.translate(0, -0.065, 0.08);
+      const shoeSocket = new THREE.Mesh(shoeSocketGeo, faceShadowMat);
+      shoeGroup.add(shoeSocket);
+
+      // --- 2. MULTI-PANEL LEATHER UPPER WITH DOUBLE TOPSTITCHING SEAMS ---
+      // Crimson Red Sneaker Body (base do cabedal)
+      const upperGeo = this.track(new THREE.CapsuleGeometry(0.132, 0.22, 10, 16));
       upperGeo.rotateX(Math.PI / 2);
       upperGeo.translate(0, -0.12, 0.08);
       const upper = new THREE.Mesh(upperGeo, sneakerRedMat);
       upper.castShadow = true;
       shoeGroup.add(upper);
 
-      // Rounded White Rubber Toe Cap
-      const toeCapGeo = this.track(new THREE.SphereGeometry(0.14, 16, 12, 0, Math.PI, 0, Math.PI * 0.55));
+      // Deep Crimson Heel Counter Panel (painel de reforço traseiro do calcanhar)
+      const heelCounterGeo = this.track(new THREE.CylinderGeometry(0.138, 0.140, 0.12, 16, 1, false, Math.PI * 0.5, Math.PI));
+      const heelCounter = new THREE.Mesh(heelCounterGeo, sneakerDarkRedMat);
+      heelCounter.position.set(0, -0.12, -0.02);
+      heelCounter.castShadow = true;
+      shoeGroup.add(heelCounter);
+
+      // Deep Crimson Quarter Flank Panels (painéis laterais dinâmicos esportivos)
+      const leftQuarterGeo = this.track(new THREE.BoxGeometry(0.018, 0.082, 0.22));
+      const leftQuarter = new THREE.Mesh(leftQuarterGeo, sneakerDarkRedMat);
+      leftQuarter.position.set(-0.134, -0.12, 0.08);
+      leftQuarter.castShadow = true;
+      shoeGroup.add(leftQuarter);
+
+      const rightQuarterGeo = this.track(new THREE.BoxGeometry(0.018, 0.082, 0.22));
+      const rightQuarter = new THREE.Mesh(rightQuarterGeo, sneakerDarkRedMat);
+      rightQuarter.position.set(0.134, -0.12, 0.08);
+      rightQuarter.castShadow = true;
+      shoeGroup.add(rightQuarter);
+
+      // Eyestay Reinforcement Leather Panels (reforço onde passam os cadarços)
+      const leftEyestayGeo = this.track(new THREE.BoxGeometry(0.026, 0.155, 0.020));
+      const leftEyestay = new THREE.Mesh(leftEyestayGeo, sneakerDarkRedMat);
+      leftEyestay.position.set(-0.062, -0.045, 0.170);
+      leftEyestay.rotation.x = -0.34;
+      leftEyestay.castShadow = true;
+      shoeGroup.add(leftEyestay);
+
+      const rightEyestayGeo = this.track(new THREE.BoxGeometry(0.026, 0.155, 0.020));
+      const rightEyestay = new THREE.Mesh(rightEyestayGeo, sneakerDarkRedMat);
+      rightEyestay.position.set(0.062, -0.045, 0.170);
+      rightEyestay.rotation.x = -0.34;
+      rightEyestay.castShadow = true;
+      shoeGroup.add(rightEyestay);
+
+      // Costuras Esportivas Pespontadas (Double-stitched white topseams)
+      // Heel counter upper stitch seam
+      const heelStitchGeo = this.track(new THREE.TorusGeometry(0.140, 0.004, 6, 18, Math.PI));
+      heelStitchGeo.rotateX(Math.PI / 2);
+      const heelStitch = new THREE.Mesh(heelStitchGeo, sneakerStitchWhiteMat);
+      heelStitch.position.set(0, -0.062, -0.02);
+      shoeGroup.add(heelStitch);
+
+      // Eyestay lateral stitch lines
+      const leftEyestayStitchGeo = this.track(new THREE.CapsuleGeometry(0.004, 0.148, 4, 6));
+      const leftEyestayStitch = new THREE.Mesh(leftEyestayStitchGeo, sneakerStitchWhiteMat);
+      leftEyestayStitch.position.set(-0.076, -0.045, 0.172);
+      leftEyestayStitch.rotation.x = -0.34;
+      shoeGroup.add(leftEyestayStitch);
+
+      const rightEyestayStitchGeo = this.track(new THREE.CapsuleGeometry(0.004, 0.148, 4, 6));
+      const rightEyestayStitch = new THREE.Mesh(rightEyestayStitchGeo, sneakerStitchWhiteMat);
+      rightEyestayStitch.position.set(0.076, -0.045, 0.172);
+      rightEyestayStitch.rotation.x = -0.34;
+      shoeGroup.add(rightEyestayStitch);
+
+      // Flank swoosh accent stitch lines
+      const leftFlankStitchGeo = this.track(new THREE.CapsuleGeometry(0.004, 0.18, 4, 6));
+      const leftFlankStitch = new THREE.Mesh(leftFlankStitchGeo, sneakerStitchWhiteMat);
+      leftFlankStitch.position.set(-0.136, -0.11, 0.08);
+      leftFlankStitch.rotation.set(0.15, 0, 0.05);
+      shoeGroup.add(leftFlankStitch);
+
+      const rightFlankStitchGeo = this.track(new THREE.CapsuleGeometry(0.004, 0.18, 4, 6));
+      const rightFlankStitch = new THREE.Mesh(rightFlankStitchGeo, sneakerStitchWhiteMat);
+      rightFlankStitch.position.set(0.136, -0.11, 0.08);
+      rightFlankStitch.rotation.set(0.15, 0, -0.05);
+      shoeGroup.add(rightFlankStitch);
+
+      // --- 3. PADDED TONGUE ELEVATED BEFORE SHIN WITH WOVEN ATHLETIC TAG ---
+      // Padded sneaker tongue rising high in front of the shin/sock
+      const tongueGeo = this.track(new THREE.BoxGeometry(0.126, 0.185, 0.042));
+      const tongue = new THREE.Mesh(tongueGeo, sneakerWhiteMat);
+      tongue.position.set(0, -0.025, 0.180);
+      tongue.rotation.x = -0.34;
+      tongue.castShadow = true;
+      shoeGroup.add(tongue);
+
+      // Rolled cushioned top lip of the tongue
+      const tongueLipGeo = this.track(new THREE.CylinderGeometry(0.021, 0.021, 0.124, 12));
+      tongueLipGeo.rotateZ(Math.PI / 2);
+      const tongueLip = new THREE.Mesh(tongueLipGeo, sneakerCollarMat);
+      tongueLip.position.set(0, 0.050, 0.208);
+      tongueLip.castShadow = true;
+      shoeGroup.add(tongueLip);
+
+      // Woven Athletic Logo Tag / Patch on upper tongue
+      const tagPatchGeo = this.track(new THREE.BoxGeometry(0.066, 0.056, 0.010));
+      const tagPatch = new THREE.Mesh(tagPatchGeo, sneakerTongueTagMat);
+      tagPatch.position.set(0, 0.024, 0.222);
+      tagPatch.rotation.x = -0.34;
+      shoeGroup.add(tagPatch);
+
+      // White stitched border framing the tag
+      const tagBorderGeo = this.track(new THREE.BoxGeometry(0.070, 0.060, 0.004));
+      const tagBorder = new THREE.Mesh(tagBorderGeo, sneakerStitchWhiteMat);
+      tagBorder.position.set(0, 0.024, 0.219);
+      tagBorder.rotation.x = -0.34;
+      shoeGroup.add(tagBorder);
+
+      // Golden Brawler star / emblem centered on the tag
+      const tagStarGeo = this.track(new THREE.SphereGeometry(0.012, 8, 6));
+      tagStarGeo.scale(1.2, 1.2, 0.5);
+      const tagStar = new THREE.Mesh(tagStarGeo, sneakerEyeletGoldMat);
+      tagStar.position.set(0, 0.025, 0.229);
+      tagStar.rotation.x = -0.34;
+      shoeGroup.add(tagStar);
+
+      // --- 4. 3D CROSSED LACES WITH TIED BOW OVER THE INSTEP ---
+      // 3 Pairs of Golden Metallic Eyelets
+      const eyeletCoords = [
+        { x: -0.058, y: -0.088, z: 0.155 },
+        { x:  0.058, y: -0.088, z: 0.155 },
+        { x: -0.058, y: -0.042, z: 0.176 },
+        { x:  0.058, y: -0.042, z: 0.176 },
+        { x: -0.058, y:  0.008, z: 0.198 },
+        { x:  0.058, y:  0.008, z: 0.198 },
+      ];
+      for (const ec of eyeletCoords) {
+        const eyeletGeo = this.track(new THREE.TorusGeometry(0.011, 0.0035, 6, 12));
+        eyeletGeo.rotateY(Math.PI / 2);
+        const eyelet = new THREE.Mesh(eyeletGeo, sneakerEyeletGoldMat);
+        eyelet.position.set(ec.x, ec.y, ec.z);
+        eyelet.rotation.x = -0.34;
+        shoeGroup.add(eyelet);
+      }
+
+      // Bottom straight horizontal lace bar
+      const botLaceGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, 0.106, 8));
+      botLaceGeo.rotateZ(Math.PI / 2);
+      const botLace = new THREE.Mesh(botLaceGeo, sneakerLaceWhiteMat);
+      botLace.position.set(0, -0.088, 0.160);
+      botLace.castShadow = true;
+      shoeGroup.add(botLace);
+
+      // Lower 3D Crossed Laces (X1)
+      const crossLaceA_Geo = this.track(new THREE.CylinderGeometry(0.0065, 0.0065, 0.126, 8));
+      const crossLaceA = new THREE.Mesh(crossLaceA_Geo, sneakerLaceWhiteMat);
+      crossLaceA.position.set(0, -0.065, 0.172);
+      crossLaceA.rotation.set(-0.34, 0, 0.40);
+      crossLaceA.castShadow = true;
+      shoeGroup.add(crossLaceA);
+
+      const crossLaceB_Geo = this.track(new THREE.CylinderGeometry(0.0065, 0.0065, 0.126, 8));
+      const crossLaceB = new THREE.Mesh(crossLaceB_Geo, sneakerLaceWhiteMat);
+      crossLaceB.position.set(0, -0.065, 0.178);
+      crossLaceB.rotation.set(-0.34, 0, -0.40);
+      crossLaceB.castShadow = true;
+      shoeGroup.add(crossLaceB);
+
+      // Upper 3D Crossed Laces (X2)
+      const crossLaceC_Geo = this.track(new THREE.CylinderGeometry(0.0065, 0.0065, 0.126, 8));
+      const crossLaceC = new THREE.Mesh(crossLaceC_Geo, sneakerLaceWhiteMat);
+      crossLaceC.position.set(0, -0.017, 0.194);
+      crossLaceC.rotation.set(-0.34, 0, 0.40);
+      crossLaceC.castShadow = true;
+      shoeGroup.add(crossLaceC);
+
+      const crossLaceD_Geo = this.track(new THREE.CylinderGeometry(0.0065, 0.0065, 0.126, 8));
+      const crossLaceD = new THREE.Mesh(crossLaceD_Geo, sneakerLaceWhiteMat);
+      crossLaceD.position.set(0, -0.017, 0.200);
+      crossLaceD.rotation.set(-0.34, 0, -0.40);
+      crossLaceD.castShadow = true;
+      shoeGroup.add(crossLaceD);
+
+      // Tied Shoelace Bow (Laço Superior Modelado Sobre o Peito do Pé)
+      const bowKnotGeo = this.track(new THREE.SphereGeometry(0.016, 8, 8));
+      bowKnotGeo.scale(1.2, 0.9, 0.9);
+      const bowKnot = new THREE.Mesh(bowKnotGeo, sneakerLaceWhiteMat);
+      bowKnot.position.set(0, 0.018, 0.216);
+      bowKnot.castShadow = true;
+      shoeGroup.add(bowKnot);
+
+      // Left Bow Loop
+      const bowLoopLeftGeo = this.track(new THREE.TorusGeometry(0.024, 0.0065, 8, 16, Math.PI * 1.6));
+      const bowLoopLeft = new THREE.Mesh(bowLoopLeftGeo, sneakerLaceWhiteMat);
+      bowLoopLeft.position.set(-0.026, 0.030, 0.224);
+      bowLoopLeft.rotation.set(0.35, -0.45, 0.70);
+      bowLoopLeft.castShadow = true;
+      shoeGroup.add(bowLoopLeft);
+
+      // Right Bow Loop
+      const bowLoopRightGeo = this.track(new THREE.TorusGeometry(0.024, 0.0065, 8, 16, Math.PI * 1.6));
+      const bowLoopRight = new THREE.Mesh(bowLoopRightGeo, sneakerLaceWhiteMat);
+      bowLoopRight.position.set(0.026, 0.030, 0.224);
+      bowLoopRight.rotation.set(0.35, 0.45, -0.70);
+      bowLoopRight.castShadow = true;
+      shoeGroup.add(bowLoopRight);
+
+      // Drooping Lace Aglet Tails with dynamic jiggle pivots
+      const agletLeftPivot = new THREE.Group();
+      agletLeftPivot.position.set(-0.020, 0.012, 0.222);
+      agletLeftPivot.rotation.set(0.20, 0, 0.40);
+
+      const agletLeftLen = 0.055;
+      const agletLeftGeo = this.track(new THREE.CylinderGeometry(0.0055, 0.0055, agletLeftLen, 6));
+      const agletLeft = new THREE.Mesh(agletLeftGeo, sneakerLaceWhiteMat);
+      agletLeft.position.set(0, -agletLeftLen / 2, 0);
+      agletLeft.castShadow = true;
+      agletLeftPivot.add(agletLeft);
+
+      const agletTipLeftLen = 0.014;
+      const agletTipLeftGeo = this.track(new THREE.CylinderGeometry(0.006, 0.006, agletTipLeftLen, 6));
+      const agletTipLeft = new THREE.Mesh(agletTipLeftGeo, sneakerEyeletGoldMat);
+      agletTipLeft.position.set(0, -agletLeftLen - agletTipLeftLen / 2 + 0.002, 0);
+      agletLeftPivot.add(agletTipLeft);
+
+      shoeGroup.add(agletLeftPivot);
+      this.sneakerAgletPivots.push({ pivot: agletLeftPivot, baseRotX: 0.20, baseRotZ: 0.40, isLeftShoe: xSign < 0, side: -1 });
+
+      const agletRightPivot = new THREE.Group();
+      agletRightPivot.position.set(0.020, 0.012, 0.222);
+      agletRightPivot.rotation.set(0.20, 0, -0.40);
+
+      const agletRightLen = 0.055;
+      const agletRightGeo = this.track(new THREE.CylinderGeometry(0.0055, 0.0055, agletRightLen, 6));
+      const agletRight = new THREE.Mesh(agletRightGeo, sneakerLaceWhiteMat);
+      agletRight.position.set(0, -agletRightLen / 2, 0);
+      agletRight.castShadow = true;
+      agletRightPivot.add(agletRight);
+
+      const agletTipRightLen = 0.014;
+      const agletTipRightGeo = this.track(new THREE.CylinderGeometry(0.006, 0.006, agletTipRightLen, 6));
+      const agletTipRight = new THREE.Mesh(agletTipRightGeo, sneakerEyeletGoldMat);
+      agletTipRight.position.set(0, -agletRightLen - agletTipRightLen / 2 + 0.002, 0);
+      agletRightPivot.add(agletTipRight);
+
+      shoeGroup.add(agletRightPivot);
+      this.sneakerAgletPivots.push({ pivot: agletRightPivot, baseRotX: 0.20, baseRotZ: -0.40, isLeftShoe: xSign < 0, side: 1 });
+
+      // --- 5. SHELL-TOE WITH 3D RADIAL GROOVES (Biqueira de Concha com Frisos Estriados) ---
+      // Sculpted rubber dome shell cap
+      const toeCapGeo = this.track(new THREE.SphereGeometry(0.144, 18, 14, 0, Math.PI, 0, Math.PI * 0.58));
       toeCapGeo.rotateX(Math.PI / 2);
       const toeCap = new THREE.Mesh(toeCapGeo, sneakerWhiteMat);
       toeCap.position.set(0, -0.14, 0.25);
-      toeCap.scale.set(0.98, 0.72, 0.82);
+      toeCap.scale.set(0.98, 0.74, 0.84);
       toeCap.castShadow = true;
       shoeGroup.add(toeCap);
 
-      // Sneaker Tongue & Laces
-      const tongueGeo = this.track(new THREE.BoxGeometry(0.12, 0.14, 0.04));
-      const tongue = new THREE.Mesh(tongueGeo, sneakerWhiteMat);
-      tongue.position.set(0, -0.04, 0.19);
-      tongue.rotation.x = -0.32;
-      shoeGroup.add(tongue);
+      // 5 Molded 3D Radial Frisos Estriados radiating from top of shell-toe to sole
+      // Center Rib
+      const ribCenterGeo = this.track(new THREE.CylinderGeometry(0.007, 0.009, 0.115, 8));
+      const ribCenter = new THREE.Mesh(ribCenterGeo, sneakerWhiteMat);
+      ribCenter.position.set(0, -0.138, 0.288);
+      ribCenter.rotation.x = 0.52;
+      ribCenter.castShadow = true;
+      shoeGroup.add(ribCenter);
 
-      for (let l = 0; l < 3; l++) {
-        const laceGeo = this.track(new THREE.BoxGeometry(0.13, 0.02, 0.04));
-        const lace = new THREE.Mesh(laceGeo, sneakerWhiteMat);
-        lace.position.set(0, -0.08 + l * 0.045, 0.15 + l * 0.022);
-        lace.castShadow = true;
-        shoeGroup.add(lace);
+      // Left Medial Rib
+      const ribLeftMedGeo = this.track(new THREE.CylinderGeometry(0.0065, 0.0085, 0.110, 8));
+      const ribLeftMed = new THREE.Mesh(ribLeftMedGeo, sneakerWhiteMat);
+      ribLeftMed.position.set(-0.036, -0.139, 0.282);
+      ribLeftMed.rotation.set(0.50, 0, 0.20);
+      ribLeftMed.castShadow = true;
+      shoeGroup.add(ribLeftMed);
+
+      // Right Medial Rib
+      const ribRightMedGeo = this.track(new THREE.CylinderGeometry(0.0065, 0.0085, 0.110, 8));
+      const ribRightMed = new THREE.Mesh(ribRightMedGeo, sneakerWhiteMat);
+      ribRightMed.position.set(0.036, -0.139, 0.282);
+      ribRightMed.rotation.set(0.50, 0, -0.20);
+      ribRightMed.castShadow = true;
+      shoeGroup.add(ribRightMed);
+
+      // Left Outer Rib
+      const ribLeftOutGeo = this.track(new THREE.CylinderGeometry(0.006, 0.008, 0.100, 8));
+      const ribLeftOut = new THREE.Mesh(ribLeftOutGeo, sneakerWhiteMat);
+      ribLeftOut.position.set(-0.068, -0.142, 0.266);
+      ribLeftOut.rotation.set(0.46, 0, 0.40);
+      ribLeftOut.castShadow = true;
+      shoeGroup.add(ribLeftOut);
+
+      // Right Outer Rib
+      const ribRightOutGeo = this.track(new THREE.CylinderGeometry(0.006, 0.008, 0.100, 8));
+      const ribRightOut = new THREE.Mesh(ribRightOutGeo, sneakerWhiteMat);
+      ribRightOut.position.set(0.068, -0.142, 0.266);
+      ribRightOut.rotation.set(0.46, 0, -0.40);
+      ribRightOut.castShadow = true;
+      shoeGroup.add(ribRightOut);
+
+      // Shaded groove lines flanking ribs for crisp graphic definition
+      const grooveOffsets = [-0.052, -0.018, 0.018, 0.052];
+      for (const gx of grooveOffsets) {
+        const grooveGeo = this.track(new THREE.CapsuleGeometry(0.003, 0.095, 4, 6));
+        const groove = new THREE.Mesh(grooveGeo, sneakerShellGrooveMat);
+        groove.position.set(gx, -0.140, 0.278);
+        groove.rotation.set(0.50, 0, gx * -1.8);
+        shoeGroup.add(groove);
       }
+
+      // --- 6. CHUNKY FLANGED SOLE, RIBBED SIDEWALLS & 3D TRACTION OUTSOLE ---
+      // Thick White Molded Rubber Sole (Midsole platform)
+      const soleGeo = this.track(new THREE.BoxGeometry(0.292, 0.088, 0.490));
+      soleGeo.translate(0, -0.218, 0.09);
+      const sole = new THREE.Mesh(soleGeo, sneakerWhiteMat);
+      sole.castShadow = true;
+      shoeGroup.add(sole);
+
+      // Sole Dark Racing Groove Stripe
+      const stripeGeo = this.track(new THREE.BoxGeometry(0.296, 0.016, 0.470));
+      stripeGeo.translate(0, -0.218, 0.09);
+      const stripe = new THREE.Mesh(stripeGeo, sneakerStripeMat);
+      shoeGroup.add(stripe);
+
+      // Lateral Estriada: Front Toe Bumper Wrap
+      const toeBumperGeo = this.track(new THREE.BoxGeometry(0.245, 0.066, 0.035));
+      const toeBumper = new THREE.Mesh(toeBumperGeo, sneakerWhiteMat);
+      toeBumper.position.set(0, -0.218, 0.330);
+      toeBumper.castShadow = true;
+      shoeGroup.add(toeBumper);
+
+      // 7 Vertical embossed rubber ribs on front toe bumper
+      for (let i = -3; i <= 3; i++) {
+        const bRibGeo = this.track(new THREE.BoxGeometry(0.013, 0.062, 0.015));
+        const bRib = new THREE.Mesh(bRibGeo, sneakerWhiteMat);
+        bRib.position.set(i * 0.032, -0.218, 0.345);
+        bRib.castShadow = true;
+        shoeGroup.add(bRib);
+      }
+
+      // Lateral Estriada: Heel Bumper Guard Wrap
+      const heelBumperGeo = this.track(new THREE.BoxGeometry(0.230, 0.066, 0.035));
+      const heelBumper = new THREE.Mesh(heelBumperGeo, sneakerWhiteMat);
+      heelBumper.position.set(0, -0.218, -0.150);
+      heelBumper.castShadow = true;
+      shoeGroup.add(heelBumper);
+
+      // 5 Vertical embossed rubber ribs on rear heel bumper
+      for (let j = -2; j <= 2; j++) {
+        const hRibGeo = this.track(new THREE.BoxGeometry(0.013, 0.062, 0.015));
+        const hRib = new THREE.Mesh(hRibGeo, sneakerWhiteMat);
+        hRib.position.set(j * 0.038, -0.218, -0.165);
+        hRib.castShadow = true;
+        shoeGroup.add(hRib);
+      }
+
+      // Outsole Rugged Rubber Base Plate
+      const outsoleGeo = this.track(new THREE.BoxGeometry(0.296, 0.024, 0.496));
+      outsoleGeo.translate(0, -0.262, 0.09);
+      const outsole = new THREE.Mesh(outsoleGeo, sneakerTreadBlackMat);
+      outsole.receiveShadow = true;
+      shoeGroup.add(outsole);
+
+      // --- 7. PISO E RANHURAS DE TRAÇÃO 3D EMBAIXO DA SOLA ---
+      // A) Forefoot flex grooves (4 ranhuras de tração transversais na planta do pé)
+      const flexZ = [0.16, 0.21, 0.26, 0.30];
+      for (const fz of flexZ) {
+        const flexCleatGeo = this.track(new THREE.BoxGeometry(0.24, 0.010, 0.026));
+        const flexCleat = new THREE.Mesh(flexCleatGeo, sneakerWhiteMat);
+        flexCleat.position.set(0, -0.274, fz);
+        shoeGroup.add(flexCleat);
+      }
+
+      // B) Chevron / Herringbone traction pattern (dentes de tração em espinha de peixe no mediopé)
+      const chevZ = [0.06, 0.01];
+      for (const cz of chevZ) {
+        const chevL_Geo = this.track(new THREE.BoxGeometry(0.09, 0.010, 0.020));
+        const chevL = new THREE.Mesh(chevL_Geo, sneakerWhiteMat);
+        chevL.position.set(-0.050, -0.274, cz);
+        chevL.rotation.y = 0.45;
+        shoeGroup.add(chevL);
+
+        const chevR_Geo = this.track(new THREE.BoxGeometry(0.09, 0.010, 0.020));
+        const chevR = new THREE.Mesh(chevR_Geo, sneakerWhiteMat);
+        chevR.position.set(0.050, -0.274, cz);
+        chevR.rotation.y = -0.45;
+        shoeGroup.add(chevR);
+      }
+
+      // C) Heel Circular Pivot Ring & Center Plug (disco de giro com anel concêntrico)
+      const pivotRingGeo = this.track(new THREE.TorusGeometry(0.048, 0.009, 6, 18));
+      pivotRingGeo.rotateX(Math.PI / 2);
+      const pivotRing = new THREE.Mesh(pivotRingGeo, sneakerWhiteMat);
+      pivotRing.position.set(0, -0.273, -0.065);
+      shoeGroup.add(pivotRing);
+
+      const pivotPlugGeo = this.track(new THREE.CylinderGeometry(0.020, 0.020, 0.010, 12));
+      const pivotPlug = new THREE.Mesh(pivotPlugGeo, sneakerTreadBlackMat);
+      pivotPlug.position.set(0, -0.273, -0.065);
+      shoeGroup.add(pivotPlug);
+
+      // D) Outer Perimeter Traction Lugs (bordas laterais de aderência)
+      const lugLeftGeo = this.track(new THREE.BoxGeometry(0.022, 0.010, 0.44));
+      const lugLeft = new THREE.Mesh(lugLeftGeo, sneakerWhiteMat);
+      lugLeft.position.set(-0.125, -0.274, 0.09);
+      shoeGroup.add(lugLeft);
+
+      const lugRightGeo = this.track(new THREE.BoxGeometry(0.022, 0.010, 0.44));
+      const lugRight = new THREE.Mesh(lugRightGeo, sneakerWhiteMat);
+      lugRight.position.set(0.125, -0.274, 0.09);
+      shoeGroup.add(lugRight);
     };
 
+    this.sneakerAgletPivots = [];
     buildLeonLeg(-1, this.leftLegPivot);
     buildLeonLeg(1, this.rightLegPivot);
   }
@@ -865,19 +2865,129 @@ export class PlayerCharacter {
     }
 
     // ==========================================
-    // 5. CHAMELEON TAIL PHYSICS
+    // 5. CHAMELEON PREHENSILE SPIRAL TAIL PHYSICS
     // ==========================================
+    // Base prehensile spiral curling angles (coiling gracefully up and forward in snail spiral)
+    const baseCurl = [-0.16, 0.14, 0.34, 0.46, 0.52, 0.50, 0.46];
+
     const tailSpeed = Math.min(1.2, speed * 0.14);
-    const tailWave = Math.sin(this.idleTime * 3.5 + speed * 2.0) * (0.08 + speed * 0.05);
+    const tailWave = Math.sin(this.idleTime * 3.2 + speed * 2.2) * (0.06 + speed * 0.04);
+    const tailSideWave = Math.cos(this.idleTime * 2.6 + speed * 1.8) * (0.05 + speed * 0.04);
 
     for (let s = 0; s < this.tailSegments.length; s++) {
       const seg = this.tailSegments[s];
-      const link = (s + 1) * 0.35;
-      const targetRotX = THREE.MathUtils.clamp(-0.2 + tailSpeed * link + tailWave * (s + 1), -0.6, 1.2);
+      const curl = baseCurl[s] ?? 0.45;
+
+      // Vertical spring physics: velocity drag + harmonic run bounce
+      const dynamicPitch = -tailSpeed * 0.06 + tailWave * (1.0 + s * 0.16);
+      const targetRotX = THREE.MathUtils.clamp(curl + dynamicPitch, -0.1, 1.4);
       seg.rotation.x += (targetRotX - seg.rotation.x) * Math.min(1, 16 * dt);
 
-      const targetRotY = -this.currentBankAngle * (s + 1) * 0.4;
+      // Lateral physics: banking lean compensation + reactive stride sway
+      const targetRotY = -this.currentBankAngle * (s + 1) * 0.28 + tailSideWave * (s * 0.22);
       seg.rotation.y += (targetRotY - seg.rotation.y) * Math.min(1, 14 * dt);
+
+      // Subtle organic reptilian roll / twist
+      const targetRotZ = (s % 2 === 0 ? 1 : -1) * tailSideWave * 0.12;
+      seg.rotation.z += (targetRotZ - seg.rotation.z) * Math.min(1, 12 * dt);
+    }
+
+    // ==========================================
+    // 6. SECONDARY INERTIA PHYSICS (Loop 5)
+    // Drawstrings Elastic Swing, Zipper Teardrop Puller Dangle, & Sneaker Aglet Micro-Jiggle
+    // ==========================================
+
+    // A. Cream Hoodie Drawstrings (Elastic aerodynamic & stride pendulum)
+    const speedWind = Math.min(0.25, speed * 0.038);
+    for (const ds of this.drawstringPivots) {
+      let targetRotX = ds.group.rotation.x;
+      let targetRotZ = ds.baseRotZ;
+
+      if (!isGrounded) {
+        // Airborne: lift on rise, float on fall, whip on landing
+        const airLift = verticalVelocity > 0
+          ? -verticalVelocity * 0.035
+          : Math.min(0.32, -verticalVelocity * 0.040);
+        targetRotX = 0.06 + airLift;
+        targetRotZ = ds.baseRotZ + (ds.side * 0.05);
+      } else if (speed > 0.20) {
+        // Running stride harmonic pendulum swing with stride cadence
+        const stridePhase = this.walkCycleTime + (ds.side > 0 ? 0.35 : -0.35);
+        const swingX = Math.sin(stridePhase) * 0.22 + speedWind;
+        const swayZ = Math.cos(stridePhase * 0.5) * 0.10 * ds.side;
+        targetRotX = 0.08 + swingX;
+        targetRotZ = ds.baseRotZ + swayZ - this.currentBankAngle * 0.35;
+      } else {
+        // Idle breathing micro-flutter
+        const breatheFlutter = Math.sin(this.idleTime * 2.8 + ds.side * 0.8) * 0.035;
+        targetRotX = 0.04 + breatheFlutter;
+        targetRotZ = ds.baseRotZ + Math.cos(this.idleTime * 1.5) * 0.015 * ds.side;
+      }
+
+      if (jumpSquash > 0) {
+        targetRotX += jumpSquash * 0.35;
+      }
+
+      ds.group.rotation.x += (targetRotX - ds.group.rotation.x) * Math.min(1, 14 * dt);
+      ds.group.rotation.z += (targetRotZ - ds.group.rotation.z) * Math.min(1, 14 * dt);
+    }
+
+    // B. Golden Zipper Puller Pendulum Dangle & Cadence Bounce
+    let targetPullerRotX = 0.12;
+    let targetPullerRotZ = -this.currentBankAngle * 0.45;
+
+    if (!isGrounded) {
+      if (verticalVelocity > 0) {
+        targetPullerRotX = -0.10; // Dragged back on jump ascendance
+      } else {
+        targetPullerRotX = Math.min(0.38, 0.12 - verticalVelocity * 0.04); // Floats upward on descent
+      }
+    } else if (speed > 0.20) {
+      // Vigorous double-cadence bounce on running steps
+      const bounceFreq = this.walkCycleTime * 2.0;
+      const bounceJiggle = Math.sin(bounceFreq) * (0.18 + Math.min(0.12, speed * 0.02));
+      const speedDrag = Math.min(0.22, speed * 0.03);
+      targetPullerRotX = 0.12 + bounceJiggle + speedDrag;
+      targetPullerRotZ += Math.cos(this.walkCycleTime) * 0.10;
+    } else {
+      // Subtle idle chest breathing heave
+      targetPullerRotX = 0.12 + Math.sin(this.idleTime * 2.8) * 0.025;
+    }
+
+    if (jumpSquash > 0) {
+      targetPullerRotX += jumpSquash * 0.45;
+    }
+
+    this.zipperPullerPivot.rotation.x += (targetPullerRotX - this.zipperPullerPivot.rotation.x) * Math.min(1, 22 * dt);
+    this.zipperPullerPivot.rotation.z += (targetPullerRotZ - this.zipperPullerPivot.rotation.z) * Math.min(1, 18 * dt);
+
+    // C. Sneaker Shoelace Aglets Micro-Jiggle
+    for (const aglet of this.sneakerAgletPivots) {
+      let targetAgletX = aglet.baseRotX;
+      let targetAgletZ = aglet.baseRotZ;
+
+      if (!isGrounded) {
+        // Airborne trail
+        targetAgletX = aglet.baseRotX + (verticalVelocity > 0 ? -0.14 : 0.18);
+      } else if (speed > 0.20) {
+        // Leg swing phase offset with sharp ground strike impact
+        const legPhase = this.walkCycleTime + (aglet.isLeftShoe ? 0 : Math.PI);
+        const footStrikeJiggle = Math.sin(legPhase * 2.0) * (0.16 + speed * 0.025);
+        const lateralFling = Math.cos(legPhase * 2.0) * 0.10 * aglet.side;
+
+        targetAgletX = aglet.baseRotX + footStrikeJiggle;
+        targetAgletZ = aglet.baseRotZ + lateralFling;
+      } else {
+        // Settled idle state with tiny micro-tremor
+        targetAgletX = aglet.baseRotX + Math.sin(this.idleTime * 2.0 + (aglet.isLeftShoe ? 0 : 1)) * 0.015;
+      }
+
+      if (jumpSquash > 0) {
+        targetAgletX += jumpSquash * 0.30;
+      }
+
+      aglet.pivot.rotation.x += (targetAgletX - aglet.pivot.rotation.x) * Math.min(1, 26 * dt);
+      aglet.pivot.rotation.z += (targetAgletZ - aglet.pivot.rotation.z) * Math.min(1, 22 * dt);
     }
   }
 
@@ -888,7 +2998,11 @@ export class PlayerCharacter {
   public dispose() {
     for (const g of this.geometries) g.dispose();
     for (const m of this.materials) m.dispose();
+    for (const t of this.textures) t.dispose();
     this.geometries = [];
     this.materials = [];
+    this.textures = [];
+    this.drawstringPivots = [];
+    this.sneakerAgletPivots = [];
   }
 }

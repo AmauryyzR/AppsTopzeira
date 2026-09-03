@@ -4,6 +4,10 @@ export interface ToonMaterialOptions {
   color: THREE.ColorRepresentation;
   gradientBands?: 3 | 4 | 5 | number;
   gradientMap?: THREE.Texture;
+  map?: THREE.Texture | null;
+  bumpMap?: THREE.Texture | null;
+  bumpScale?: number;
+  normalMap?: THREE.Texture | null;
   rimColor?: THREE.ColorRepresentation;
   rimPower?: number;
   rimIntensity?: number;
@@ -202,6 +206,10 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
   const mat = new THREE.MeshToonMaterial({
     color: options.color,
     gradientMap,
+    map: options.map ?? null,
+    bumpMap: options.bumpMap ?? null,
+    bumpScale: options.bumpScale !== undefined ? options.bumpScale : 1.0,
+    normalMap: options.normalMap ?? null,
     emissive: options.emissive || 0x000000,
     emissiveIntensity: options.emissiveIntensity !== undefined ? options.emissiveIntensity : 1.0,
     transparent: options.transparent ?? false,
@@ -224,7 +232,7 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
   mat.userData.shadowIntensity = shadowIntensity;
 
   mat.customProgramCacheKey = () => {
-    return `ToonMat_b${bands}`;
+    return `ToonMat_b${bands}_m${options.map ? '1' : '0'}`;
   };
 
   mat.onBeforeCompile = (shader) => {
