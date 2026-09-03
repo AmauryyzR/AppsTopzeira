@@ -18,11 +18,12 @@ export class PhysicsSimulation {
   private readonly playerRadius = 0.42;
   private readonly playerHeight = 1.85;
 
-  // Newtonian Gravitational Constants
-  // g = 22.0 m/s^2. For target apex height h = 2.35m: v0 = sqrt(2 * g * h) ~= 10.16 m/s
-  private readonly gravity = 22.0;
-  private readonly baseJumpImpulse = 10.2;
-  private readonly terminalVelocity = -28.0;
+  // Snappy Gravitational Physics (Fast Responsive Fall)
+  // Rise gravity: 24.0 m/s^2 | Fall gravity: 48.0 m/s^2 (2x descent acceleration for crisp, weighty landing)
+  private readonly riseGravity = 24.0;
+  private readonly fallGravity = 48.0;
+  private readonly baseJumpImpulse = 11.2;
+  private readonly terminalVelocity = -36.0;
 
   // Horizontal Kinematics
   private readonly walkSpeed = 6.4;
@@ -124,9 +125,10 @@ export class PhysicsSimulation {
       this.jumpSquash = -0.22;
     }
 
-    // 5. Gravitational Physics (Clean, natural parabolic arc with zero apex hang)
+    // 5. Gravitational Physics (Natural rise, fast & snappy fall)
     if (!this.isGrounded) {
-      this.velocity.y -= this.gravity * dt;
+      const currentGravity = this.velocity.y > 0 ? this.riseGravity : this.fallGravity;
+      this.velocity.y -= currentGravity * dt;
 
       // Terminal fall velocity clamp
       if (this.velocity.y < this.terminalVelocity) {

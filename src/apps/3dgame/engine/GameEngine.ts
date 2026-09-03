@@ -6,6 +6,7 @@ import { PhysicsSimulation } from './PhysicsSimulation';
 import { InputManager } from '../input/InputManager';
 import { SkyDome } from './shaders/SkyDomeShader';
 import { disposeToonCache } from './shaders/ToonMaterial';
+import { AtmosphericVFXSystem } from './vfx/AtmosphericVFXSystem';
 
 export class GameEngine {
   public readonly scene: THREE.Scene;
@@ -16,6 +17,7 @@ export class GameEngine {
   public readonly physics: PhysicsSimulation;
   public readonly input: InputManager;
   public readonly skyDome: SkyDome;
+  public readonly vfx: AtmosphericVFXSystem;
   public sunLight!: THREE.DirectionalLight;
 
   private container: HTMLElement;
@@ -80,6 +82,10 @@ export class GameEngine {
 
     this.playerCharacter = new PlayerCharacter();
     this.scene.add(this.playerCharacter.group);
+
+    // Dynamic Cel-Shaded Atmospheric VFX (Loop 7: Sakura, Fireflies, Splashes, Dust)
+    this.vfx = new AtmosphericVFXSystem();
+    this.scene.add(this.vfx.group);
 
     this.physics = new PhysicsSimulation(0, 0, 8);
 
@@ -181,7 +187,15 @@ export class GameEngine {
     // 7. Update Stylized Water & Fountain Hydrodynamics (Waves, Caustics, Cascades)
     this.parkWorld.update(dt, this.sunLight?.position);
 
-    // 8. Render Scene
+    // 8. Update Dynamic Cel-Shaded Atmospheric VFX (Sakura, Fireflies, Splashes, Dust)
+    this.vfx.update(
+      dt,
+      this.physics.position,
+      this.physics.isGrounded,
+      this.physics.speed
+    );
+
+    // 9. Render Scene
     this.renderer.render(this.scene, this.cameraRig.camera);
 
     this.animFrameId = requestAnimationFrame(this.loop);
@@ -201,6 +215,7 @@ export class GameEngine {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+    this.vfx.dispose();
     this.skyDome.dispose();
     this.cameraRig.dispose();
     this.parkWorld.dispose();

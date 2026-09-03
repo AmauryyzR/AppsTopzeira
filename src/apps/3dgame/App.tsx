@@ -3,6 +3,7 @@ import { GameEngine } from './engine/GameEngine';
 import { InputManager } from './input/InputManager';
 import { RobloxJoystick } from './components/RobloxJoystick';
 import { MobileJumpButton } from './components/MobileJumpButton';
+import { MobileFullscreenButton } from './components/MobileFullscreenButton';
 
 export default function App3DGame() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,7 @@ export default function App3DGame() {
 
       {/* Mobile Touch Controls Layer */}
       <div className="tg-mobile-controls">
+        <MobileFullscreenButton />
         <RobloxJoystick input={input} />
         <MobileJumpButton input={input} />
       </div>
