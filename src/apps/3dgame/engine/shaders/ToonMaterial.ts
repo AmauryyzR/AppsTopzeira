@@ -34,15 +34,24 @@ export function getDiscreteGradientMap(bands: number = 4): THREE.DataTexture {
     return gradientTextureCache.get(clampedBands)!;
   }
 
-  const width = clampedBands;
+  const width = 256;
   const data = new Uint8Array(width);
 
-  // Discrete bands stepped from deep shadow to full direct sunlight
+  // Smooth antialiased cel-shading steps (Brawl Stars / Genshin / BotW style)
   for (let i = 0; i < width; i++) {
-    // Normalised step values: e.g. for 4 bands -> ~64, 128, 192, 255
-    const stepRatio = (i + 1) / width;
-    const luma = Math.round(Math.pow(stepRatio, 0.95) * 255);
-    data[i] = Math.max(35, Math.min(255, luma));
+    const u = i / (width - 1);
+    const bandStep = u * clampedBands;
+    const bandIndex = Math.min(clampedBands - 1, Math.floor(bandStep));
+    const bandFrac = bandStep - bandIndex;
+
+    // Smoothstep transition over the boundary to prevent polygonal faceting
+    const edge = THREE.MathUtils.smoothstep(bandFrac, 0.88, 1.0);
+    const currLuma = (bandIndex + 1) / clampedBands;
+    const nextLuma = (Math.min(clampedBands, bandIndex + 2)) / clampedBands;
+    const lumaRatio = THREE.MathUtils.lerp(currLuma, nextLuma, edge);
+
+    const val = Math.round(Math.pow(lumaRatio, 0.95) * 255);
+    data[i] = Math.max(35, Math.min(255, val));
   }
 
   const texture = new THREE.DataTexture(
@@ -52,8 +61,8 @@ export function getDiscreteGradientMap(bands: number = 4): THREE.DataTexture {
     THREE.RedFormat,
     THREE.UnsignedByteType
   );
-  texture.minFilter = THREE.NearestFilter;
-  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.generateMipmaps = false;
