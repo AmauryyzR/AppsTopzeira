@@ -366,3 +366,244 @@ export function createRubberSoleTexture(options: TextureOptions = {}): THREE.Tex
 
   return texture;
 }
+
+/**
+ * High-Resolution Procedural Anime Face Texture for Leon (1024x1024)
+ * - Buttery-smooth vector antialiased anime eyes with vibrant cyan caustic irises and double star catchlights.
+ * - Confident brawler eyebrows and expressive smirk holding the lollipop.
+ * - Soft peach skin tone with gentle cheek blush and natural hood shadow gradient.
+ * - 100% elimination of 3D polygonal clipping and mesh fragmentation on the face.
+ */
+export function createLeonFaceTexture(options: TextureOptions = {}): THREE.Texture {
+  const width = options.width || 1024;
+  const height = options.height || 1024;
+
+  const canvas = createOffscreenCanvas(width, height);
+  if (!canvas) return createFallbackTexture();
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return createFallbackTexture();
+
+  // 1. Oval Anime Face Mask (eliminates square plane corners and lets 3D sphere frame naturally)
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(512, 530, 430, 460, 0, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Warm rich brawler skin tone (rich peach with golden anime glow, doesn't wash out under bright lights!)
+  const skinGrad = ctx.createLinearGradient(0, 80, 0, height);
+  skinGrad.addColorStop(0, '#fca574');
+  skinGrad.addColorStop(0.25, '#fdb992');
+  skinGrad.addColorStop(0.65, '#fdb082');
+  skinGrad.addColorStop(1, '#f87171');
+  ctx.fillStyle = skinGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Soft Ambient Shadow Gradient from Hood Overhang (Top Forehead)
+  const hoodShadowGrad = ctx.createLinearGradient(0, 0, 0, height * 0.40);
+  hoodShadowGrad.addColorStop(0, 'rgba(15, 23, 42, 0.45)');
+  hoodShadowGrad.addColorStop(0.65, 'rgba(15, 23, 42, 0.15)');
+  hoodShadowGrad.addColorStop(1, 'rgba(15, 23, 42, 0.0)');
+  ctx.fillStyle = hoodShadowGrad;
+  ctx.fillRect(0, 0, width, height * 0.40);
+
+  // 3. Cute Anime Rosy Cheek Blush
+  const drawBlush = (cx: number, cy: number) => {
+    const blushGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 120);
+    blushGrad.addColorStop(0, 'rgba(244, 63, 94, 0.52)');
+    blushGrad.addColorStop(0.55, 'rgba(244, 63, 94, 0.24)');
+    blushGrad.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
+    ctx.fillStyle = blushGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 120, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle anime blush parallel accent streaks
+    ctx.strokeStyle = 'rgba(244, 63, 94, 0.60)';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(cx + i * 24 - 14, cy - 16);
+      ctx.lineTo(cx + i * 24 + 14, cy + 16);
+      ctx.stroke();
+    }
+  };
+  drawBlush(260, 625);
+  drawBlush(764, 625);
+
+  // 4. Large, Expressive Anime Hero Eyes
+  const drawAnimeEye = (cx: number, cy: number, isLeft: boolean) => {
+    const eyeW = 135;
+    const eyeH = 112;
+
+    // --- Sclera (White base with soft upper sky shadow) ---
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - eyeW * 0.55, cy + 12);
+    ctx.bezierCurveTo(cx - eyeW * 0.35, cy - eyeH * 0.65, cx + eyeW * 0.35, cy - eyeH * 0.65, cx + eyeW * 0.55, cy + 12);
+    ctx.bezierCurveTo(cx + eyeW * 0.35, cy + eyeH * 0.48, cx - eyeW * 0.35, cy + eyeH * 0.48, cx - eyeW * 0.55, cy + 12);
+    ctx.closePath();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Upper sclera shadow
+    const scleraShadow = ctx.createLinearGradient(0, cy - eyeH * 0.60, 0, cy + 5);
+    scleraShadow.addColorStop(0, 'rgba(100, 116, 139, 0.55)');
+    scleraShadow.addColorStop(1, 'rgba(100, 116, 139, 0.0)');
+    ctx.fillStyle = scleraShadow;
+    ctx.fill();
+
+    // Clip to eye opening for iris rendering
+    ctx.clip();
+
+    // --- Vibrant Multi-Tone Cyan Iris ---
+    const irisR = 52;
+    const irisY = cy + 2;
+    ctx.beginPath();
+    ctx.ellipse(cx, irisY, irisR * 0.88, irisR, 0, 0, Math.PI * 2);
+
+    const irisGrad = ctx.createLinearGradient(0, irisY - irisR, 0, irisY + irisR);
+    irisGrad.addColorStop(0, '#0369a1');     // Deep navy cyan
+    irisGrad.addColorStop(0.35, '#0284c7');  // Royal cyan
+    irisGrad.addColorStop(0.70, '#06b6d4');  // Bright turquoise
+    irisGrad.addColorStop(0.92, '#38bdf8');  // Electric cyan
+    irisGrad.addColorStop(1, '#e0f2fe');     // Radiant highlight base
+    ctx.fillStyle = irisGrad;
+    ctx.fill();
+
+    // Limbal ring outer contrast
+    ctx.lineWidth = 5.5;
+    ctx.strokeStyle = '#082f49';
+    ctx.stroke();
+
+    // Lower Caustic Crescent Glow
+    ctx.beginPath();
+    ctx.ellipse(cx, irisY + 18, irisR * 0.70, irisR * 0.35, 0, 0, Math.PI);
+    ctx.fillStyle = 'rgba(186, 230, 253, 0.75)';
+    ctx.fill();
+
+    // Obsidian Anime Pupil
+    ctx.beginPath();
+    ctx.ellipse(cx, irisY - 4, 24, 32, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#090d16';
+    ctx.fill();
+
+    // Double Catchlight Highlights
+    // Primary large crisp circular highlight
+    ctx.beginPath();
+    ctx.arc(cx + (isLeft ? 15 : 12), irisY - 14, 13, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // Secondary soft circular highlight
+    ctx.beginPath();
+    ctx.arc(cx - (isLeft ? 14 : 16), irisY + 16, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.fill();
+
+    // Diamond twinkle star
+    ctx.beginPath();
+    ctx.arc(cx - 3, irisY - 22, 4.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    ctx.restore(); // Restore clip
+
+    // --- Thick Upper Eyeliner with Confident Anime Wing ---
+    ctx.save();
+    ctx.strokeStyle = '#090d16';
+    ctx.lineWidth = 11;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    const x0 = cx - eyeW * 0.58;
+    const x1 = cx + eyeW * 0.58;
+    const yMid = cy - eyeH * 0.62;
+
+    ctx.moveTo(x0, cy + 12);
+    ctx.quadraticCurveTo(cx, yMid - 6, x1, cy + 6);
+    ctx.stroke();
+
+    // Cat-eye wing flick
+    const wingDir = isLeft ? -1 : 1;
+    const outerX = isLeft ? x0 : x1;
+    ctx.fillStyle = '#090d16';
+    ctx.beginPath();
+    ctx.moveTo(outerX, cy + (isLeft ? 12 : 6));
+    ctx.lineTo(outerX + wingDir * 20, cy - 8);
+    ctx.lineTo(outerX - wingDir * 12, cy - 14);
+    ctx.closePath();
+    ctx.fill();
+
+    // Subtle Lower Eyelid Accent Line
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 26, 40, isLeft ? 0.35 * Math.PI : 0.45 * Math.PI, isLeft ? 0.55 * Math.PI : 0.65 * Math.PI);
+    ctx.stroke();
+
+    ctx.restore();
+
+    // --- Confident Hero Eyebrows ---
+    ctx.save();
+    ctx.strokeStyle = '#082f49';
+    ctx.lineWidth = 8.5;
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    const browY = cy - 88;
+    if (isLeft) {
+      ctx.moveTo(cx - 56, browY + 8);
+      ctx.quadraticCurveTo(cx - 10, browY - 14, cx + 52, browY + 2);
+    } else {
+      ctx.moveTo(cx - 52, browY + 2);
+      ctx.quadraticCurveTo(cx + 10, browY - 14, cx + 56, browY + 8);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  drawAnimeEye(360, 485, true);
+  drawAnimeEye(664, 485, false);
+
+  // 5. Cute Confident Brawler Smirk / Smile (Right Corner Upturn for Lollipop)
+  ctx.save();
+  ctx.strokeStyle = '#090d16';
+  ctx.lineWidth = 7.5;
+  ctx.lineCap = 'round';
+
+  ctx.beginPath();
+  ctx.moveTo(465, 680);
+  ctx.quadraticCurveTo(525, 712, 600, 672);
+  ctx.stroke();
+
+  // Smirk corner tick
+  ctx.beginPath();
+  ctx.lineWidth = 5.5;
+  ctx.moveTo(595, 676);
+  ctx.lineTo(610, 664);
+  ctx.stroke();
+
+  // Subtle dark-pink lower lip curve
+  ctx.strokeStyle = 'rgba(225, 29, 72, 0.45)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(530, 715, 26, 0.22 * Math.PI, 0.78 * Math.PI);
+  ctx.stroke();
+
+  ctx.restore();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  return texture;
+}
+
