@@ -378,19 +378,22 @@ export class PlayerCharacter {
     this.headGroup.position.set(0, 1.160, 0.015);
     this.modelRoot.add(this.headGroup);
 
-    // Outer Chameleon Hood (R = 0.260, open front 120°)
-    // Bottom reaches y = -0.260 in headGroup -> World Y = 0.900 (Inside Torso Y = 0.940!)
+    // Outer Chameleon Hood (Seamless spherical dome: 100% solid top, back, and sides)
+    // Using thetaLength = 0.68*PI rotated -PI/2 around X axis.
+    // The pole is at -Z (back of skull). Sphere wraps continuously across top, nape, and sides,
+    // terminating cleanly in a smooth circular face opening in front (+Z). ZERO HOLES ON TOP!
     const hoodGeo = this.track(
       new THREE.SphereGeometry(
-        0.260,
+        0.270,
         36,
-        28,
-        Math.PI * 0.85,
-        Math.PI * 1.30,
+        24,
         0,
-        Math.PI
+        Math.PI * 2,
+        0,
+        Math.PI * 0.68
       )
     );
+    hoodGeo.rotateX(-Math.PI / 2);
     hoodGeo.scale(1.02, 1.04, 1.02);
     const hoodMesh = new THREE.Mesh(hoodGeo, hoodieGreenMat);
     hoodMesh.position.set(0, 0.01, -0.01);
@@ -409,66 +412,97 @@ export class PlayerCharacter {
       this.headGroup.add(spike);
     }
 
-    // Peach Head Base Sphere
-    const headBaseGeo = this.track(new THREE.SphereGeometry(0.210, 28, 24));
-    headBaseGeo.scale(1.0, 1.02, 0.90);
-    const headBase = new THREE.Mesh(headBaseGeo, skinToneMat);
-    headBase.position.set(0, -0.01, 0.02);
-    headBase.castShadow = true;
-    this.headGroup.add(headBase);
+    // Peach Face Front Dome (Convex cap STRICTLY confined inside the hood rim: ZERO skin leaks on sides/temples/top)
+    const faceCapGeo = this.track(new THREE.SphereGeometry(0.190, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.44));
+    faceCapGeo.rotateX(Math.PI / 2);
+    faceCapGeo.scale(1.0, 1.06, 0.60);
+    const faceMesh = new THREE.Mesh(faceCapGeo, skinToneMat);
+    faceMesh.position.set(0, -0.005, 0.095);
+    faceMesh.castShadow = true;
+    this.headGroup.add(faceMesh);
 
-    // Dark Green Hood Face Rim (Padded bezel framing the opening)
-    // Bottom rests at local y = -0.190 -> World Y = 0.970 (Nestled directly inside the cowl at Y = 0.990!)
-    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.190, 0.030, 18, 36));
-    hoodRimGeo.scale(1.0, 1.08, 0.70);
+    // Dark Green Hood Face Rim (Thick padded bezel framing the face opening)
+    // Sits flush at z = 0.140, completely overlapping the boundary of the face cap and hood opening
+    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.205, 0.036, 20, 36));
+    hoodRimGeo.scale(1.0, 1.06, 0.70);
     const hoodRim = new THREE.Mesh(hoodRimGeo, hoodTrimDarkGreenMat);
-    hoodRim.position.set(0, 0.00, 0.135);
+    hoodRim.position.set(0, 0.00, 0.140);
     hoodRim.castShadow = true;
     this.headGroup.add(hoodRim);
 
     // Curved Hood Visor / Brim over the forehead
     const visorShape = new THREE.Shape();
-    visorShape.moveTo(-0.19, 0);
-    visorShape.quadraticCurveTo(0, 0.12, 0.19, 0);
-    visorShape.quadraticCurveTo(0, 0.05, -0.19, 0);
+    visorShape.moveTo(-0.20, 0);
+    visorShape.quadraticCurveTo(0, 0.13, 0.20, 0);
+    visorShape.quadraticCurveTo(0, 0.05, -0.20, 0);
 
     const visorGeo = this.track(
       new THREE.ExtrudeGeometry(visorShape, {
-        depth: 0.022,
+        depth: 0.024,
         bevelEnabled: true,
         bevelSegments: 2,
         steps: 1,
-        bevelSize: 0.009,
-        bevelThickness: 0.009,
+        bevelSize: 0.010,
+        bevelThickness: 0.010,
       })
     );
     visorGeo.center();
     const visorMesh = new THREE.Mesh(visorGeo, hoodTrimDarkGreenMat);
-    visorMesh.position.set(0, 0.125, 0.180);
-    visorMesh.rotation.set(0.16, 0, 0);
+    visorMesh.position.set(0, 0.140, 0.165);
+    visorMesh.rotation.set(0.18, 0, 0);
     visorMesh.castShadow = true;
     this.headGroup.add(visorMesh);
 
-    // Leon's Signature Soft Anime Hair Bangs peeking under visor
-    const bangsGroup = new THREE.Group();
-    bangsGroup.position.set(0, 0.095, 0.178);
+    // ==========================================
+    // SCULPTED VOLUMETRIC ANIME HAIR LOCKS
+    // ==========================================
+    const hairGroup = new THREE.Group();
+    hairGroup.position.set(0, 0.120, 0.155);
 
-    const bangConfigs = [
-      { x: 0.01, y: 0.00, z: 0.02, r: 0.035, len: 0.105, rotZ: 0.08, rotX: 0.24 },
-      { x: -0.055, y: 0.01, z: 0.015, r: 0.030, len: 0.090, rotZ: 0.30, rotX: 0.20 },
-      { x: 0.065, y: 0.01, z: 0.015, r: 0.031, len: 0.095, rotZ: -0.24, rotX: 0.22 },
+    const createHairLockShape = (width: number, length: number, curveX: number) => {
+      const s = new THREE.Shape();
+      s.moveTo(-width / 2, 0);
+      s.quadraticCurveTo(curveX * 0.4, -length * 0.45, -width * 0.15 + curveX, -length);
+      s.quadraticCurveTo(curveX * 0.7 + width * 0.15, -length * 0.50, width / 2, 0);
+      s.closePath();
+      return s;
+    };
+
+    const lockExtrudeSettings = {
+      depth: 0.015,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.006,
+      bevelThickness: 0.006,
+    };
+
+    const hairLocksConfig = [
+      // 1. Center Hero Lock (Graceful sweep to right)
+      { width: 0.062, len: 0.115, curveX: 0.025, x: 0.010, y: -0.015, z: 0.025, rx: 0.24, rz: 0.06 },
+      // 2. Left Framing Lock (Swoop left framing the brow)
+      { width: 0.052, len: 0.095, curveX: -0.030, x: -0.055, y: -0.010, z: 0.018, rx: 0.20, rz: 0.25 },
+      // 3. Right Framing Lock (Swoop right framing the brow)
+      { width: 0.054, len: 0.100, curveX: 0.028, x: 0.065, y: -0.010, z: 0.020, rx: 0.22, rz: -0.22 },
+      // 4. Dimensional Top-Volume Lock (Layered above center)
+      { width: 0.044, len: 0.075, curveX: 0.018, x: 0.005, y: 0.005, z: 0.034, rx: 0.28, rz: 0.04 },
+      // 5. Left Temple Tendril
+      { width: 0.035, len: 0.070, curveX: -0.020, x: -0.100, y: -0.030, z: 0.008, rx: 0.14, rz: 0.40 },
+      // 6. Right Temple Tendril
+      { width: 0.035, len: 0.070, curveX: 0.020, x: 0.105, y: -0.030, z: 0.010, rx: 0.15, rz: -0.38 },
     ];
 
-    for (const b of bangConfigs) {
-      const bGeo = this.track(new THREE.ConeGeometry(b.r, b.len, 14));
-      bGeo.rotateZ(b.rotZ);
-      bGeo.rotateX(b.rotX);
-      const bMesh = new THREE.Mesh(bGeo, hairTealMat);
-      bMesh.position.set(b.x, b.y, b.z);
-      bMesh.castShadow = true;
-      bangsGroup.add(bMesh);
+    for (const h of hairLocksConfig) {
+      const lockShape = createHairLockShape(h.width, h.len, h.curveX);
+      const lockGeo = this.track(new THREE.ExtrudeGeometry(lockShape, lockExtrudeSettings));
+      lockGeo.center();
+      const lockMesh = new THREE.Mesh(lockGeo, hairTealMat);
+      lockMesh.position.set(h.x, h.y, h.z);
+      lockMesh.rotation.set(h.rx, 0, h.rz);
+      lockMesh.castShadow = true;
+      hairGroup.add(lockMesh);
     }
-    this.headGroup.add(bangsGroup);
+    this.headGroup.add(hairGroup);
 
     // Expressive Hero Eyes
     const buildExpressiveHeroEye = (xSign: number) => {
