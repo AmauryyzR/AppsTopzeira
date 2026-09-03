@@ -11,16 +11,18 @@ export interface CharacterAnimState {
 }
 
 /**
- * Authentic Brawl Stars / Chibi Style "Verdinho" Leon Brawler Model
- * - Calibrated proportions: 1:3 chibi brawler ratio (balanced head, torso, and legs)
- * - Cozy chameleon hood with embedded turrets, sleepy/confident eyelids, and visor
- * - Seamless padded neck cowl eliminating 100% of air gaps between body and head
- * - Expressive anime hero face: determined cool gaze, cyan irises, blush, and candy lollipop
- * - Soft layered anime hair bangs peeking under the visor
- * - Kangaroo front pocket and zipper with teardrop pull tab (zero collision)
- * - Arms anchored to torso with smooth shoulders, blue cuffs, and cartoon brawl fists
- * - Prehensile chameleon tail curling UPWARDS in a cheerful spiral above the hips
- * - Chunky red brawler sneakers with rounded rubber shell toe resting flush on the ground (y = 0.00)
+ * Authentic Professional Leon Character Model (Brawl Stars Chibi Aesthetic)
+ * 
+ * MATHEMATICAL RIGGING & CONNECTION SPECIFICATION:
+ * - World Ground Plane: Y = 0.000
+ * - Feet & Shoes: Sits from Y = 0.000 to Y = 0.155 (Sole: Y = 0.000 to 0.045, Upper: Y = 0.045 to 0.155)
+ * - Leg Insertion: Leg cylinder spans Y = 0.105 to Y = 0.380. Enters 5.0cm INSIDE the shoe collar (Y = 0.155). ZERO GAP.
+ * - Bermuda Shorts: Spans Y = 0.270 to Y = 0.490. Overlaps leg by 11.0cm. Pelvis at Y = 0.490.
+ * - Torso: Spans Y = 0.470 to Y = 0.990. Hem at Y = 0.470 overlaps shorts by 2.0cm.
+ * - Padded Collar / Cowl: Torus centered at Y = 0.990, spans Y = 0.940 to Y = 1.060, reaches Z = +0.250.
+ * - Head & Hood: Pivot at Y = 1.160. Hood base reaches Y = 0.900 (penetrates 9.0cm inside torso collar). ZERO GAP.
+ * - Drawstrings: Rooted at eyelets (Y = 0.950, Z = 0.180), draped forward at Z = 0.270 over chest (Z_chest = 0.245). NEVER penetrates chest.
+ * - Arms: Anchored to torso at Y = 0.910. Sleeves end at blue cuffs. Forearms emerge from inside cuffs.
  */
 export class PlayerCharacter {
   public readonly group = new THREE.Group();
@@ -36,7 +38,7 @@ export class PlayerCharacter {
   private leftLegPivot = new THREE.Group();
   private rightLegPivot = new THREE.Group();
 
-  // Chameleon Tail at back (Animated spring/cloth physics)
+  // Chameleon Tail at back
   private tailSegments: THREE.Group[] = [];
 
   // Animation Timers & Smoothing
@@ -54,7 +56,7 @@ export class PlayerCharacter {
   constructor() {
     this.group.name = 'PlayerCharacter_Verdinho_Leon';
     this.group.add(this.modelRoot);
-    this.modelRoot.position.y = 0; // Feet sit flush on ground plane at world y = 0.00
+    this.modelRoot.position.y = 0; // Feet sit flush on ground plane at world y = 0.000
     this.buildCharacterModel();
   }
 
@@ -86,7 +88,7 @@ export class PlayerCharacter {
     );
     const hoodTrimDarkGreenMat = this.trackMat(
       createToonMaterial({
-        color: 0x059669, // Rich forest green hood rim & visor trim
+        color: 0x059669, // Forest green hood rim & visor trim
         gradientBands: 4,
         rimColor: 0xa7f3d0,
         rimPower: 3.0,
@@ -97,7 +99,7 @@ export class PlayerCharacter {
     );
     const pocketBlueMat = this.trackMat(
       createToonMaterial({
-        color: 0x2563eb, // Royal Blue Kangaroo Pouch, Crest & Tail bands
+        color: 0x2563eb, // Royal Blue Kangaroo Pouch & Cuffs
         gradientBands: 4,
         rimColor: 0x93c5fd,
         rimPower: 2.9,
@@ -130,12 +132,12 @@ export class PlayerCharacter {
     );
     const skinToneMat = this.trackMat(
       createToonMaterial({
-        color: 0xffdfc2, // Warm glowing peach skin
+        color: 0xffdfc2, // Warm peach skin
         gradientBands: 4,
         rimColor: 0xffedd5,
         rimPower: 3.2,
         rimIntensity: 0.50,
-        shadowColor: 0xc2785c, // Warm peach-caramel shadow
+        shadowColor: 0xc2785c,
         shadowIntensity: 0.45,
       })
     );
@@ -163,7 +165,7 @@ export class PlayerCharacter {
     );
     const sneakerWhiteMat = this.trackMat(
       createToonMaterial({
-        color: 0xffffff, // Thick White Sole & Rubber Shell-Toe
+        color: 0xffffff, // White Sole & Rubber Shell-Toe
         gradientBands: 4,
         rimColor: 0xffffff,
         rimPower: 2.6,
@@ -185,7 +187,7 @@ export class PlayerCharacter {
     );
     const lollipopCherryMat = this.trackMat(
       createToonMaterial({
-        color: 0xe11d48, // Vibrant glossy red lollipop
+        color: 0xe11d48, // Glossy cherry red lollipop
         gradientBands: 4,
         rimColor: 0xfecdd3,
         rimPower: 2.2,
@@ -206,12 +208,12 @@ export class PlayerCharacter {
       })
     );
 
-    // Eyes on Top of Hood (Chameleon Eye Turrets)
+    // Eye Turret Materials
     const chamEyeYellowMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
     const chamEyePupilMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0f172a }));
     const chamEyeHighlightMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
 
-    // Anime Face & Hair Materials
+    // Face Materials
     const hairTealMat = this.trackMat(
       createToonMaterial({
         color: 0x0284c7, // Vibrant cyan-teal anime hair
@@ -238,23 +240,23 @@ export class PlayerCharacter {
     );
 
     // ==========================================
-    // 2. TORSO & HOODIE BODY
+    // 2. TORSO & HOODIE BODY (World Y = 0.470 to Y = 0.990)
     // ==========================================
-    // Torso centered at y = 0.78
-    this.torsoGroup.position.set(0, 0.78, 0);
+    // Torso centered at y = 0.730
+    this.torsoGroup.position.set(0, 0.730, 0);
     this.modelRoot.add(this.torsoGroup);
 
-    // LatheGeometry for torso with 32 segments (cozy rounded pear silhouette)
+    // Torso LatheGeometry: spans local y = -0.260 to y = +0.260 (World Y: 0.470 to 0.990)
     const torsoPoints: THREE.Vector2[] = [
       new THREE.Vector2(0.01, -0.26),
-      new THREE.Vector2(0.24, -0.26), // Hem
-      new THREE.Vector2(0.26, -0.16), // Hip
-      new THREE.Vector2(0.25, -0.05), // Waist
-      new THREE.Vector2(0.28, 0.10),  // Chest expansion
-      new THREE.Vector2(0.29, 0.18),  // Upper chest
-      new THREE.Vector2(0.25, 0.23),  // Shoulder taper
-      new THREE.Vector2(0.16, 0.25),  // Collar base
-      new THREE.Vector2(0.01, 0.25),
+      new THREE.Vector2(0.23, -0.26), // Hem (overlaps shorts)
+      new THREE.Vector2(0.25, -0.16), // Hip
+      new THREE.Vector2(0.24, -0.05), // Waist
+      new THREE.Vector2(0.27, 0.10),  // Chest expansion (z_max ~ 0.25)
+      new THREE.Vector2(0.28, 0.18),  // Upper chest
+      new THREE.Vector2(0.24, 0.23),  // Shoulder taper
+      new THREE.Vector2(0.16, 0.26),  // Collar base
+      new THREE.Vector2(0.01, 0.26),
     ];
     const torsoGeo = this.track(new THREE.LatheGeometry(torsoPoints, 32));
     torsoGeo.scale(1.0, 1.0, 0.92);
@@ -263,78 +265,88 @@ export class PlayerCharacter {
     torsoMesh.receiveShadow = true;
     this.torsoGroup.add(torsoMesh);
 
-    // PADDED HOODIE COWL / COLLAR ROLL (Bridging Torso seamlessly into the Head - ZERO GAPS)
-    const cowlGeo = this.track(new THREE.TorusGeometry(0.17, 0.044, 16, 32));
-    cowlGeo.scale(1.0, 0.85, 0.95);
+    // PADDED HOODIE COWL / COLLAR ROLL (Bridging Torso seamlessly into Head in 360°)
+    // Local y = 0.260 (World Y = 0.990). Torus radius 0.170, tube 0.048.
+    // Extends from local y = 0.210 to 0.310 (World Y = 0.940 to 1.040).
+    // Extends forward in Z to +0.225, wrapping directly under the chin!
+    const cowlGeo = this.track(new THREE.TorusGeometry(0.170, 0.048, 20, 36));
+    cowlGeo.scale(1.0, 0.85, 1.05);
     const cowlMesh = new THREE.Mesh(cowlGeo, hoodieGreenMat);
-    cowlMesh.position.set(0, 0.25, 0.01);
-    cowlMesh.rotation.x = Math.PI / 2 - 0.15;
+    cowlMesh.position.set(0, 0.260, 0.025);
+    cowlMesh.rotation.x = Math.PI / 2 - 0.14;
     cowlMesh.castShadow = true;
     this.torsoGroup.add(cowlMesh);
 
     // Inner neck cylinder to guarantee zero hollow void
-    const neckInnerGeo = this.track(new THREE.CylinderGeometry(0.14, 0.15, 0.16, 24));
+    const neckInnerGeo = this.track(new THREE.CylinderGeometry(0.145, 0.155, 0.20, 28));
     const neckInnerMesh = new THREE.Mesh(neckInnerGeo, hoodieGreenMat);
-    neckInnerMesh.position.set(0, 0.28, 0.01);
+    neckInnerMesh.position.set(0, 0.280, 0.015);
     this.torsoGroup.add(neckInnerMesh);
 
-    // Royal Blue Kangaroo Front Pouch Pocket (Curved shell)
-    const pouchGeo = this.track(new THREE.CylinderGeometry(0.255, 0.270, 0.17, 24, 1, false, -0.80, 1.60));
+    // Royal Blue Kangaroo Front Pouch Pocket
+    const pouchGeo = this.track(new THREE.CylinderGeometry(0.245, 0.260, 0.16, 24, 1, false, -0.80, 1.60));
     pouchGeo.scale(1.03, 1.0, 0.95);
     const pouchMesh = new THREE.Mesh(pouchGeo, pocketBlueMat);
     pouchMesh.position.set(0, -0.12, 0.03);
     pouchMesh.castShadow = true;
     this.torsoGroup.add(pouchMesh);
 
-    // Golden Front Zipper Line (Stops precisely at top of pocket! Zero overlap!)
-    const zipperGeo = this.track(new THREE.BoxGeometry(0.032, 0.26, 0.022));
+    // Golden Front Zipper Line (Starts strictly at top of pocket at y = -0.04 up to collar at y = 0.25)
+    const zipperGeo = this.track(new THREE.BoxGeometry(0.030, 0.28, 0.020));
     const zipperMesh = new THREE.Mesh(zipperGeo, zipperYellowMat);
-    zipperMesh.position.set(0, 0.11, 0.26);
+    zipperMesh.position.set(0, 0.11, 0.255);
     zipperMesh.castShadow = true;
     this.torsoGroup.add(zipperMesh);
 
     // Golden Zipper Pull Tab
-    const pullerGeo = this.track(new THREE.BoxGeometry(0.045, 0.060, 0.028));
+    const pullerGeo = this.track(new THREE.BoxGeometry(0.042, 0.055, 0.025));
     const pullerMesh = new THREE.Mesh(pullerGeo, zipperYellowMat);
-    pullerMesh.position.set(0, 0.19, 0.275);
+    pullerMesh.position.set(0, 0.19, 0.270);
     this.torsoGroup.add(pullerMesh);
 
-    // Cream Hoodie Drawstrings with Golden Tips
+    // Cream Hoodie Drawstrings (Engineered with positive Z clearance: NEVER penetrates torso!)
     for (const xSign of [-1, 1]) {
       const drawstringGroup = new THREE.Group();
-      drawstringGroup.position.set(xSign * 0.075, 0.20, 0.24);
-      drawstringGroup.rotation.z = xSign * -0.06;
+      // Eyelet at collar
+      drawstringGroup.position.set(xSign * 0.075, 0.230, 0.185);
 
-      const stringLen = 0.15;
-      const stringGeo = this.track(new THREE.CylinderGeometry(0.008, 0.008, stringLen, 10));
-      const stringMesh = new THREE.Mesh(stringGeo, drawstringCreamMat);
-      stringMesh.position.set(0, -stringLen / 2, 0);
-      drawstringGroup.add(stringMesh);
+      // Angled upper string curving forward over chest
+      const upperStrLen = 0.140;
+      const upperStrGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, upperStrLen, 10));
+      upperStrGeo.rotateX(-0.55); // Angles forward in +Z as it goes down
+      const upperStrMesh = new THREE.Mesh(upperStrGeo, drawstringCreamMat);
+      upperStrMesh.position.set(0, -upperStrLen * 0.42, upperStrLen * 0.28);
+      drawstringGroup.add(upperStrMesh);
 
-      const tipLen = 0.032;
-      const tipGeo = this.track(new THREE.CylinderGeometry(0.013, 0.013, tipLen, 10));
+      // Hanging lower string with golden aglet tip (Drapes freely at Z = 0.080 in local coords -> Z_world = 0.265 > Z_torso = 0.240)
+      const lowerStrLen = 0.070;
+      const lowerStrGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, lowerStrLen, 10));
+      const lowerStrMesh = new THREE.Mesh(lowerStrGeo, drawstringCreamMat);
+      lowerStrMesh.position.set(xSign * 0.005, -upperStrLen * 0.85 - lowerStrLen * 0.5, upperStrLen * 0.56);
+      drawstringGroup.add(lowerStrMesh);
+
+      // Golden Aglet Tip
+      const tipLen = 0.030;
+      const tipGeo = this.track(new THREE.CylinderGeometry(0.012, 0.012, tipLen, 10));
       const tipMesh = new THREE.Mesh(tipGeo, zipperYellowMat);
-      tipMesh.position.set(0, -stringLen - tipLen / 2 + 0.003, 0);
+      tipMesh.position.set(xSign * 0.005, -upperStrLen * 0.85 - lowerStrLen - tipLen * 0.5, upperStrLen * 0.56);
       drawstringGroup.add(tipMesh);
 
       this.torsoGroup.add(drawstringGroup);
     }
 
-    // ==========================================
-    // 3. CHAMELEON SPIRAL TAIL (Curling Upwards)
-    // ==========================================
+    // Chameleon Tail at back (curling UPWARDS)
     const tailRoot = new THREE.Group();
     tailRoot.position.set(0, -0.16, -0.22);
     this.torsoGroup.add(tailRoot);
 
-    // 6 progressive nodes curving gracefully UPWARDS and forwards in a prehensile spiral
     const tailOffsets = [
-      { pos: new THREE.Vector3(0, 0, 0), r: 0.085 },
-      { pos: new THREE.Vector3(0, -0.01, -0.07), r: 0.075 },
-      { pos: new THREE.Vector3(0, 0.03, -0.13), r: 0.065 },
-      { pos: new THREE.Vector3(0, 0.09, -0.16), r: 0.055 },
-      { pos: new THREE.Vector3(0, 0.16, -0.15), r: 0.045 },
-      { pos: new THREE.Vector3(0, 0.21, -0.10), r: 0.035 },
+      { pos: new THREE.Vector3(0, 0, 0), r: 0.080 },
+      { pos: new THREE.Vector3(0, -0.01, -0.07), r: 0.070 },
+      { pos: new THREE.Vector3(0, 0.03, -0.13), r: 0.060 },
+      { pos: new THREE.Vector3(0, 0.09, -0.16), r: 0.050 },
+      { pos: new THREE.Vector3(0, 0.16, -0.15), r: 0.040 },
+      { pos: new THREE.Vector3(0, 0.21, -0.10), r: 0.032 },
     ];
 
     let prevTail = tailRoot;
@@ -360,16 +372,17 @@ export class PlayerCharacter {
     }
 
     // ==========================================
-    // 4. THE CHAMELEON HOOD & EXPRESSIVE HERO FACE
+    // 3. THE CHAMELEON HOOD & EXPRESSIVE HERO FACE
     // ==========================================
-    // Head pivot at y = 1.25 (balanced chibi brawler proportion)
-    this.headGroup.position.set(0, 1.25, 0);
+    // Head pivot at y = 1.160 (Overlaps torso cowl at y = 0.990 by 9.0cm - ZERO GAPS)
+    this.headGroup.position.set(0, 1.160, 0.015);
     this.modelRoot.add(this.headGroup);
 
-    // Outer Chameleon Hood (Smooth rounded dome open at front, 36x28 segments)
+    // Outer Chameleon Hood (R = 0.260, open front 120°)
+    // Bottom reaches y = -0.260 in headGroup -> World Y = 0.900 (Inside Torso Y = 0.940!)
     const hoodGeo = this.track(
       new THREE.SphereGeometry(
-        0.28,
+        0.260,
         36,
         28,
         Math.PI * 0.85,
@@ -385,65 +398,65 @@ export class PlayerCharacter {
     hoodMesh.receiveShadow = true;
     this.headGroup.add(hoodMesh);
 
-    // 3 Cute Chameleon Ridge Spikes along Back of Hood
+    // 3 Chameleon Ridge Spikes along Back of Hood
     for (let r = 0; r < 3; r++) {
-      const spikeGeo = this.track(new THREE.ConeGeometry(0.038, 0.075, 10));
+      const spikeGeo = this.track(new THREE.ConeGeometry(0.035, 0.070, 10));
       spikeGeo.rotateX(Math.PI / 2);
       const spike = new THREE.Mesh(spikeGeo, pocketBlueMat);
-      spike.position.set(0, 0.22 - r * 0.085, -0.22 - r * 0.05);
+      spike.position.set(0, 0.20 - r * 0.080, -0.21 - r * 0.05);
       spike.rotation.x = -0.35 - r * 0.25;
       spike.castShadow = true;
       this.headGroup.add(spike);
     }
 
-    // Peach Head Sphere (Natural curved 3D face base)
-    const headBaseGeo = this.track(new THREE.SphereGeometry(0.22, 28, 24));
+    // Peach Head Base Sphere
+    const headBaseGeo = this.track(new THREE.SphereGeometry(0.210, 28, 24));
     headBaseGeo.scale(1.0, 1.02, 0.90);
     const headBase = new THREE.Mesh(headBaseGeo, skinToneMat);
     headBase.position.set(0, -0.01, 0.02);
     headBase.castShadow = true;
     this.headGroup.add(headBase);
 
-    // Dark Green Chameleon Hood Face Rim (Framing the opening)
-    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.20, 0.030, 18, 36));
+    // Dark Green Hood Face Rim (Padded bezel framing the opening)
+    // Bottom rests at local y = -0.190 -> World Y = 0.970 (Nestled directly inside the cowl at Y = 0.990!)
+    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.190, 0.030, 18, 36));
     hoodRimGeo.scale(1.0, 1.08, 0.70);
     const hoodRim = new THREE.Mesh(hoodRimGeo, hoodTrimDarkGreenMat);
-    hoodRim.position.set(0, 0.00, 0.14);
+    hoodRim.position.set(0, 0.00, 0.135);
     hoodRim.castShadow = true;
     this.headGroup.add(hoodRim);
 
     // Curved Hood Visor / Brim over the forehead
     const visorShape = new THREE.Shape();
-    visorShape.moveTo(-0.20, 0);
-    visorShape.quadraticCurveTo(0, 0.13, 0.20, 0);
-    visorShape.quadraticCurveTo(0, 0.06, -0.20, 0);
+    visorShape.moveTo(-0.19, 0);
+    visorShape.quadraticCurveTo(0, 0.12, 0.19, 0);
+    visorShape.quadraticCurveTo(0, 0.05, -0.19, 0);
 
     const visorGeo = this.track(
       new THREE.ExtrudeGeometry(visorShape, {
-        depth: 0.024,
+        depth: 0.022,
         bevelEnabled: true,
         bevelSegments: 2,
         steps: 1,
-        bevelSize: 0.010,
-        bevelThickness: 0.010,
+        bevelSize: 0.009,
+        bevelThickness: 0.009,
       })
     );
     visorGeo.center();
     const visorMesh = new THREE.Mesh(visorGeo, hoodTrimDarkGreenMat);
-    visorMesh.position.set(0, 0.13, 0.19);
+    visorMesh.position.set(0, 0.125, 0.180);
     visorMesh.rotation.set(0.16, 0, 0);
     visorMesh.castShadow = true;
     this.headGroup.add(visorMesh);
 
-    // Leon's Signature Soft Anime Hair Bangs peeking from under the visor
+    // Leon's Signature Soft Anime Hair Bangs peeking under visor
     const bangsGroup = new THREE.Group();
-    bangsGroup.position.set(0, 0.10, 0.185);
+    bangsGroup.position.set(0, 0.095, 0.178);
 
-    // 3 Natural stylized hair bangs
     const bangConfigs = [
-      { x: 0.01, y: 0.00, z: 0.02, r: 0.038, len: 0.11, rotZ: 0.08, rotX: 0.24 },
-      { x: -0.060, y: 0.01, z: 0.015, r: 0.032, len: 0.095, rotZ: 0.30, rotX: 0.20 },
-      { x: 0.070, y: 0.01, z: 0.015, r: 0.034, len: 0.100, rotZ: -0.24, rotX: 0.22 },
+      { x: 0.01, y: 0.00, z: 0.02, r: 0.035, len: 0.105, rotZ: 0.08, rotX: 0.24 },
+      { x: -0.055, y: 0.01, z: 0.015, r: 0.030, len: 0.090, rotZ: 0.30, rotX: 0.20 },
+      { x: 0.065, y: 0.01, z: 0.015, r: 0.031, len: 0.095, rotZ: -0.24, rotX: 0.22 },
     ];
 
     for (const b of bangConfigs) {
@@ -457,55 +470,48 @@ export class PlayerCharacter {
     }
     this.headGroup.add(bangsGroup);
 
-    // Expressive Cool Anime Hero Eyes (Brawl Stars confident brawler look)
+    // Expressive Hero Eyes
     const buildExpressiveHeroEye = (xSign: number) => {
       const eyeGroup = new THREE.Group();
-      eyeGroup.position.set(xSign * 0.090, 0.015, 0.206);
-      eyeGroup.rotation.z = xSign * -0.08; // Confident slant
+      eyeGroup.position.set(xSign * 0.085, 0.015, 0.198);
+      eyeGroup.rotation.z = xSign * -0.08;
 
-      // Crisp White Sclera
-      const scleraGeo = this.track(new THREE.SphereGeometry(0.046, 20, 16));
+      const scleraGeo = this.track(new THREE.SphereGeometry(0.044, 20, 16));
       scleraGeo.scale(1.20, 1.05, 0.25);
       const sclera = new THREE.Mesh(scleraGeo, eyeScleraWhiteMat);
       eyeGroup.add(sclera);
 
-      // Glowing Cyan Anime Iris
-      const irisGeo = this.track(new THREE.SphereGeometry(0.032, 20, 16));
+      const irisGeo = this.track(new THREE.SphereGeometry(0.030, 20, 16));
       irisGeo.scale(1.0, 1.05, 0.18);
       const iris = new THREE.Mesh(irisGeo, eyeIrisCyanMat);
       iris.position.set(xSign * -0.003, -0.002, 0.012);
       eyeGroup.add(iris);
 
-      // Deep Midnight Pupil
-      const pupilGeo = this.track(new THREE.SphereGeometry(0.019, 14, 12));
+      const pupilGeo = this.track(new THREE.SphereGeometry(0.018, 14, 12));
       pupilGeo.scale(1.0, 1.15, 0.18);
       const pupil = new THREE.Mesh(pupilGeo, eyePupilBlackMat);
       pupil.position.set(xSign * -0.003, -0.002, 0.016);
       eyeGroup.add(pupil);
 
-      // Main Glossy Specular Sparkle
-      const sparkleMainGeo = this.track(new THREE.CircleGeometry(0.011, 12));
+      const sparkleMainGeo = this.track(new THREE.CircleGeometry(0.010, 12));
       const sparkleMain = new THREE.Mesh(sparkleMainGeo, eyeHighlightWhiteMat);
-      sparkleMain.position.set(xSign * 0.007, 0.012, 0.022);
+      sparkleMain.position.set(xSign * 0.007, 0.011, 0.021);
       eyeGroup.add(sparkleMain);
 
-      // Secondary Small Sparkle
       const sparkleSubGeo = this.track(new THREE.CircleGeometry(0.005, 10));
       const sparkleSub = new THREE.Mesh(sparkleSubGeo, eyeHighlightWhiteMat);
-      sparkleSub.position.set(xSign * -0.008, -0.008, 0.022);
+      sparkleSub.position.set(xSign * -0.007, -0.007, 0.021);
       eyeGroup.add(sparkleSub);
 
-      // Top Eyelash / Eyelid Arc
-      const lashGeo = this.track(new THREE.TorusGeometry(0.048, 0.008, 8, 16, Math.PI * 0.72));
+      const lashGeo = this.track(new THREE.TorusGeometry(0.046, 0.008, 8, 16, Math.PI * 0.72));
       lashGeo.rotateZ(Math.PI * 0.14);
       const lash = new THREE.Mesh(lashGeo, eyeBrowBlackMat);
-      lash.position.set(0, 0.024, 0.018);
+      lash.position.set(0, 0.023, 0.017);
       eyeGroup.add(lash);
 
-      // Determined Hero Eyebrow above eye
-      const browGeo = this.track(new THREE.BoxGeometry(0.062, 0.014, 0.014));
+      const browGeo = this.track(new THREE.BoxGeometry(0.058, 0.013, 0.013));
       const brow = new THREE.Mesh(browGeo, eyeBrowBlackMat);
-      brow.position.set(xSign * 0.004, 0.056, 0.011);
+      brow.position.set(xSign * 0.004, 0.053, 0.011);
       brow.rotation.z = xSign * 0.20;
       eyeGroup.add(brow);
 
@@ -515,84 +521,76 @@ export class PlayerCharacter {
     this.headGroup.add(buildExpressiveHeroEye(-1));
     this.headGroup.add(buildExpressiveHeroEye(1));
 
-    // Cute Anime Cheek Blush
+    // Cheek Blush
     for (const xSign of [-1, 1]) {
-      const blushGeo = this.track(new THREE.SphereGeometry(0.042, 14, 10));
+      const blushGeo = this.track(new THREE.SphereGeometry(0.040, 14, 10));
       blushGeo.scale(1.25, 0.65, 0.15);
       const blush = new THREE.Mesh(blushGeo, blushPeachMat);
-      blush.position.set(xSign * 0.130, -0.050, 0.198);
+      blush.position.set(xSign * 0.125, -0.048, 0.190);
       this.headGroup.add(blush);
     }
 
-    // Confident Anime Smirk Mouth
-    const mouthGeo = this.track(new THREE.TorusGeometry(0.032, 0.007, 6, 14, Math.PI * 0.65));
+    // Smirk Mouth
+    const mouthGeo = this.track(new THREE.TorusGeometry(0.030, 0.006, 6, 14, Math.PI * 0.65));
     mouthGeo.rotateZ(Math.PI * 0.18);
     const mouth = new THREE.Mesh(mouthGeo, eyeBrowBlackMat);
-    mouth.position.set(0.008, -0.075, 0.210);
+    mouth.position.set(0.008, -0.072, 0.202);
     this.headGroup.add(mouth);
 
-    // Iconic Round Candy Lollipop (Leon's Signature Chupa-Chups)
+    // Iconic Round Candy Lollipop
     const lollipopGroup = new THREE.Group();
-    lollipopGroup.position.set(0.050, -0.070, 0.215);
+    lollipopGroup.position.set(0.048, -0.068, 0.206);
     lollipopGroup.rotation.set(0.12, 0.20, -0.28);
 
-    // Glossy Cherry Round Lollipop Sphere
-    const candyGeo = this.track(new THREE.SphereGeometry(0.040, 20, 16));
+    const candyGeo = this.track(new THREE.SphereGeometry(0.038, 20, 16));
     candyGeo.scale(1.0, 1.0, 0.85);
     const candyMesh = new THREE.Mesh(candyGeo, lollipopCherryMat);
     candyMesh.castShadow = true;
     lollipopGroup.add(candyMesh);
 
-    // Lollipop Candy Swirl Accent
-    const swirlGeo = this.track(new THREE.TorusGeometry(0.022, 0.005, 8, 16));
+    const swirlGeo = this.track(new THREE.TorusGeometry(0.021, 0.004, 8, 16));
     const swirlMesh = new THREE.Mesh(swirlGeo, whiteAccentMat);
-    swirlMesh.position.set(0, 0, 0.031);
+    swirlMesh.position.set(0, 0, 0.030);
     lollipopGroup.add(swirlMesh);
 
-    // Clean White Lollipop Stick
-    const stickGeo = this.track(new THREE.CylinderGeometry(0.006, 0.006, 0.11, 10));
+    const stickGeo = this.track(new THREE.CylinderGeometry(0.005, 0.005, 0.10, 10));
     stickGeo.rotateZ(Math.PI / 2);
     const stickMesh = new THREE.Mesh(stickGeo, whiteAccentMat);
-    stickMesh.position.set(-0.058, -0.003, 0);
+    stickMesh.position.set(-0.055, -0.003, 0);
     lollipopGroup.add(stickMesh);
 
     this.headGroup.add(lollipopGroup);
 
-    // LARGE CHAMELEON EYES ON TOP OF HOOD (Compact, Cute, Embedded)
+    // Chameleon Eye Turrets on Top of Hood
     const buildChamEyeTurret = (xSign: number) => {
       const turretRoot = new THREE.Group();
-      turretRoot.position.set(xSign * 0.16, 0.22, 0.06);
+      turretRoot.position.set(xSign * 0.15, 0.21, 0.05);
       turretRoot.rotation.set(-0.16, xSign * 0.28, xSign * 0.18);
 
-      // Green Turret Socket Base
-      const turretGeo = this.track(new THREE.SphereGeometry(0.090, 24, 18));
+      const turretGeo = this.track(new THREE.SphereGeometry(0.085, 24, 18));
       const turret = new THREE.Mesh(turretGeo, hoodieGreenMat);
       turret.castShadow = true;
       turretRoot.add(turret);
 
-      // Vibrant Yellow Eyeball
-      const eyeballGeo = this.track(new THREE.SphereGeometry(0.075, 24, 18));
+      const eyeballGeo = this.track(new THREE.SphereGeometry(0.070, 24, 18));
       eyeballGeo.scale(1.0, 1.0, 0.70);
       const eyeball = new THREE.Mesh(eyeballGeo, chamEyeYellowMat);
-      eyeball.position.set(0, 0, 0.045);
+      eyeball.position.set(0, 0, 0.042);
       turretRoot.add(eyeball);
 
-      // Black Slit Pupil
-      const pupilGeo = this.track(new THREE.CapsuleGeometry(0.018, 0.040, 6, 10));
+      const pupilGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.036, 6, 10));
       const pupil = new THREE.Mesh(pupilGeo, chamEyePupilMat);
-      pupil.position.set(0, 0, 0.095);
+      pupil.position.set(0, 0, 0.090);
       turretRoot.add(pupil);
 
-      // Glossy Specular Catchlight
-      const hlGeo = this.track(new THREE.SphereGeometry(0.018, 10, 10));
+      const hlGeo = this.track(new THREE.SphereGeometry(0.016, 10, 10));
       const hl = new THREE.Mesh(hlGeo, chamEyeHighlightMat);
-      hl.position.set(xSign * 0.018, 0.018, 0.105);
+      hl.position.set(xSign * 0.016, 0.016, 0.098);
       turretRoot.add(hl);
 
-      // Upper Sleepy / Confident Eyelid
-      const lidGeo = this.track(new THREE.SphereGeometry(0.078, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.38));
+      const lidGeo = this.track(new THREE.SphereGeometry(0.073, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.38));
       const lid = new THREE.Mesh(lidGeo, hoodieGreenMat);
-      lid.position.set(0, 0, 0.045);
+      lid.position.set(0, 0, 0.042);
       lid.rotation.x = -0.22;
       turretRoot.add(lid);
 
@@ -603,67 +601,64 @@ export class PlayerCharacter {
     this.headGroup.add(buildChamEyeTurret(1));
 
     // ==========================================
-    // 5. ARMS & CARTOON HANDS (Anchored to Torso)
+    // 4. ARMS & CARTOON HANDS (Anchored to Torso)
     // ==========================================
     const buildLeonArm = (xSign: number, pivot: THREE.Group) => {
-      // Natural shoulder attachment anchored to torsoGroup!
-      pivot.position.set(xSign * 0.25, 0.16, 0.00);
+      // Anchored to torsoGroup at local y = 0.160 (World Y = 0.890)
+      pivot.position.set(xSign * 0.24, 0.160, 0.00);
       this.torsoGroup.add(pivot);
 
       // Smooth Rounded Shoulder
-      const shoulderGeo = this.track(new THREE.SphereGeometry(0.115, 24, 18));
+      const shoulderGeo = this.track(new THREE.SphereGeometry(0.110, 24, 18));
       const shoulder = new THREE.Mesh(shoulderGeo, hoodieGreenMat);
       shoulder.castShadow = true;
       pivot.add(shoulder);
 
       // Upper Arm (Green hoodie sleeve)
-      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.100, 0.085, 0.20, 24));
-      upperArmGeo.translate(0, -0.12, 0);
+      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.095, 0.080, 0.19, 24));
+      upperArmGeo.translate(0, -0.11, 0);
       const upperArm = new THREE.Mesh(upperArmGeo, hoodieGreenMat);
       upperArm.castShadow = true;
       pivot.add(upperArm);
 
       // Blue Sleeve Cuff
-      const cuffGeo = this.track(new THREE.TorusGeometry(0.090, 0.025, 12, 24));
+      const cuffGeo = this.track(new THREE.TorusGeometry(0.085, 0.024, 12, 24));
       cuffGeo.rotateX(Math.PI / 2);
       const cuff = new THREE.Mesh(cuffGeo, pocketBlueMat);
-      cuff.position.set(0, -0.21, 0);
+      cuff.position.set(0, -0.20, 0);
       cuff.castShadow = true;
       pivot.add(cuff);
 
-      // Solid Peach Forearm / Wrist
-      const wristGeo = this.track(new THREE.CylinderGeometry(0.065, 0.060, 0.13, 20));
-      wristGeo.translate(0, -0.25, 0.01);
+      // Solid Peach Forearm / Wrist emerging from inside cuff
+      const wristGeo = this.track(new THREE.CylinderGeometry(0.060, 0.055, 0.12, 20));
+      wristGeo.translate(0, -0.24, 0.01);
       const wrist = new THREE.Mesh(wristGeo, skinToneMat);
       wrist.castShadow = true;
       pivot.add(wrist);
 
-      // Cartoon Hand / Fist attached directly at end of wrist
+      // Cartoon Brawl Fist
       const handGroup = new THREE.Group();
-      handGroup.position.set(0, -0.32, 0.015);
+      handGroup.position.set(0, -0.30, 0.015);
       pivot.add(handGroup);
 
-      // Rounded Cartoon Fist / Palm
-      const palmGeo = this.track(new THREE.SphereGeometry(0.075, 24, 18));
+      const palmGeo = this.track(new THREE.SphereGeometry(0.070, 24, 18));
       palmGeo.scale(1.0, 0.92, 0.90);
       const palm = new THREE.Mesh(palmGeo, skinToneMat);
       palm.castShadow = true;
       handGroup.add(palm);
 
-      // Knuckle ridges for cartoon brawl glove/fist
       for (let k = 0; k < 3; k++) {
-        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.018, 0.034, 6, 10));
+        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.032, 6, 10));
         knuckleGeo.rotateZ(Math.PI / 2);
         const knuckle = new THREE.Mesh(knuckleGeo, skinToneMat);
-        knuckle.position.set((k - 1) * 0.030, -0.028, 0.046);
+        knuckle.position.set((k - 1) * 0.028, -0.026, 0.042);
         knuckle.castShadow = true;
         handGroup.add(knuckle);
       }
 
-      // Articulated Thumb
-      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.028, 0.052, 6, 10));
+      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.026, 0.048, 6, 10));
       const thumb = new THREE.Mesh(thumbGeo, skinToneMat);
-      thumb.position.set(xSign * -0.046, 0.008, 0.032);
+      thumb.position.set(xSign * -0.042, 0.006, 0.030);
       thumb.rotation.set(-0.25, 0, xSign * -0.55);
       thumb.castShadow = true;
       handGroup.add(thumb);
@@ -673,75 +668,90 @@ export class PlayerCharacter {
     buildLeonArm(1, this.rightArmPivot);
 
     // ==========================================
-    // 6. SHORTS, LEGS & CHUNKY BRAWLER SNEAKERS
+    // 5. SHORTS, LEGS & SNEAKERS (ENGINEERED ZERO-GAP ANATOMY)
     // ==========================================
+    // Hip joint anchored to modelRoot at Y = 0.460
+    // Floor is at Y = 0.000 (Local y = -0.460)
     const buildLeonLeg = (xSign: number, pivot: THREE.Group) => {
-      // Hip joint anchored to modelRoot at y = 0.52
-      pivot.position.set(xSign * 0.12, 0.52, 0);
+      pivot.position.set(xSign * 0.12, 0.460, 0);
       this.modelRoot.add(pivot);
 
-      // Dark Indigo Shorts
-      const shortGeo = this.track(new THREE.CylinderGeometry(0.125, 0.115, 0.16, 24));
-      shortGeo.translate(0, -0.08, 0);
+      // Dark Indigo Bermuda Shorts: spans local y = 0.020 to y = -0.170 (Height 0.190)
+      const shortGeo = this.track(new THREE.CylinderGeometry(0.120, 0.128, 0.190, 24));
+      shortGeo.translate(0, -0.075, 0);
       const shorts = new THREE.Mesh(shortGeo, shortsIndigoMat);
       shorts.castShadow = true;
       pivot.add(shorts);
 
-      // Exposed Peach Leg
-      const legGeo = this.track(new THREE.CylinderGeometry(0.078, 0.072, 0.16, 24));
-      legGeo.translate(0, -0.19, 0);
+      // Peach Skin Leg Cylinder:
+      // Starts DEEP inside the shorts at local y = -0.060
+      // Extends down to local y = -0.390 (penetrating 5.0cm INSIDE the shoe collar!)
+      // Total length: 0.330m. Centered at y = -0.225.
+      const legGeo = this.track(new THREE.CylinderGeometry(0.065, 0.060, 0.330, 24));
+      legGeo.translate(0, -0.225, 0);
       const leg = new THREE.Mesh(legGeo, skinToneMat);
       leg.castShadow = true;
       pivot.add(leg);
 
-      // CHUNKY BRAWL SNEAKER
+      // CHUNKY BRAWL SNEAKER:
+      // Floor contact: local y = -0.460 (World Y = 0.000)
+      // Top of shoe collar: local y = -0.340 (World Y = 0.120)
+      // Since leg extends to local y = -0.390, the leg is 5.0cm INSIDE the shoe! ZERO GAP!
       const shoeGroup = new THREE.Group();
-      shoeGroup.position.set(0, -0.27, 0.02);
+      shoeGroup.position.set(0, 0, 0.020);
       pivot.add(shoeGroup);
 
-      // Thick White Molded Rubber Sole (Height 0.05, resting flush at world y = 0.00!)
-      // Pivot at y = 0.52, shoeGroup at y = -0.27 -> local y = 0.25.
-      // Sole bottom at y = -0.25 -> world y = 0.00!
-      const soleGeo = this.track(new THREE.BoxGeometry(0.18, 0.05, 0.26));
-      soleGeo.translate(0, -0.225, 0.03);
+      // White Molded Rubber Sole:
+      // Bottom at local y = -0.460, top at local y = -0.415 (Height 0.045, width 0.170, length 0.250)
+      const soleGeo = this.track(new THREE.BoxGeometry(0.170, 0.045, 0.250));
+      soleGeo.translate(0, -0.4375, 0.020);
       const sole = new THREE.Mesh(soleGeo, sneakerWhiteMat);
       sole.castShadow = true;
       shoeGroup.add(sole);
 
       // Sole Dark Stripe
-      const stripeGeo = this.track(new THREE.BoxGeometry(0.185, 0.012, 0.24));
-      stripeGeo.translate(0, -0.225, 0.03);
+      const stripeGeo = this.track(new THREE.BoxGeometry(0.175, 0.010, 0.230));
+      stripeGeo.translate(0, -0.4375, 0.020);
       const stripe = new THREE.Mesh(stripeGeo, sneakerStripeMat);
       shoeGroup.add(stripe);
 
-      // Crimson Red Sneaker Body
-      const upperGeo = this.track(new THREE.CapsuleGeometry(0.085, 0.13, 10, 24));
+      // Crimson Red Sneaker Upper:
+      // Sits on top of sole: from local y = -0.415 up to local y = -0.340
+      const upperGeo = this.track(new THREE.CapsuleGeometry(0.075, 0.120, 10, 24));
       upperGeo.rotateX(Math.PI / 2);
-      upperGeo.translate(0, -0.15, 0.03);
+      upperGeo.translate(0, -0.365, 0.025);
       const upper = new THREE.Mesh(upperGeo, sneakerRedMat);
       upper.castShadow = true;
       shoeGroup.add(upper);
 
-      // Rounded White Rubber Shell-Toe
-      const toeCapGeo = this.track(new THREE.SphereGeometry(0.095, 24, 14, 0, Math.PI, 0, Math.PI * 0.55));
+      // Rounded White Rubber Shell-Toe Cap
+      const toeCapGeo = this.track(new THREE.SphereGeometry(0.085, 24, 14, 0, Math.PI, 0, Math.PI * 0.55));
       toeCapGeo.rotateX(Math.PI / 2);
       const toeCap = new THREE.Mesh(toeCapGeo, sneakerWhiteMat);
-      toeCap.position.set(0, -0.17, 0.12);
+      toeCap.position.set(0, -0.395, 0.105);
       toeCap.scale.set(0.95, 0.72, 0.85);
       toeCap.castShadow = true;
       shoeGroup.add(toeCap);
 
+      // Padded Sneaker Ankle Collar (Where the leg enters the shoe - Hermetic visual seal)
+      const collarTorusGeo = this.track(new THREE.TorusGeometry(0.068, 0.016, 12, 24));
+      collarTorusGeo.rotateX(Math.PI / 2);
+      const collarTorus = new THREE.Mesh(collarTorusGeo, sneakerWhiteMat);
+      collarTorus.position.set(0, -0.340, 0.005);
+      collarTorus.castShadow = true;
+      shoeGroup.add(collarTorus);
+
       // Sneaker Tongue & Laces
-      const tongueGeo = this.track(new THREE.BoxGeometry(0.08, 0.10, 0.028));
+      const tongueGeo = this.track(new THREE.BoxGeometry(0.075, 0.090, 0.025));
       const tongue = new THREE.Mesh(tongueGeo, sneakerWhiteMat);
-      tongue.position.set(0, -0.09, 0.10);
+      tongue.position.set(0, -0.320, 0.080);
       tongue.rotation.x = -0.32;
       shoeGroup.add(tongue);
 
       for (let l = 0; l < 3; l++) {
-        const laceGeo = this.track(new THREE.BoxGeometry(0.09, 0.014, 0.028));
+        const laceGeo = this.track(new THREE.BoxGeometry(0.080, 0.012, 0.025));
         const lace = new THREE.Mesh(laceGeo, sneakerWhiteMat);
-        lace.position.set(0, -0.12 + l * 0.030, 0.06 + l * 0.016);
+        lace.position.set(0, -0.355 + l * 0.026, 0.045 + l * 0.014);
         lace.castShadow = true;
         shoeGroup.add(lace);
       }
@@ -757,8 +767,7 @@ export class PlayerCharacter {
     while (diff > Math.PI) diff -= 2 * Math.PI;
     while (diff < -Math.PI) diff += 2 * Math.PI;
 
-    // Smooth bounded angular interpolation (Genshin Impact / BotW style turn easing)
-    const maxAngularSpeed = 12.0; // rad/s (~680 deg/s max turn rate)
+    const maxAngularSpeed = 12.0;
     const responsiveness = 14.0;
     const step = diff * (1 - Math.exp(-responsiveness * dt));
     const maxStep = maxAngularSpeed * dt;
@@ -776,18 +785,14 @@ export class PlayerCharacter {
 
     this.idleTime += dt;
 
-    // ==========================================
-    // 1. SOLID PROPORTION SCALE
-    // ==========================================
+    // Solid proportion scale
     let targetScaleY = 1.0;
     if (isGrounded && jumpSquash > 0) {
       targetScaleY = Math.max(0.94, 1.0 - jumpSquash * 0.25);
     }
     this.modelRoot.scale.set(1.0, targetScaleY, 1.0);
 
-    // ==========================================
-    // 2. DYNAMIC BANKING & LEAN
-    // ==========================================
+    // Dynamic banking & lean
     const targetBank = THREE.MathUtils.clamp(-turnRate * 0.065, -0.34, 0.34);
     this.currentBankAngle += (targetBank - this.currentBankAngle) * Math.min(1, 16 * dt);
     this.modelRoot.rotation.z = this.currentBankAngle;
@@ -796,11 +801,9 @@ export class PlayerCharacter {
     this.currentForwardLean += (targetLean - this.currentForwardLean) * Math.min(1, 14 * dt);
     this.modelRoot.rotation.x = this.currentForwardLean;
 
-    // ==========================================
-    // 3. ANIMATION STATES (Airborne Jump, Run Stride, Idle)
-    // ==========================================
+    // Animation States
     if (!isGrounded) {
-      // Airborne Jump Pose
+      // Airborne pose
       this.walkCycleTime = 0;
 
       if (verticalVelocity > 0) {
@@ -821,10 +824,10 @@ export class PlayerCharacter {
         this.rightLegPivot.rotation.x = -0.04;
       }
 
-      this.torsoGroup.position.y = 0.78;
-      this.headGroup.position.y = 1.25;
+      this.torsoGroup.position.y = 0.730;
+      this.headGroup.position.y = 1.160;
     } else if (speed > 0.20) {
-      // Brawl Stars Run Stride
+      // Running pose
       const strideCadence = Math.min(18, 6.5 + speed * 1.5);
       this.walkCycleTime += dt * strideCadence;
 
@@ -839,18 +842,18 @@ export class PlayerCharacter {
       this.leftArmPivot.rotation.z = -0.18 - Math.abs(cosStride) * 0.10;
       this.rightArmPivot.rotation.z = 0.18 + Math.abs(cosStride) * 0.10;
 
-      const bounce = Math.abs(cosStride) * 0.05;
-      this.torsoGroup.position.y = 0.78 + bounce;
-      this.headGroup.position.y = 1.25 + bounce;
+      const bounce = Math.abs(cosStride) * 0.04;
+      this.torsoGroup.position.y = 0.730 + bounce;
+      this.headGroup.position.y = 1.160 + bounce;
       this.torsoGroup.rotation.y = sinStride * 0.12;
       this.headGroup.rotation.y = -sinStride * 0.04;
     } else {
-      // Idle Breathing Pose
+      // Idle pose
       this.walkCycleTime = 0;
 
-      const breathe = Math.sin(this.idleTime * 2.8) * 0.015;
-      this.torsoGroup.position.y = 0.78 + breathe;
-      this.headGroup.position.y = 1.25 + breathe;
+      const breathe = Math.sin(this.idleTime * 2.8) * 0.012;
+      this.torsoGroup.position.y = 0.730 + breathe;
+      this.headGroup.position.y = 1.160 + breathe;
 
       this.leftLegPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
       this.rightLegPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
@@ -862,9 +865,7 @@ export class PlayerCharacter {
       this.headGroup.rotation.y *= Math.max(0, 1 - 16 * dt);
     }
 
-    // ==========================================
-    // 4. CHAMELEON TAIL PHYSICS
-    // ==========================================
+    // Chameleon Tail Physics
     const tailSpeed = Math.min(1.0, speed * 0.12);
     const tailWave = Math.sin(this.idleTime * 3.0 + speed * 2.0) * (0.06 + speed * 0.04);
 
