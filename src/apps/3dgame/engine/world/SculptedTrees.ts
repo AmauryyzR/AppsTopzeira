@@ -152,8 +152,8 @@ function createOrganicFoliagePuff(
   depthScale = 1.0,
   seed = 0
 ): THREE.BufferGeometry {
-  // Dense 20x16 sphere for smooth anime contours
-  const geo = new THREE.SphereGeometry(radius, 20, 16);
+  // Dense 36x28 sphere for velvety smooth anime contours without polygon faceting
+  const geo = new THREE.SphereGeometry(radius, 36, 28);
   const pos = geo.getAttribute('position');
   const p = new THREE.Vector3();
 

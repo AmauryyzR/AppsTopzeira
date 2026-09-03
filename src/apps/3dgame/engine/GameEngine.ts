@@ -59,7 +59,7 @@ export class GameEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.renderer.setPixelRatio(dpr);
@@ -130,7 +130,9 @@ export class GameEngine {
     sunLight.shadow.camera.right = 50;
     sunLight.shadow.camera.top = 50;
     sunLight.shadow.camera.bottom = -50;
-    sunLight.shadow.bias = -0.0003;
+    sunLight.shadow.bias = -0.00008;
+    sunLight.shadow.normalBias = 0.05;
+    sunLight.shadow.radius = 2.0;
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 

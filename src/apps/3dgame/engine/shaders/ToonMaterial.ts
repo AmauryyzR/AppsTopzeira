@@ -44,10 +44,10 @@ export function getDiscreteGradientMap(bands: number = 4): THREE.DataTexture {
     const bandIndex = Math.min(clampedBands - 1, Math.floor(bandStep));
     const bandFrac = bandStep - bandIndex;
 
-    // Smoothstep transition over the boundary to prevent polygonal faceting
-    const edge = THREE.MathUtils.smoothstep(bandFrac, 0.88, 1.0);
+    // Silky smoothstep transition over boundary to eliminate banding/faceting
+    const edge = THREE.MathUtils.smoothstep(bandFrac, 0.70, 1.0);
     const currLuma = (bandIndex + 1) / clampedBands;
-    const nextLuma = (Math.min(clampedBands, bandIndex + 2)) / clampedBands;
+    const nextLuma = Math.min(clampedBands, bandIndex + 2) / clampedBands;
     const lumaRatio = THREE.MathUtils.lerp(currLuma, nextLuma, edge);
 
     const val = Math.round(Math.pow(lumaRatio, 0.95) * 255);
@@ -225,6 +225,7 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
     opacity: options.opacity !== undefined ? options.opacity : 1.0,
     side: options.side ?? THREE.FrontSide,
     depthWrite: options.depthWrite ?? true,
+    dithering: true,
   });
 
   const rimColor = new THREE.Color(options.rimColor !== undefined ? options.rimColor : 0xdbeafe);
@@ -251,11 +252,16 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
     shader.uniforms.uShadowColor = { value: shadowColor };
     shader.uniforms.uShadowIntensity = { value: shadowIntensity };
 
-    // Inject uniforms into fragment shader
+    // Inject high precision and uniforms into fragment shader
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <common>',
       /* glsl */ `
       #include <common>
+      #ifdef GL_FRAGMENT_PRECISION_HIGH
+        precision highp float;
+      #else
+        precision mediump float;
+      #endif
       uniform vec3 uRimColor;
       uniform float uRimPower;
       uniform float uRimIntensity;
@@ -277,15 +283,14 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
           0.0,
           1.0
         );
-        float shadowFactor = 1.0 - smoothstep(0.05, 0.70, directLevel);
+        float shadowFactor = 1.0 - smoothstep(0.01, 0.85, directLevel);
 
         // Blend with artistic anime shadow hue (warm terracotta, soft lavender, or deep jade)
-        vec3 stylizedShadow = mix(
+        outgoingLight = mix(
           outgoingLight,
-          uShadowColor * diffuseColor.rgb * 1.55,
+          uShadowColor * diffuseColor.rgb * 1.35,
           shadowFactor * clamp(uShadowIntensity, 0.0, 1.0)
         );
-        outgoingLight = max(outgoingLight * 0.45 + stylizedShadow * 0.55, stylizedShadow);
 
         // 2. Anime Fresnel Rim Lighting
         vec3 viewDir = normalize(vViewPosition);

@@ -258,7 +258,7 @@ export class PlayerCharacter {
       new THREE.Vector2(0.16, 0.26),  // Collar base
       new THREE.Vector2(0.01, 0.26),
     ];
-    const torsoGeo = this.track(new THREE.LatheGeometry(torsoPoints, 32));
+    const torsoGeo = this.track(new THREE.LatheGeometry(torsoPoints, 48));
     torsoGeo.scale(1.0, 1.0, 0.92);
     const torsoMesh = new THREE.Mesh(torsoGeo, hoodieGreenMat);
     torsoMesh.castShadow = true;
@@ -269,7 +269,7 @@ export class PlayerCharacter {
     // Local y = 0.260 (World Y = 0.990). Torus radius 0.170, tube 0.048.
     // Extends from local y = 0.210 to 0.310 (World Y = 0.940 to 1.040).
     // Extends forward in Z to +0.225, wrapping directly under the chin!
-    const cowlGeo = this.track(new THREE.TorusGeometry(0.170, 0.048, 20, 36));
+    const cowlGeo = this.track(new THREE.TorusGeometry(0.170, 0.048, 24, 48));
     cowlGeo.scale(1.0, 0.85, 1.05);
     const cowlMesh = new THREE.Mesh(cowlGeo, hoodieGreenMat);
     cowlMesh.position.set(0, 0.260, 0.025);
@@ -385,8 +385,8 @@ export class PlayerCharacter {
     const hoodGeo = this.track(
       new THREE.SphereGeometry(
         0.270,
+        48,
         36,
-        24,
         0,
         Math.PI * 2,
         0,
@@ -413,7 +413,7 @@ export class PlayerCharacter {
     }
 
     // Peach Face Front Dome (Convex cap STRICTLY confined inside the hood rim: ZERO skin leaks on sides/temples/top)
-    const faceCapGeo = this.track(new THREE.SphereGeometry(0.190, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.44));
+    const faceCapGeo = this.track(new THREE.SphereGeometry(0.190, 36, 28, 0, Math.PI * 2, 0, Math.PI * 0.44));
     faceCapGeo.rotateX(Math.PI / 2);
     faceCapGeo.scale(1.0, 1.06, 0.60);
     const faceMesh = new THREE.Mesh(faceCapGeo, skinToneMat);
@@ -423,7 +423,7 @@ export class PlayerCharacter {
 
     // Dark Green Hood Face Rim (Thick padded bezel framing the face opening)
     // Sits flush at z = 0.140, completely overlapping the boundary of the face cap and hood opening
-    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.205, 0.036, 20, 36));
+    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.205, 0.036, 24, 48));
     hoodRimGeo.scale(1.0, 1.06, 0.70);
     const hoodRim = new THREE.Mesh(hoodRimGeo, hoodTrimDarkGreenMat);
     hoodRim.position.set(0, 0.00, 0.140);
@@ -643,20 +643,20 @@ export class PlayerCharacter {
       this.torsoGroup.add(pivot);
 
       // Smooth Rounded Shoulder
-      const shoulderGeo = this.track(new THREE.SphereGeometry(0.110, 24, 18));
+      const shoulderGeo = this.track(new THREE.SphereGeometry(0.110, 32, 24));
       const shoulder = new THREE.Mesh(shoulderGeo, hoodieGreenMat);
       shoulder.castShadow = true;
       pivot.add(shoulder);
 
       // Upper Arm (Green hoodie sleeve)
-      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.095, 0.080, 0.19, 24));
+      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.095, 0.080, 0.19, 32));
       upperArmGeo.translate(0, -0.11, 0);
       const upperArm = new THREE.Mesh(upperArmGeo, hoodieGreenMat);
       upperArm.castShadow = true;
       pivot.add(upperArm);
 
       // Blue Sleeve Cuff
-      const cuffGeo = this.track(new THREE.TorusGeometry(0.085, 0.024, 12, 24));
+      const cuffGeo = this.track(new THREE.TorusGeometry(0.085, 0.024, 16, 32));
       cuffGeo.rotateX(Math.PI / 2);
       const cuff = new THREE.Mesh(cuffGeo, pocketBlueMat);
       cuff.position.set(0, -0.20, 0);
@@ -664,7 +664,7 @@ export class PlayerCharacter {
       pivot.add(cuff);
 
       // Solid Peach Forearm / Wrist emerging from inside cuff
-      const wristGeo = this.track(new THREE.CylinderGeometry(0.060, 0.055, 0.12, 20));
+      const wristGeo = this.track(new THREE.CylinderGeometry(0.060, 0.055, 0.12, 24));
       wristGeo.translate(0, -0.24, 0.01);
       const wrist = new THREE.Mesh(wristGeo, skinToneMat);
       wrist.castShadow = true;
@@ -675,14 +675,14 @@ export class PlayerCharacter {
       handGroup.position.set(0, -0.30, 0.015);
       pivot.add(handGroup);
 
-      const palmGeo = this.track(new THREE.SphereGeometry(0.070, 24, 18));
+      const palmGeo = this.track(new THREE.SphereGeometry(0.070, 28, 20));
       palmGeo.scale(1.0, 0.92, 0.90);
       const palm = new THREE.Mesh(palmGeo, skinToneMat);
       palm.castShadow = true;
       handGroup.add(palm);
 
       for (let k = 0; k < 3; k++) {
-        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.032, 6, 10));
+        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.032, 8, 12));
         knuckleGeo.rotateZ(Math.PI / 2);
         const knuckle = new THREE.Mesh(knuckleGeo, skinToneMat);
         knuckle.position.set((k - 1) * 0.028, -0.026, 0.042);
@@ -690,7 +690,7 @@ export class PlayerCharacter {
         handGroup.add(knuckle);
       }
 
-      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.026, 0.048, 6, 10));
+      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.026, 0.048, 8, 12));
       const thumb = new THREE.Mesh(thumbGeo, skinToneMat);
       thumb.position.set(xSign * -0.042, 0.006, 0.030);
       thumb.rotation.set(-0.25, 0, xSign * -0.55);
@@ -711,7 +711,7 @@ export class PlayerCharacter {
       this.modelRoot.add(pivot);
 
       // Dark Indigo Bermuda Shorts: spans local y = 0.020 to y = -0.170 (Height 0.190)
-      const shortGeo = this.track(new THREE.CylinderGeometry(0.120, 0.128, 0.190, 24));
+      const shortGeo = this.track(new THREE.CylinderGeometry(0.120, 0.128, 0.190, 32));
       shortGeo.translate(0, -0.075, 0);
       const shorts = new THREE.Mesh(shortGeo, shortsIndigoMat);
       shorts.castShadow = true;
@@ -721,7 +721,7 @@ export class PlayerCharacter {
       // Starts DEEP inside the shorts at local y = -0.060
       // Extends down to local y = -0.390 (penetrating 5.0cm INSIDE the shoe collar!)
       // Total length: 0.330m. Centered at y = -0.225.
-      const legGeo = this.track(new THREE.CylinderGeometry(0.065, 0.060, 0.330, 24));
+      const legGeo = this.track(new THREE.CylinderGeometry(0.065, 0.060, 0.330, 32));
       legGeo.translate(0, -0.225, 0);
       const leg = new THREE.Mesh(legGeo, skinToneMat);
       leg.castShadow = true;
