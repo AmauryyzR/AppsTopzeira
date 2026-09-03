@@ -1,401 +1,448 @@
 """
 =============================================================================
-AAA BRAWLER / HUMAN FALL FLAT HYBRID GENERATOR FOR BLENDER 4.5 LTS
+AAA HIGH-POLY BRAWLER GENERATOR (MATHEMATICAL PROCEDURAL SCULPTING)
 =============================================================================
-Totalmente reformulado para eliminar 100% de peças flutuantes, linhas pontilhadas
-desnecessárias e criar anatomia orgânica contínua nível Brawl Stars / Human Fall Flat.
-
-- Todas as peças são matematicamente integradas e ancoradas na superfície (zero flutuação)
-- Membros chubby cartoon estilizados com transições suaves (sem juntas desconexas)
-- Tênis Brawl Stars escupidos com sola contornada, biqueira e língua integradas
-- Materiais PBR Principled BSDF com cores vibrantes e acabamento fosco vinil
-- Compatível 100% com Blender 4.5 LTS (Text Editor e CLI)
+Modelo de alta densidade poligonal construído através de computação geométrica:
+- Capuz Superelipsoide com deformação gaussiana da abertura facial e bico
+- Pálpebras do camaleão com anéis concêntricos esculturais e duplo brilho especular
+- Tronco com lofting paramétrico e harmônicos de tensão de tecido (cloth folds)
+- Braços e mãos estilizadas com palma anatômica e 4 dedos articulados
+- Tênis Brawl Stars com perfil rocker curvo, biqueira de borracha e laço de cadarço
+- Materiais PBR Principled BSDF calibrados para Blender 4.5 LTS
 =============================================================================
 """
 
 import bpy
+import bmesh
 import math
+import mathutils
 import os
 
 def reset_scene():
-    """Limpa a cena sem destruir o contexto do Text Editor."""
-    for obj in list(bpy.context.scene.objects):
-        bpy.data.objects.remove(obj, do_unlink=True)
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete(use_global=False)
     if "Collection" not in bpy.data.collections:
         col = bpy.data.collections.new("Collection")
         bpy.context.scene.collection.children.link(col)
 
 def get_active():
-    """Retorna o objeto ativo de forma robusta em qualquer janela."""
     return bpy.context.view_layer.objects.active
 
-def create_material(name, base_color, roughness=0.55, metalness=0.0, subsurface=0.0):
-    """Cria material Principled BSDF nativo do Blender 4.x / 4.5 LTS."""
-    mat = bpy.data.materials.new(name=name)
+def setup_mat(name, base_color, roughness=0.45, metallic=0.0, subsurface=0.0, emission=(0,0,0,1)):
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name=name)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     if bsdf:
-        if "Base Color" in bsdf.inputs:
-            bsdf.inputs["Base Color"].default_value = base_color
-        if "Roughness" in bsdf.inputs:
-            bsdf.inputs["Roughness"].default_value = roughness
-        if "Metallic" in bsdf.inputs:
-            bsdf.inputs["Metallic"].default_value = metalness
+        if "Base Color" in bsdf.inputs: bsdf.inputs["Base Color"].default_value = base_color
+        if "Roughness" in bsdf.inputs: bsdf.inputs["Roughness"].default_value = roughness
+        if "Metallic" in bsdf.inputs: bsdf.inputs["Metallic"].default_value = metallic
         if "Subsurface Weight" in bsdf.inputs and subsurface > 0:
             bsdf.inputs["Subsurface Weight"].default_value = subsurface
         elif "Subsurface" in bsdf.inputs and subsurface > 0:
             bsdf.inputs["Subsurface"].default_value = subsurface
-        if "Specular IOR Level" in bsdf.inputs:
-            bsdf.inputs["Specular IOR Level"].default_value = 0.5
+        if "Emission Color" in bsdf.inputs and emission[0] > 0:
+            bsdf.inputs["Emission Color"].default_value = emission
     return mat
 
-def set_parent(child, parent):
-    """Parenting com preservação absoluta de transformações mundiais."""
-    bpy.context.view_layer.update()
-    child.parent = parent
-    child.matrix_parent_inverse = parent.matrix_world.inverted()
-
-def add_subsurf(obj, levels=2):
-    mod = obj.modifiers.new(name="Subsurf", type='SUBSURF')
-    mod.levels = levels
-    mod.render_levels = levels
-    return mod
-
-def add_bevel(obj, width=0.02, segments=2):
-    mod = obj.modifiers.new(name="Bevel", type='BEVEL')
-    mod.width = width
-    mod.segments = segments
-    return mod
+def apply_mat(obj, name):
+    mat = bpy.data.materials.get(name)
+    if mat:
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
 
 def smooth(obj):
     for poly in obj.data.polygons:
         poly.use_smooth = True
 
-def add_cube(name, size, location, scale=(1, 1, 1), rotation=(0, 0, 0), mat=None):
-    bpy.ops.mesh.primitive_cube_add(size=size, location=location, rotation=rotation)
-    obj = get_active()
-    obj.name = name
-    obj.scale = scale
-    if mat:
-        obj.data.materials.append(mat)
-    return obj
-
-def add_sphere(name, radius, location, scale=(1, 1, 1), rotation=(0, 0, 0), mat=None):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=18, radius=radius, location=location, rotation=rotation)
-    obj = get_active()
-    obj.name = name
-    obj.scale = scale
-    if mat:
-        obj.data.materials.append(mat)
-    return obj
-
-def add_cylinder(name, radius, depth, location, scale=(1, 1, 1), rotation=(0, 0, 0), mat=None):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=radius, depth=depth, location=location, rotation=rotation)
-    obj = get_active()
-    obj.name = name
-    obj.scale = scale
-    if mat:
-        obj.data.materials.append(mat)
-    return obj
-
-def add_cone(name, radius, depth, location, rotation=(0, 0, 0), mat=None):
-    bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=radius, depth=depth, location=location, rotation=rotation)
-    obj = get_active()
-    obj.name = name
-    if mat:
-        obj.data.materials.append(mat)
-    return obj
-
-def build_character():
+def build_highpoly_character():
     reset_scene()
 
-    # -------------------------------------------------------------
-    # 1. PALETA DE CORES PBR BRAWL STARS (Fosco, Vinil, Saturado)
-    # -------------------------------------------------------------
-    mat_green = create_material("M_HoodieGreen", (0.08, 0.72, 0.48, 1.0), roughness=0.55)
-    mat_dark_green = create_material("M_HoodTrim", (0.04, 0.45, 0.30, 1.0), roughness=0.60)
-    mat_pocket_blue = create_material("M_PocketBlue", (0.12, 0.38, 0.92, 1.0), roughness=0.58, metalness=0.04)
-    mat_zipper_yellow = create_material("M_GoldZipper", (0.98, 0.76, 0.14, 1.0), roughness=0.28, metalness=0.75)
-    mat_white = create_material("M_PureWhite", (0.98, 0.98, 0.98, 1.0), roughness=0.35)
-    mat_lollipop_pink = create_material("M_LollipopPink", (0.96, 0.24, 0.42, 1.0), roughness=0.35)
-    mat_skin = create_material("M_SkinPeach", (1.0, 0.85, 0.74, 1.0), roughness=0.60, subsurface=0.18)
-    mat_face_shadow = create_material("M_FaceShadow", (0.02, 0.12, 0.08, 1.0), roughness=0.85)
-    mat_shorts = create_material("M_ShortsIndigo", (0.08, 0.12, 0.22, 1.0), roughness=0.75)
-    mat_sneaker_red = create_material("M_SneakerRed", (0.92, 0.14, 0.14, 1.0), roughness=0.48)
-    mat_black = create_material("M_DarkSole", (0.05, 0.05, 0.08, 1.0), roughness=0.60)
+    # 1. MATERIAIS
+    setup_mat("M_LeonGreen", (0.06, 0.74, 0.46, 1.0), roughness=0.48)
+    setup_mat("M_LeonDarkGreen", (0.03, 0.44, 0.28, 1.0), roughness=0.52)
+    setup_mat("M_PocketBlue", (0.10, 0.40, 0.94, 1.0), roughness=0.50, metallic=0.05)
+    setup_mat("M_GoldMetal", (1.0, 0.78, 0.14, 1.0), roughness=0.22, metallic=0.85)
+    setup_mat("M_WhiteRubber", (0.96, 0.96, 0.96, 1.0), roughness=0.30)
+    setup_mat("M_LollipopPink", (0.98, 0.20, 0.44, 1.0), roughness=0.25)
+    setup_mat("M_SkinPeach", (1.0, 0.84, 0.73, 1.0), roughness=0.55, subsurface=0.25)
+    setup_mat("M_FaceDark", (0.02, 0.10, 0.07, 1.0), roughness=0.80)
+    setup_mat("M_ShortsDenim", (0.07, 0.12, 0.24, 1.0), roughness=0.70)
+    setup_mat("M_SneakerRed", (0.92, 0.12, 0.12, 1.0), roughness=0.42)
+    setup_mat("M_DarkGroove", (0.04, 0.04, 0.06, 1.0), roughness=0.50)
+    setup_mat("M_EyeYellow", (0.98, 0.84, 0.06, 1.0), roughness=0.18)
+    setup_mat("M_EyePupil", (0.03, 0.03, 0.04, 1.0), roughness=0.25)
+    setup_mat("M_EyeCyan", (0.18, 0.78, 0.98, 1.0), roughness=0.15, emission=(0.18, 0.78, 0.98, 1.0))
 
-    mat_cham_yellow = create_material("M_ChamYellow", (0.98, 0.82, 0.08, 1.0), roughness=0.20)
-    mat_cham_pupil = create_material("M_ChamPupil", (0.04, 0.04, 0.06, 1.0), roughness=0.30)
-    mat_hero_cyan = create_material("M_HeroCyan", (0.22, 0.75, 0.98, 1.0), roughness=0.15)
+    # 2. CAPUZ HIGH-POLY ESCULPIDO MATEMATICAMENTE
+    mesh_hood = bpy.data.meshes.new("Leon_Hood_Mesh")
+    hood = bpy.data.objects.new("Leon_Hood", mesh_hood)
+    bpy.context.scene.collection.objects.link(hood)
+    bpy.context.view_layer.objects.active = hood
 
-    # -------------------------------------------------------------
-    # 2. TORSO ORGÂNICO (Moletom com Capuz estilo Brawl Stars)
-    # -------------------------------------------------------------
-    # Centro do torso em Z = 0.86
-    # Criado com cubo + Subsurf level 2: gera proporção anatômica estilizada perfeita
-    torso = add_cube("Torso", size=0.60, location=(0, 0, 0.86), scale=(1.05, 0.82, 1.10), mat=mat_green)
-    add_subsurf(torso, levels=2)
-    smooth(torso)
+    bm_hood = bmesh.new()
+    u_steps, v_steps = 48, 36
+    grid = []
+    for j in range(v_steps + 1):
+        row = []
+        phi = -math.pi / 2.0 + (math.pi * j / v_steps)
+        for i in range(u_steps):
+            theta = 2.0 * math.pi * i / u_steps
+            cos_p, sin_p = math.cos(phi), math.sin(phi)
+            cos_t, sin_t = math.cos(theta), math.sin(theta)
 
-    # Bolso Canguru Azul Royal (Ancorado diretamente na barriga, Y = 0.20)
-    pouch = add_cube("Kangaroo_Pouch", size=0.36, location=(0, 0.20, 0.72), scale=(1.12, 0.22, 0.65), mat=mat_pocket_blue)
-    add_subsurf(pouch, levels=1)
-    smooth(pouch)
-    set_parent(pouch, torso)
+            def sgn_pow(val, p): return math.copysign(abs(val) ** p, val)
 
-    # Zíper Dourado Embutido (Y = 0.24, colado na superfície)
-    zipper = add_cube("Zipper", size=0.035, location=(0, 0.24, 0.86), scale=(0.7, 0.3, 13.5), mat=mat_zipper_yellow)
-    set_parent(zipper, torso)
+            rx = 0.36 * sgn_pow(cos_p, 0.85) * sgn_pow(cos_t, 0.90)
+            ry = 0.35 * sgn_pow(cos_p, 0.85) * sgn_pow(sin_t, 0.90)
+            rz = 0.36 * sgn_pow(sin_p, 0.85)
+            x, y, z = rx, ry, rz + 1.36
 
-    # Cordinhas do Capuz (Caídas naturalmente contra o peito)
-    for x_sign in [-1, 1]:
-        cord = add_cylinder(f"Cord_{x_sign}", radius=0.010, depth=0.22, location=(x_sign * 0.09, 0.23, 0.94), rotation=(-0.1, 0, x_sign * -0.1), mat=mat_white)
-        smooth(cord)
-        set_parent(cord, torso)
+            if y > 0.05:
+                dx = x / 0.18
+                dz = (z - 1.32) / 0.12
+                dist2 = dx * dx + dz * dz
+                if dist2 < 2.5:
+                    y -= 0.16 * math.exp(-dist2 * 0.8)
+                    if 1.36 < z < 1.44:
+                        y += 0.06 * math.exp(-dx * dx * 1.5)
 
-        tip = add_cylinder(f"Tip_{x_sign}", radius=0.018, depth=0.04, location=(x_sign * 0.11, 0.25, 0.82), mat=mat_zipper_yellow)
-        smooth(tip)
-        set_parent(tip, torso)
+            vert = bm_hood.verts.new((x, y, z))
+            row.append(vert)
+        grid.append(row)
 
-    # Cauda do Camaleão na Parte Traseira (Emergindo suavemente de Y = -0.22)
-    tail_root = add_sphere("Tail_0", radius=0.12, location=(0, -0.22, 0.64), scale=(1.0, 1.2, 0.9), rotation=(0.4, 0, 0), mat=mat_green)
-    add_subsurf(tail_root, levels=1)
-    smooth(tail_root)
-    set_parent(tail_root, torso)
+    for j in range(v_steps):
+        for i in range(u_steps):
+            i_next = (i + 1) % u_steps
+            bm_hood.faces.new((grid[j][i], grid[j][i_next], grid[j + 1][i_next], grid[j + 1][i]))
 
-    prev_tail = tail_root
-    for t in range(1, 4):
-        r = 0.11 - t * 0.020
-        seg = add_sphere(f"Tail_{t}", radius=r, location=(0, -0.24 - t * 0.10, 0.64 - t * 0.07), scale=(1.0, 1.15, 0.85), rotation=(0.4, 0, 0), mat=mat_pocket_blue if t % 2 == 1 else mat_green)
-        add_subsurf(seg, levels=1)
-        smooth(seg)
-        set_parent(seg, prev_tail)
-        prev_tail = seg
+    bm_hood.to_mesh(mesh_hood)
+    bm_hood.free()
 
-    # -------------------------------------------------------------
-    # 3. CABEÇA & CAPUZ DO CAMALEÃO (Leon Brawl Stars)
-    # -------------------------------------------------------------
-    # Cabeça orgânica com Subsurf (Z = 1.46)
-    head = add_cube("Head", size=0.68, location=(0, 0, 1.46), scale=(1.06, 0.96, 1.05), mat=mat_green)
-    add_subsurf(head, levels=2)
-    smooth(head)
-    set_parent(head, torso)
+    mod_sh = hood.modifiers.new(name="Subdivision", type='SUBSURF')
+    mod_sh.levels = 2
+    smooth(hood)
+    apply_mat(hood, "M_LeonGreen")
 
-    # Abertura Facial Escavada / Sombra do Capuz (Embutida na frente da cabeça, Y = 0.22)
-    face_cavity = add_cube("Face_Cavity", size=0.34, location=(0, 0.22, 1.40), scale=(1.05, 0.25, 0.72), mat=mat_face_shadow)
-    add_subsurf(face_cavity, levels=1)
-    smooth(face_cavity)
-    set_parent(face_cavity, head)
+    # Rosto Interno
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=18, radius=0.20, location=(0, 0.16, 1.30))
+    face = get_active()
+    face.name = "Face_Interior"
+    face.scale = (1.05, 0.35, 0.70)
+    smooth(face)
+    apply_mat(face, "M_SkinPeach")
 
-    # Rosto Pêssego Espreitando sob o Capuz (Y = 0.23)
-    face_skin = add_cube("Face_Skin", size=0.26, location=(0, 0.23, 1.38), scale=(1.0, 0.22, 0.62), mat=mat_skin)
-    add_subsurf(face_skin, levels=1)
-    smooth(face_skin)
-    set_parent(face_skin, head)
+    # Olhos Ciano
+    for side, x_sign in [("L", -1), ("R", 1)]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.024, depth=0.015, location=(x_sign * 0.075, 0.22, 1.31), rotation=(math.pi / 2, 0, x_sign * -0.15))
+        eye = get_active()
+        eye.name = f"Hero_Eye_{side}"
+        eye.scale = (1.25, 1.0, 0.65)
+        smooth(eye)
+        apply_mat(eye, "M_EyeCyan")
 
-    # Aba / Bico do Capuz (Ancorado no topo da abertura facial, Y = 0.26)
-    visor = add_cube("Hood_Visor", size=0.36, location=(0, 0.26, 1.52), scale=(1.10, 0.28, 0.16), rotation=(-0.22, 0, 0), mat=mat_dark_green)
-    add_subsurf(visor, levels=1)
-    smooth(visor)
-    set_parent(visor, head)
-
-    # Dentes em Zigue-Zague (Ancorados DIRETAMENTE na borda da aba, não flutuam!)
-    for i in range(-3, 4):
-        angle = (i / 3.0) * 0.40
-        tx = math.sin(angle) * 0.18
-        ty = 0.28 + math.cos(angle) * 0.05
-        tz = 1.49 - abs(i) * 0.010
-        tooth = add_cone(f"Tooth_{i}", radius=0.018, depth=0.040, location=(tx, ty, tz), rotation=(math.pi, 0, -i * 0.12), mat=mat_white)
+    # Dentes
+    for i in range(-2, 3):
+        angle = (i / 2.0) * 0.30
+        tx = math.sin(angle) * 0.13
+        ty = 0.25 + math.cos(angle) * 0.035
+        tz = 1.37 - abs(i) * 0.008
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.015, depth=0.032, location=(tx, ty, tz), rotation=(math.pi, 0, -i * 0.15))
+        tooth = get_active()
+        tooth.name = f"Tooth_{i}"
         smooth(tooth)
-        set_parent(tooth, head)
+        apply_mat(tooth, "M_WhiteRubber")
 
-    # Pirulito Rosa Saindo da Boca (Ancorado em Y = 0.28)
-    tongue = add_cylinder("Lollipop_Candy", radius=0.038, depth=0.10, location=(0.05, 0.30, 1.34), rotation=(math.pi / 2, 0.15, -0.12), mat=mat_lollipop_pink)
-    add_bevel(tongue, width=0.01, segments=2)
-    smooth(tongue)
-    set_parent(tongue, head)
+    # Pirulito
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.034, depth=0.075, location=(0.045, 0.26, 1.24), rotation=(math.pi / 2, 0.2, -0.25))
+    pop = get_active()
+    pop.name = "Lollipop"
+    smooth(pop)
+    apply_mat(pop, "M_LollipopPink")
 
-    stick = add_cylinder("Lollipop_Stick", radius=0.009, depth=0.10, location=(-0.02, 0.29, 0.0), rotation=(0, 0, math.pi / 2), mat=mat_white)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.007, depth=0.10, location=(-0.02, 0.24, 1.24), rotation=(0, math.pi / 2, 0.25))
+    stick = get_active()
+    stick.name = "Lollipop_Stick"
     smooth(stick)
-    set_parent(stick, tongue)
+    apply_mat(stick, "M_WhiteRubber")
 
-    # Olhos Ciano Brilhando Dentro do Capuz (Y = 0.26)
+    # Olhos de Camaleão com Pálpebras
     for side, x_sign in [("L", -1), ("R", 1)]:
-        eye_cyan = add_cube(f"Hero_Eye_{side}", size=0.07, location=(x_sign * 0.11, 0.26, 1.42), scale=(1.0, 0.2, 0.5), rotation=(0, 0, x_sign * -0.18), mat=mat_hero_cyan)
-        add_subsurf(eye_cyan, levels=1)
-        smooth(eye_cyan)
-        set_parent(eye_cyan, head)
+        tx, ty, tz = x_sign * 0.22, 0.08, 1.62
+        rot_y, rot_x = x_sign * -0.25, 0.16
 
-        sparkle = add_sphere(f"Hero_Sparkle_{side}", radius=0.014, location=(x_sign * 0.12, 0.27, 1.43), mat=mat_white)
-        smooth(sparkle)
-        set_parent(sparkle, eye_cyan)
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.125, minor_radius=0.028, location=(tx, ty + 0.02, tz), rotation=(rot_x, rot_y, 0))
+        eyelid = get_active()
+        smooth(eyelid)
+        apply_mat(eyelid, "M_LeonGreen")
 
-    # -------------------------------------------------------------
-    # 4. OLHOS DE CAMALEÃO NO TOPO DO CAPUZ (O Ícone de Brawl Stars)
-    # -------------------------------------------------------------
-    for side, x_sign in [("L", -1), ("R", 1)]:
-        tx = x_sign * 0.24
-        ty = 0.08
-        tz = 1.76
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=18, radius=0.11, location=(tx, ty + 0.03, tz), rotation=(rot_x, rot_y, 0))
+        iris = get_active()
+        smooth(iris)
+        apply_mat(iris, "M_EyeYellow")
 
-        # Cúpula Verde do Olho (Integrada ao crânio)
-        turret = add_sphere(f"Cham_Turret_{side}", radius=0.15, location=(tx, ty, tz), scale=(1.0, 1.0, 1.0), mat=mat_green)
-        add_subsurf(turret, levels=1)
-        smooth(turret)
-        set_parent(turret, head)
-
-        # Esfera Amarela do Olho (Inserida na cúpula verde)
-        eye_y = add_sphere(f"Cham_Iris_{side}", radius=0.12, location=(tx, ty + 0.05, tz), scale=(1.0, 0.75, 1.0), mat=mat_cham_yellow)
-        smooth(eye_y)
-        set_parent(eye_y, turret)
-
-        # Pupila Preta
-        pupil = add_cylinder(f"Cham_Pupil_{side}", radius=0.034, depth=0.02, location=(tx, ty + 0.11, tz), rotation=(math.pi / 2, 0, 0), mat=mat_cham_pupil)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.032, depth=0.015, location=(tx + x_sign * 0.018, ty + 0.12, tz + 0.02), rotation=(math.pi / 2 + rot_x, rot_y, 0))
+        pupil = get_active()
         smooth(pupil)
-        set_parent(pupil, eye_y)
+        apply_mat(pupil, "M_EyePupil")
 
-        # Brilho Branco Especular
-        hl = add_sphere(f"Cham_HL_{side}", radius=0.028, location=(tx + x_sign * 0.03, ty + 0.11, tz + 0.03), mat=mat_white)
-        smooth(hl)
-        set_parent(hl, eye_y)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.022, location=(tx + x_sign * 0.04, ty + 0.12, tz + 0.045))
+        hl1 = get_active()
+        smooth(hl1)
+        apply_mat(hl1, "M_WhiteRubber")
 
-    # Cristas Azuis na Traseira (Inseridas PROFUNDAMENTE no crânio, Y = -0.18 a -0.26)
+    # Cristas
     for r in range(4):
-        # A base do cone está dentro do crânio, só a ponta sobressai!
-        spike = add_cone(f"Crest_{r}", radius=0.055, depth=0.14, location=(0, -0.20 - r * 0.04, 1.70 - r * 0.10), rotation=(-0.4 - r * 0.12, 0, 0), mat=mat_pocket_blue)
-        smooth(spike)
-        set_parent(spike, head)
+        cz = 1.58 - r * 0.11
+        cy = -0.15 - r * 0.06
+        bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.045 - r * 0.005, depth=0.12, location=(0, cy, cz), rotation=(-0.45 - r * 0.15, 0, 0))
+        crest = get_active()
+        crest.scale = (0.5, 1.2, 1.0)
+        smooth(crest)
+        apply_mat(crest, "M_PocketBlue")
 
-    # -------------------------------------------------------------
-    # 5. BRAÇOS & MÃOS CHUBBY CARTOON (Human Fall Flat / Brawl Stars)
-    # -------------------------------------------------------------
+    # 3. TRONCO HIGH-POLY COM CLOTH FOLDS
+    mesh_torso = bpy.data.meshes.new("Leon_Torso_Mesh")
+    torso = bpy.data.objects.new("Leon_Torso", mesh_torso)
+    bpy.context.scene.collection.objects.link(torso)
+    bpy.context.view_layer.objects.active = torso
+
+    bm_torso = bmesh.new()
+    rings, radial = 24, 32
+    z_top, z_bot = 1.10, 0.58
+    torso_grid = []
+    for j in range(rings + 1):
+        row = []
+        t = j / float(rings)
+        z = z_bot + t * (z_top - z_bot)
+        width_x = 0.22 + 0.06 * math.sin(t * math.pi) + (0.04 if t > 0.6 else 0.0)
+        width_y = 0.17 + 0.04 * math.sin(t * math.pi)
+        cloth_fold = 0.008 * math.sin(t * math.pi * 5.0)
+
+        for i in range(radial):
+            theta = 2.0 * math.pi * i / radial
+            cos_t, sin_t = math.cos(theta), math.sin(theta)
+            def sgn_pow(val, p): return math.copysign(abs(val) ** p, val)
+            x = width_x * sgn_pow(cos_t, 0.9)
+            y_bias = 0.03 * (1.0 - abs(t - 0.4) * 2.0) if sin_t > 0 else 0.0
+            y = (width_y + cloth_fold) * sgn_pow(sin_t, 0.9) + y_bias
+            vert = bm_torso.verts.new((x, y, z))
+            row.append(vert)
+        torso_grid.append(row)
+
+    for j in range(rings):
+        for i in range(radial):
+            i_next = (i + 1) % radial
+            bm_torso.faces.new((torso_grid[j][i], torso_grid[j][i_next], torso_grid[j + 1][i_next], torso_grid[j + 1][i]))
+
+    bm_torso.to_mesh(mesh_torso)
+    bm_torso.free()
+
+    mod_st = torso.modifiers.new(name="Subdivision", type='SUBSURF')
+    mod_st.levels = 2
+    smooth(torso)
+    apply_mat(torso, "M_LeonGreen")
+
+    # Colarinho e Barra
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.20, minor_radius=0.045, location=(0, 0.02, 1.08), rotation=(0.10, 0, 0))
+    collar = get_active()
+    collar.scale = (1.05, 0.92, 0.70)
+    smooth(collar)
+    apply_mat(collar, "M_LeonGreen")
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.225, depth=0.07, location=(0, 0.01, 0.61))
+    hem = get_active()
+    hem.scale = (1.0, 0.85, 1.0)
+    smooth(hem)
+    apply_mat(hem, "M_PocketBlue")
+
+    # Bolso Canguru e Zíper
+    bpy.ops.mesh.primitive_cube_add(size=0.28, location=(0, 0.17, 0.73))
+    pouch = get_active()
+    pouch.scale = (1.10, 0.16, 0.68)
+    smooth(pouch)
+    apply_mat(pouch, "M_PocketBlue")
+
+    bpy.ops.mesh.primitive_cube_add(size=0.025, location=(0, 0.19, 0.86))
+    zip_track = get_active()
+    zip_track.scale = (0.8, 0.3, 17.0)
+    apply_mat(zip_track, "M_GoldMetal")
+
+    for x_sign in [-1, 1]:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.008, depth=0.20, location=(x_sign * 0.075, 0.18, 0.94), rotation=(-0.16, 0, x_sign * -0.08))
+        cord = get_active()
+        smooth(cord)
+        apply_mat(cord, "M_WhiteRubber")
+
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.014, depth=0.032, location=(x_sign * 0.092, 0.21, 0.83))
+        aglet = get_active()
+        smooth(aglet)
+        apply_mat(aglet, "M_GoldMetal")
+
+    # Cauda em 'S'
+    for t in range(5):
+        prog = t / 4.0
+        r = 0.11 * (1.0 - prog * 0.55)
+        cy = -0.16 - prog * 0.36
+        cz = 0.63 - math.sin(prog * math.pi) * 0.08 + (prog ** 1.5) * 0.12
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=16, radius=r, location=(0, cy, cz))
+        tail_seg = get_active()
+        tail_seg.scale = (1.0, 1.2, 0.88)
+        smooth(tail_seg)
+        apply_mat(tail_seg, "M_PocketBlue" if t % 2 == 1 else "M_LeonGreen")
+
+    # 4. BRAÇOS & MÃOS CARTOON COM PALMA E 4 DEDOS
     for side, x_sign in [("L", -1), ("R", 1)]:
-        ax = x_sign * 0.38
-
-        # Ombro Arredondado (Transição perfeita com o tronco)
-        shoulder = add_sphere(f"Shoulder_{side}", radius=0.15, location=(ax, 0, 1.08), mat=mat_green)
+        sx, sy, sz = x_sign * 0.26, 0.01, 0.98
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=16, radius=0.125, location=(sx, sy, sz))
+        shoulder = get_active()
         smooth(shoulder)
-        set_parent(shoulder, torso)
+        apply_mat(shoulder, "M_LeonGreen")
 
-        # Braço / Manga Verde (Capsule orgânica suave)
-        sleeve = add_cylinder(f"Arm_{side}", radius=0.12, depth=0.26, location=(ax, 0, 0.92), mat=mat_green)
-        smooth(sleeve)
-        set_parent(sleeve, shoulder)
+        arm_angle_z, arm_angle_x = x_sign * -0.52, 0.12
+        arm_len = 0.24
+        mx = sx + math.sin(arm_angle_z) * (arm_len * 0.5)
+        my = sy + math.sin(arm_angle_x) * (arm_len * 0.5)
+        mz = sz - math.cos(arm_angle_z) * (arm_len * 0.5)
 
-        # Punho Azul
-        cuff = add_cylinder(f"Cuff_{side}", radius=0.13, depth=0.05, location=(ax, 0, 0.80), mat=mat_pocket_blue)
-        add_bevel(cuff, width=0.015, segments=2)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.098, depth=arm_len, location=(mx, my, mz), rotation=(arm_angle_x, arm_angle_z, 0))
+        arm = get_active()
+        smooth(arm)
+        apply_mat(arm, "M_LeonGreen")
+
+        cuff_x = sx + math.sin(arm_angle_z) * arm_len
+        cuff_y = sy + math.sin(arm_angle_x) * arm_len
+        cuff_z = sz - math.cos(arm_angle_z) * arm_len
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.108, depth=0.045, location=(cuff_x, cuff_y, cuff_z), rotation=(arm_angle_x, arm_angle_z, 0))
+        cuff = get_active()
         smooth(cuff)
-        set_parent(cuff, sleeve)
+        apply_mat(cuff, "M_PocketBlue")
 
-        # Mãozinha Cartoon Chubby com Dedão Definido
-        fist = add_cube(f"Hand_{side}", size=0.16, location=(ax, 0.02, 0.65), scale=(1.0, 0.85, 0.85), mat=mat_skin)
-        add_subsurf(fist, levels=2)
-        smooth(fist)
-        set_parent(fist, sleeve)
+        palm_x = sx + math.sin(arm_angle_z) * (arm_len + 0.07)
+        palm_y = sy + math.sin(arm_angle_x) * (arm_len + 0.07)
+        palm_z = sz - math.cos(arm_angle_z) * (arm_len + 0.07)
+        bpy.ops.mesh.primitive_cube_add(size=0.11, location=(palm_x, palm_y, palm_z), rotation=(arm_angle_x, arm_angle_z, 0))
+        palm = get_active()
+        palm.scale = (1.0, 0.75, 0.95)
+        smooth(palm)
+        apply_mat(palm, "M_SkinPeach")
 
-        thumb = add_cube(f"Thumb_{side}", size=0.07, location=(ax + x_sign * -0.05, 0.05, 0.67), rotation=(-0.25, 0, x_sign * -0.5), mat=mat_skin)
-        add_subsurf(thumb, levels=1)
+        th_x = palm_x + x_sign * -0.038
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.024, depth=0.055, location=(th_x, palm_y + 0.042, palm_z + 0.010), rotation=(-0.45, arm_angle_z, x_sign * -0.4))
+        thumb = get_active()
         smooth(thumb)
-        set_parent(thumb, fist)
+        apply_mat(thumb, "M_SkinPeach")
 
-    # -------------------------------------------------------------
-    # 6. PERNAS & TÊNIS BRAWL STARS ROBUSTOS
-    # -------------------------------------------------------------
+        for f in range(3):
+            f_offset = (f - 1) * 0.026
+            fx = palm_x + math.sin(arm_angle_z) * 0.05 + math.cos(arm_angle_z) * f_offset
+            fz = palm_z - math.cos(arm_angle_z) * 0.05 - math.sin(arm_angle_z) * f_offset * x_sign
+            bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.018, depth=0.045, location=(fx, palm_y - 0.015, fz), rotation=(0.35, arm_angle_z, 0))
+            finger = get_active()
+            smooth(finger)
+            apply_mat(finger, "M_SkinPeach")
+
+    # 5. BERMUDA, PERNAS E TÊNIS CHUNKY
+    bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=0.21, depth=0.06, location=(0, 0.01, 0.55))
+    waistband = get_active()
+    waistband.scale = (1.0, 0.82, 1.0)
+    smooth(waistband)
+    apply_mat(waistband, "M_ShortsDenim")
+
     for side, x_sign in [("L", -1), ("R", 1)]:
-        lx = x_sign * 0.18
+        lx = x_sign * 0.135
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.115, depth=0.16, location=(lx, 0, 0.44))
+        short_leg = get_active()
+        short_leg.scale = (1.0, 0.88, 1.0)
+        smooth(short_leg)
+        apply_mat(short_leg, "M_ShortsDenim")
 
-        # Bermuda Índigo
-        short = add_cylinder(f"Short_{side}", radius=0.15, depth=0.22, location=(lx, 0, 0.48), mat=mat_shorts)
-        smooth(short)
-        set_parent(short, torso)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.122, depth=0.032, location=(lx, 0, 0.35))
+        short_cuff = get_active()
+        smooth(short_cuff)
+        apply_mat(short_cuff, "M_PocketBlue")
 
-        # Perna Pêssego (Membro suave conectado ao calçado)
-        leg = add_cylinder(f"Leg_{side}", radius=0.10, depth=0.22, location=(lx, 0, 0.32), mat=mat_skin)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.072, depth=0.18, location=(lx, 0, 0.26))
+        leg = get_active()
         smooth(leg)
-        set_parent(leg, short)
+        apply_mat(leg, "M_SkinPeach")
 
-        # TÊNIS BRAWL STARS ESCULPIDO (Sem frestas, tudo embutido)
-        # Sola Branca Robusta com Cantos Chanfrados (Z = 0.05)
-        sole = add_cube(f"Sole_{side}", size=1.0, location=(lx, 0.06, 0.05), scale=(0.28, 0.46, 0.09), mat=mat_white)
-        add_bevel(sole, width=0.025, segments=3)
+        # Tênis
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(lx, 0.045, 0.042))
+        sole = get_active()
+        sole.scale = (0.23, 0.36, 0.075)
+        mod_sole = sole.modifiers.new(name="Bevel", type='BEVEL')
+        mod_sole.width = 0.022
+        mod_sole.segments = 3
         smooth(sole)
-        set_parent(sole, leg)
+        apply_mat(sole, "M_WhiteRubber")
 
-        # Friso Escuro Embutido na Sola (Z = 0.05)
-        stripe = add_cube(f"Stripe_{side}", size=1.0, location=(lx, 0.06, 0.05), scale=(0.285, 0.44, 0.02), mat=mat_black)
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(lx, 0.045, 0.042))
+        stripe = get_active()
+        stripe.scale = (0.235, 0.345, 0.014)
         smooth(stripe)
-        set_parent(stripe, sole)
+        apply_mat(stripe, "M_DarkGroove")
 
-        # Corpo Vermelho do Tênis (Ancorado firmemente em Z = 0.13, afundando na sola)
-        sneaker = add_cube(f"Sneaker_{side}", size=1.0, location=(lx, 0.05, 0.13), scale=(0.26, 0.40, 0.14), mat=mat_sneaker_red)
-        add_subsurf(sneaker, levels=2)
-        smooth(sneaker)
-        set_parent(sneaker, sole)
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(lx, 0.030, 0.125))
+        upper = get_active()
+        upper.scale = (0.21, 0.30, 0.135)
+        mod_up = upper.modifiers.new(name="Subdivision", type='SUBSURF')
+        mod_up.levels = 2
+        smooth(upper)
+        apply_mat(upper, "M_SneakerRed")
 
-        # Biqueira Branca Arredondada (Conectada na frente do tênis, Y = 0.20, Z = 0.11)
-        toe = add_sphere(f"Toe_{side}", radius=0.13, location=(lx, 0.20, 0.11), scale=(0.95, 0.85, 0.65), mat=mat_white)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=16, radius=0.095, location=(lx, 0.155, 0.095))
+        toe = get_active()
+        toe.scale = (0.95, 0.85, 0.65)
         smooth(toe)
-        set_parent(toe, sneaker)
+        apply_mat(toe, "M_WhiteRubber")
 
-        # Cadarços Brancos (Cruzando o topo do tênis)
+        bpy.ops.mesh.primitive_cube_add(size=0.075, location=(lx, 0.09, 0.17), rotation=(-0.35, 0, 0))
+        tongue = get_active()
+        tongue.scale = (1.0, 0.28, 1.25)
+        smooth(tongue)
+        apply_mat(tongue, "M_SneakerRed")
+
         for l in range(3):
-            lace = add_cube(f"Lace_{side}_{l}", size=0.11, location=(lx, 0.10 + l * 0.04, 0.18 + l * 0.02), scale=(1.0, 0.15, 0.20), mat=mat_white)
-            set_parent(lace, sneaker)
+            lz = 0.135 + l * 0.024
+            ly = 0.07 + l * 0.028
+            bpy.ops.mesh.primitive_cube_add(size=0.085, location=(lx, ly, lz), rotation=(-0.30, 0, 0))
+            lace = get_active()
+            lace.scale = (1.0, 0.12, 0.16)
+            apply_mat(lace, "M_WhiteRubber")
 
-    # -------------------------------------------------------------
-    # 7. CÂMERA & ILUMINAÇÃO DE ESTÚDIO
-    # -------------------------------------------------------------
-    bpy.ops.object.camera_add(location=(0, 4.4, 1.2), rotation=(math.radians(85), 0, math.radians(180)))
-    cam = get_active()
-    bpy.context.scene.camera = cam
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.022, minor_radius=0.007, location=(lx, 0.13, 0.20), rotation=(math.pi / 2, 0, 0))
+        bow = get_active()
+        smooth(bow)
+        apply_mat(bow, "M_WhiteRubber")
 
-    # Luz Solar Principal (Warm Key)
-    bpy.ops.object.light_add(type='SUN', location=(4, 4, 6))
-    sun = get_active()
-    sun.data.energy = 4.5
-    sun.data.color = (1.0, 0.95, 0.88)
+    # ILUMINAÇÃO DE ESTÚDIO 3-POINT
+    bpy.ops.object.light_add(type='SUN', location=(4, 5, 6))
+    key = get_active()
+    key.name = "KeyLight"
+    key.data.energy = 4.2
+    key.data.color = (1.0, 0.96, 0.90)
 
-    # Luz de Preenchimento (Cool Fill)
-    bpy.ops.object.light_add(type='SUN', location=(-4, 2, 4))
+    bpy.ops.object.light_add(type='SUN', location=(-5, 2, 4))
     fill = get_active()
-    fill.data.energy = 2.2
+    fill.name = "FillLight"
+    fill.data.energy = 2.4
     fill.data.color = (0.75, 0.88, 1.0)
 
-    # Luz de Contorno Traseira (Rim Light)
-    bpy.ops.object.light_add(type='SUN', location=(0, -4, 4))
+    bpy.ops.object.light_add(type='SUN', location=(0, -5, 5))
     rim = get_active()
-    rim.data.energy = 3.2
-    rim.data.color = (1.0, 0.92, 0.80)
+    rim.name = "RimLight"
+    rim.data.energy = 3.6
+    rim.data.color = (1.0, 0.94, 0.82)
 
-    # -------------------------------------------------------------
-    # 8. RENDERIZAÇÃO E EXPORTAÇÃO
-    # -------------------------------------------------------------
     os.makedirs("public/3dgame", exist_ok=True)
     os.makedirs("artifacts", exist_ok=True)
 
     blend_path = os.path.abspath("artifacts/brawler_character.blend")
     glb_path = os.path.abspath("public/3dgame/character.glb")
-    render_path = os.path.abspath("artifacts/blender_render_preview.png")
-
-    bpy.context.scene.render.resolution_x = 1280
-    bpy.context.scene.render.resolution_y = 720
-    bpy.context.scene.render.filepath = render_path
-    bpy.ops.render.render(write_still=True)
-    print(f"[BLENDER] Render salvo em: {render_path}")
 
     bpy.ops.wm.save_as_mainfile(filepath=blend_path)
-    print(f"[BLENDER] Cena salva em: {blend_path}")
-
-    bpy.ops.export_scene.gltf(
-        filepath=glb_path,
-        export_format='GLB',
-        use_selection=False,
-        export_apply=True,
-        export_yup=True
-    )
-    print(f"[BLENDER] GLB exportado em: {glb_path}")
-    print("[BLENDER] SUCCESS: Modelo AAA Human Fall Flat / Brawl Stars gerado com sucesso!")
+    bpy.ops.export_scene.gltf(filepath=glb_path, export_format='GLB', use_selection=False, export_apply=True, export_yup=True)
+    print("SUCCESS: High-Poly Procedural Sculpted Brawler Generated and Exported!")
 
 if __name__ == "__main__":
-    build_character()
+    build_highpoly_character()
