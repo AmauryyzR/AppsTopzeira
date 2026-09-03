@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createToonMaterial } from './shaders/ToonMaterial';
 
 export interface CharacterAnimState {
   speed: number;
@@ -36,9 +37,6 @@ export class PlayerCharacter {
   // Chameleon Tail at back (Animated spring/cloth physics)
   private tailSegments: THREE.Group[] = [];
 
-  // Ground Contact Shadow Disc
-  private shadowDisc!: THREE.Mesh;
-
   // Animation Timers & Smoothing
   private walkCycleTime = 0;
   private idleTime = 0;
@@ -54,8 +52,8 @@ export class PlayerCharacter {
   constructor() {
     this.group.name = 'PlayerCharacter_Verdinho_Leon';
     this.group.add(this.modelRoot);
+    this.modelRoot.position.y = 0.055; // Elevate model root so sneaker soles rest cleanly on the ground plane
     this.buildCharacterModel();
-    this.buildContactShadow();
   }
 
   private track<T extends THREE.BufferGeometry>(geo: T): T {
@@ -70,88 +68,149 @@ export class PlayerCharacter {
 
   private buildCharacterModel() {
     // ==========================================
-    // 1. VIBRANT MATTE PBR PALETTE (Brawl Stars Vinyl)
+    // 1. CEL-SHADED ANIME TOON PALETTE (Genshin / BotW)
     // ==========================================
     const hoodieGreenMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x10b981, // Vibrant Emerald Chameleon Green
-        roughness: 0.55,
-        metalness: 0.04,
+        gradientBands: 4,
+        rimColor: 0x86efac,
+        rimPower: 2.8,
+        rimIntensity: 0.65,
+        shadowColor: 0x064e3b,
+        shadowIntensity: 0.50,
       })
     );
     const hoodTrimDarkGreenMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x059669, // Rich forest green hood rim
-        roughness: 0.60,
+        gradientBands: 4,
+        rimColor: 0xa7f3d0,
+        rimPower: 3.0,
+        rimIntensity: 0.55,
+        shadowColor: 0x022c22,
+        shadowIntensity: 0.55,
       })
     );
     const pocketBlueMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x2563eb, // Royal Blue Kangaroo Pouch & Crest
-        roughness: 0.58,
-        metalness: 0.05,
+        gradientBands: 4,
+        rimColor: 0x93c5fd,
+        rimPower: 2.9,
+        rimIntensity: 0.60,
+        shadowColor: 0x1e3a8a,
+        shadowIntensity: 0.52,
       })
     );
     const zipperYellowMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xfbbf24, // Bright Golden Yellow Zipper & Drawstring Tips
-        roughness: 0.32,
-        metalness: 0.60,
+        gradientBands: 3,
+        rimColor: 0xfef08a,
+        rimPower: 2.5,
+        rimIntensity: 0.75,
+        shadowColor: 0x854d0e,
+        shadowIntensity: 0.45,
       })
     );
     const drawstringCreamMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xf8fafc, // Cream-white drawstrings
-        roughness: 0.70,
+        gradientBands: 4,
+        rimColor: 0xffffff,
+        rimPower: 3.0,
+        rimIntensity: 0.65,
+        shadowColor: 0x94a3b8,
+        shadowIntensity: 0.50,
       })
     );
     const teethWhiteMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xffffff, // Crisp white teeth trim
-        roughness: 0.35,
+        gradientBands: 3,
+        rimColor: 0xffffff,
+        rimPower: 2.8,
+        rimIntensity: 0.70,
+        shadowColor: 0x94a3b8,
+        shadowIntensity: 0.45,
       })
     );
     const lollipopPinkMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xf43f5e, // Hot Pink Chameleon Tongue / Lollipop
-        roughness: 0.40,
-        metalness: 0.10,
+        gradientBands: 4,
+        rimColor: 0xfecdd3,
+        rimPower: 2.6,
+        rimIntensity: 0.70,
+        shadowColor: 0x9f1239,
+        shadowIntensity: 0.50,
       })
     );
     const skinToneMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xffdfc2, // Warm glowing peach skin
-        roughness: 0.60,
+        gradientBands: 4,
+        rimColor: 0xffedd5,
+        rimPower: 3.2,
+        rimIntensity: 0.50,
+        shadowColor: 0xc2785c, // Warm peach-caramel shadow
+        shadowIntensity: 0.45,
       })
     );
     const faceShadowMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x022c22, // Deep shaded interior of hood
-        roughness: 0.85,
+        gradientBands: 3,
+        rimColor: 0x047857,
+        rimPower: 4.0,
+        rimIntensity: 0.30,
+        shadowColor: 0x01140f,
+        shadowIntensity: 0.60,
       })
     );
     const shortsIndigoMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x1e293b, // Dark indigo slate denim
-        roughness: 0.75,
+        gradientBands: 4,
+        rimColor: 0x94a3b8,
+        rimPower: 2.8,
+        rimIntensity: 0.60,
+        shadowColor: 0x0f172a,
+        shadowIntensity: 0.55,
       })
     );
     const sneakerRedMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xef4444, // Crimson Brawler Sneaker Upper
-        roughness: 0.48,
+        gradientBands: 4,
+        rimColor: 0xfca5a5,
+        rimPower: 2.7,
+        rimIntensity: 0.65,
+        shadowColor: 0x991b1b,
+        shadowIntensity: 0.52,
       })
     );
     const sneakerWhiteMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0xffffff, // Thick White Sole & Rubber Shell-Toe
-        roughness: 0.32,
+        gradientBands: 4,
+        rimColor: 0xffffff,
+        rimPower: 2.6,
+        rimIntensity: 0.75,
+        shadowColor: 0x94a3b8,
+        shadowIntensity: 0.50,
       })
     );
     const sneakerStripeMat = this.trackMat(
-      new THREE.MeshStandardMaterial({
+      createToonMaterial({
         color: 0x0f172a, // Sole racing groove
-        roughness: 0.60,
+        gradientBands: 3,
+        rimColor: 0x64748b,
+        rimPower: 3.0,
+        rimIntensity: 0.45,
+        shadowColor: 0x020617,
+        shadowIntensity: 0.60,
       })
     );
 
@@ -160,8 +219,42 @@ export class PlayerCharacter {
     const chamEyePupilMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0f172a }));
     const chamEyeHighlightMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
 
-    // Glowing Hero Anime Eyes Peering From Hood
-    const heroEyeCyanMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    // Anime Face & Hair Materials (Leon's Signature Brawler Face)
+    const hairTealMat = this.trackMat(
+      createToonMaterial({
+        color: 0x0284c7, // Vibrant cyan-teal anime hair
+        gradientBands: 3,
+        rimColor: 0x38bdf8,
+        rimPower: 2.5,
+        rimIntensity: 0.70,
+        shadowColor: 0x075985,
+        shadowIntensity: 0.50,
+      })
+    );
+    const eyeScleraWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const eyeIrisCyanMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
+    const eyePupilBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
+    const eyeHighlightWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    const eyeBrowBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
+    const blushPeachMat = this.trackMat(
+      createToonMaterial({
+        color: 0xf43f5e,
+        gradientBands: 2,
+        transparent: true,
+        opacity: 0.38,
+      })
+    );
+    const lollipopCherryMat = this.trackMat(
+      createToonMaterial({
+        color: 0xe11d48, // Vibrant glossy red lollipop
+        gradientBands: 4,
+        rimColor: 0xfecdd3,
+        rimPower: 2.2,
+        rimIntensity: 0.85,
+        shadowColor: 0x881337,
+        shadowIntensity: 0.55,
+      })
+    );
 
     // ==========================================
     // 2. TORSO & HOODIE BODY
@@ -210,18 +303,25 @@ export class PlayerCharacter {
     pullerMesh.position.set(0, 0.26, 0.34);
     this.torsoGroup.add(pullerMesh);
 
-    // Cream Hoodie Drawstrings with Golden Tips
+    // Cream Hoodie Drawstrings with Golden Tips (accurately connected)
     for (const xSign of [-1, 1]) {
-      const stringGeo = this.track(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 8));
-      const stringMesh = new THREE.Mesh(stringGeo, drawstringCreamMat);
-      stringMesh.position.set(xSign * 0.10, 0.12, 0.31);
-      stringMesh.rotation.z = xSign * -0.12;
-      this.torsoGroup.add(stringMesh);
+      const drawstringGroup = new THREE.Group();
+      drawstringGroup.position.set(xSign * 0.095, 0.22, 0.31);
+      drawstringGroup.rotation.z = xSign * -0.07;
 
-      const tipGeo = this.track(new THREE.CylinderGeometry(0.02, 0.02, 0.04, 8));
+      const stringLen = 0.20;
+      const stringGeo = this.track(new THREE.CylinderGeometry(0.012, 0.012, stringLen, 8));
+      const stringMesh = new THREE.Mesh(stringGeo, drawstringCreamMat);
+      stringMesh.position.set(0, -stringLen / 2, 0);
+      drawstringGroup.add(stringMesh);
+
+      const tipLen = 0.042;
+      const tipGeo = this.track(new THREE.CylinderGeometry(0.02, 0.02, tipLen, 8));
       const tipMesh = new THREE.Mesh(tipGeo, zipperYellowMat);
-      tipMesh.position.set(xSign * 0.12, 0.01, 0.32);
-      this.torsoGroup.add(tipMesh);
+      tipMesh.position.set(0, -stringLen - tipLen / 2 + 0.004, 0);
+      drawstringGroup.add(tipMesh);
+
+      this.torsoGroup.add(drawstringGroup);
     }
 
     // ==========================================
@@ -249,7 +349,7 @@ export class PlayerCharacter {
     }
 
     // ==========================================
-    // 4. THE CHAMELEON HOOD & FACE
+    // 4. THE CHAMELEON HOOD & EXPRESSIVE HERO FACE
     // ==========================================
     // Head pivot at y = 1.48
     this.headGroup.position.set(0, 1.48, 0);
@@ -263,21 +363,28 @@ export class PlayerCharacter {
     hoodMesh.receiveShadow = true;
     this.headGroup.add(hoodMesh);
 
-    // Shaded Face Opening / Mask on front of hood
-    const faceMaskGeo = this.track(new THREE.CapsuleGeometry(0.22, 0.16, 12, 16));
-    faceMaskGeo.rotateZ(Math.PI / 2);
-    const faceMask = new THREE.Mesh(faceMaskGeo, faceShadowMat);
-    faceMask.position.set(0, -0.04, 0.38);
-    faceMask.scale.set(1.0, 0.9, 0.35);
-    this.headGroup.add(faceMask);
+    // Shaded Inner Cavity of Hood (Deep dark recess framing face)
+    const cavityGeo = this.track(new THREE.SphereGeometry(0.42, 24, 18));
+    cavityGeo.scale(1.0, 0.95, 0.98);
+    const cavityMesh = new THREE.Mesh(cavityGeo, faceShadowMat);
+    cavityMesh.position.set(0, -0.02, 0.05);
+    this.headGroup.add(cavityMesh);
 
-    // Warm Peach Skin Face peeking inside the mask
-    const faceSkinGeo = this.track(new THREE.CapsuleGeometry(0.18, 0.12, 12, 16));
-    faceSkinGeo.rotateZ(Math.PI / 2);
-    const faceSkin = new THREE.Mesh(faceSkinGeo, skinToneMat);
-    faceSkin.position.set(0, -0.06, 0.41);
-    faceSkin.scale.set(1.0, 0.85, 0.35);
-    this.headGroup.add(faceSkin);
+    // Smooth Peach Face Surface nestled cleanly inside the hood
+    const faceBaseGeo = this.track(new THREE.SphereGeometry(0.255, 24, 20));
+    faceBaseGeo.scale(1.0, 0.88, 0.42);
+    const faceBase = new THREE.Mesh(faceBaseGeo, skinToneMat);
+    faceBase.position.set(0, -0.045, 0.37);
+    faceBase.castShadow = true;
+    this.headGroup.add(faceBase);
+
+    // Dark Green Chameleon Hood Face Rim (Sleek smooth bezel framing the face opening)
+    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.235, 0.038, 12, 28));
+    hoodRimGeo.scale(1.0, 0.88, 0.60);
+    const hoodRim = new THREE.Mesh(hoodRimGeo, hoodTrimDarkGreenMat);
+    hoodRim.position.set(0, -0.045, 0.43);
+    hoodRim.castShadow = true;
+    this.headGroup.add(hoodRim);
 
     // Curved Hood Visor / Brim over the forehead
     const visorShape = new THREE.Shape();
@@ -297,65 +404,156 @@ export class PlayerCharacter {
     );
     visorGeo.center();
     const visorMesh = new THREE.Mesh(visorGeo, hoodTrimDarkGreenMat);
-    visorMesh.position.set(0, 0.08, 0.44);
-    visorMesh.rotation.set(0.25, 0, 0);
+    visorMesh.position.set(0, 0.09, 0.45);
+    visorMesh.rotation.set(0.22, 0, 0);
     visorMesh.castShadow = true;
     this.headGroup.add(visorMesh);
 
     // Cute Zig-Zag Teeth along the Hood Visor
     for (let i = -3; i <= 3; i++) {
-      const toothGeo = this.track(new THREE.ConeGeometry(0.026, 0.052, 4));
+      const toothGeo = this.track(new THREE.ConeGeometry(0.024, 0.048, 4));
       toothGeo.rotateX(Math.PI);
       const tooth = new THREE.Mesh(toothGeo, teethWhiteMat);
-      const angle = (i / 3) * 0.42;
-      tooth.position.set(Math.sin(angle) * 0.24, 0.06 - Math.abs(i) * 0.012, Math.cos(angle) * 0.44);
+      const angle = (i / 3) * 0.40;
+      tooth.position.set(Math.sin(angle) * 0.23, 0.06 - Math.abs(i) * 0.012, Math.cos(angle) * 0.44);
       tooth.rotation.set(0.26, 0, -i * 0.10);
       tooth.castShadow = true;
       this.headGroup.add(tooth);
     }
 
-    // Iconic Pink Lollipop / Chameleon Tongue sticking out
-    const tongueGroup = new THREE.Group();
-    tongueGroup.position.set(0.05, -0.14, 0.44);
-    tongueGroup.rotation.set(0.22, 0.18, -0.12);
+    // Leon's Signature Vibrant Anime Hair Bangs peeking from under the visor
+    const bangsGroup = new THREE.Group();
+    bangsGroup.position.set(0, 0.04, 0.42);
 
-    const tongueGeo = this.track(new THREE.CapsuleGeometry(0.035, 0.12, 8, 12));
-    tongueGeo.rotateZ(Math.PI / 2);
-    const tongueMesh = new THREE.Mesh(tongueGeo, lollipopPinkMat);
-    tongueMesh.castShadow = true;
-    tongueGroup.add(tongueMesh);
+    // Central sweeping anime hair spike
+    const centerBangGeo = this.track(new THREE.ConeGeometry(0.042, 0.13, 6));
+    centerBangGeo.rotateZ(0.12);
+    centerBangGeo.rotateX(0.25);
+    const centerBang = new THREE.Mesh(centerBangGeo, hairTealMat);
+    centerBang.position.set(0.01, -0.01, 0.02);
+    centerBang.castShadow = true;
+    bangsGroup.add(centerBang);
 
-    // White lollipop stick
-    const stickGeo = this.track(new THREE.CylinderGeometry(0.010, 0.010, 0.12, 8));
-    stickGeo.rotateZ(Math.PI / 2);
-    const stickMesh = new THREE.Mesh(stickGeo, teethWhiteMat);
-    stickMesh.position.set(-0.07, 0, 0);
-    tongueGroup.add(stickMesh);
+    // Left sweeping hair spike
+    const leftBangGeo = this.track(new THREE.ConeGeometry(0.036, 0.10, 6));
+    leftBangGeo.rotateZ(0.35);
+    leftBangGeo.rotateX(0.20);
+    const leftBang = new THREE.Mesh(leftBangGeo, hairTealMat);
+    leftBang.position.set(-0.075, 0.01, 0.01);
+    leftBang.castShadow = true;
+    bangsGroup.add(leftBang);
 
-    this.headGroup.add(tongueGroup);
+    // Right sweeping hair spike
+    const rightBangGeo = this.track(new THREE.ConeGeometry(0.038, 0.11, 6));
+    rightBangGeo.rotateZ(-0.25);
+    rightBangGeo.rotateX(0.22);
+    const rightBang = new THREE.Mesh(rightBangGeo, hairTealMat);
+    rightBang.position.set(0.08, 0.01, 0.01);
+    rightBang.castShadow = true;
+    bangsGroup.add(rightBang);
 
-    // Glowing Hero Eyes inside the Hood
-    const buildGlowingEye = (xSign: number) => {
+    this.headGroup.add(bangsGroup);
+
+    // Expressive Anime Hero Eyes (White Sclera + Glowing Cyan Iris + Pupil + Catchlight + Eyelash + Brow)
+    const buildExpressiveHeroEye = (xSign: number) => {
       const eyeGroup = new THREE.Group();
-      eyeGroup.position.set(xSign * 0.12, -0.02, 0.44);
+      eyeGroup.position.set(xSign * 0.115, -0.02, 0.44);
+      eyeGroup.rotation.z = xSign * -0.10; // Heroic determined slant
 
-      const eyeGeo = this.track(new THREE.CapsuleGeometry(0.035, 0.065, 8, 12));
-      eyeGeo.rotateZ(Math.PI / 2);
-      const eyeMesh = new THREE.Mesh(eyeGeo, heroEyeCyanMat);
-      eyeMesh.rotation.z = xSign * -0.16; // Focused, determined hero gaze
-      eyeGroup.add(eyeMesh);
+      // Crisp White Sclera
+      const scleraGeo = this.track(new THREE.SphereGeometry(0.044, 16, 14));
+      scleraGeo.scale(1.15, 0.95, 0.25);
+      const sclera = new THREE.Mesh(scleraGeo, eyeScleraWhiteMat);
+      eyeGroup.add(sclera);
 
-      // White Catchlight Sparkle
-      const sparkleGeo = this.track(new THREE.CircleGeometry(0.014, 10));
-      const sparkle = new THREE.Mesh(sparkleGeo, chamEyeHighlightMat);
-      sparkle.position.set(xSign * 0.01, 0.012, 0.020);
-      eyeGroup.add(sparkle);
+      // Glowing Cyan Anime Iris
+      const irisGeo = this.track(new THREE.SphereGeometry(0.032, 16, 14));
+      irisGeo.scale(1.0, 1.05, 0.15);
+      const iris = new THREE.Mesh(irisGeo, eyeIrisCyanMat);
+      iris.position.set(xSign * -0.005, -0.002, 0.012);
+      eyeGroup.add(iris);
+
+      // Deep Midnight Pupil
+      const pupilGeo = this.track(new THREE.SphereGeometry(0.018, 12, 10));
+      pupilGeo.scale(1.0, 1.15, 0.15);
+      const pupil = new THREE.Mesh(pupilGeo, eyePupilBlackMat);
+      pupil.position.set(xSign * -0.005, -0.002, 0.016);
+      eyeGroup.add(pupil);
+
+      // Main Glossy Specular Sparkle
+      const sparkleMainGeo = this.track(new THREE.CircleGeometry(0.010, 10));
+      const sparkleMain = new THREE.Mesh(sparkleMainGeo, eyeHighlightWhiteMat);
+      sparkleMain.position.set(xSign * 0.008, 0.012, 0.022);
+      eyeGroup.add(sparkleMain);
+
+      // Secondary Subtle Sparkle
+      const sparkleSubGeo = this.track(new THREE.CircleGeometry(0.005, 8));
+      const sparkleSub = new THREE.Mesh(sparkleSubGeo, eyeHighlightWhiteMat);
+      sparkleSub.position.set(xSign * -0.010, -0.010, 0.022);
+      eyeGroup.add(sparkleSub);
+
+      // Sharp Top Eyelash / Eyelid Arc
+      const lashGeo = this.track(new THREE.TorusGeometry(0.046, 0.008, 6, 14, Math.PI * 0.72));
+      lashGeo.rotateZ(Math.PI * 0.14);
+      const lash = new THREE.Mesh(lashGeo, eyeBrowBlackMat);
+      lash.position.set(0, 0.024, 0.018);
+      eyeGroup.add(lash);
+
+      // Determined Hero Eyebrow above eye
+      const browGeo = this.track(new THREE.BoxGeometry(0.065, 0.014, 0.015));
+      const brow = new THREE.Mesh(browGeo, eyeBrowBlackMat);
+      brow.position.set(xSign * 0.005, 0.055, 0.010);
+      brow.rotation.z = xSign * 0.22; // Inward tilt for fierce determination
+      eyeGroup.add(brow);
 
       return eyeGroup;
     };
 
-    this.headGroup.add(buildGlowingEye(-1));
-    this.headGroup.add(buildGlowingEye(1));
+    this.headGroup.add(buildExpressiveHeroEye(-1));
+    this.headGroup.add(buildExpressiveHeroEye(1));
+
+    // Cute Anime Cheek Blush
+    for (const xSign of [-1, 1]) {
+      const blushGeo = this.track(new THREE.SphereGeometry(0.045, 12, 10));
+      blushGeo.scale(1.2, 0.65, 0.15);
+      const blush = new THREE.Mesh(blushGeo, blushPeachMat);
+      blush.position.set(xSign * 0.17, -0.09, 0.42);
+      this.headGroup.add(blush);
+    }
+
+    // Cute Anime Mouth & Smirk
+    const mouthGeo = this.track(new THREE.TorusGeometry(0.038, 0.007, 6, 12, Math.PI * 0.65));
+    mouthGeo.rotateZ(Math.PI * 0.18);
+    const mouth = new THREE.Mesh(mouthGeo, eyeBrowBlackMat);
+    mouth.position.set(0.01, -0.12, 0.435);
+    this.headGroup.add(mouth);
+
+    // Iconic Round Candy Lollipop (Leon's Signature Chupa-Chups)
+    const lollipopGroup = new THREE.Group();
+    lollipopGroup.position.set(0.065, -0.115, 0.45);
+    lollipopGroup.rotation.set(0.15, 0.22, -0.32);
+
+    // Glossy Red Round Lollipop Sphere
+    const candyGeo = this.track(new THREE.SphereGeometry(0.042, 16, 14));
+    candyGeo.scale(1.0, 1.0, 0.82);
+    const candyMesh = new THREE.Mesh(candyGeo, lollipopCherryMat);
+    candyMesh.castShadow = true;
+    lollipopGroup.add(candyMesh);
+
+    // Lollipop Candy Swirl Accent
+    const swirlGeo = this.track(new THREE.TorusGeometry(0.024, 0.005, 6, 14));
+    const swirlMesh = new THREE.Mesh(swirlGeo, teethWhiteMat);
+    swirlMesh.position.set(0, 0, 0.032);
+    lollipopGroup.add(swirlMesh);
+
+    // Clean White Lollipop Stick
+    const stickGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, 0.13, 8));
+    stickGeo.rotateZ(Math.PI / 2);
+    const stickMesh = new THREE.Mesh(stickGeo, teethWhiteMat);
+    stickMesh.position.set(-0.065, -0.005, 0);
+    lollipopGroup.add(stickMesh);
+
+    this.headGroup.add(lollipopGroup);
 
     // ==========================================
     // 5. LARGE CHAMELEON EYES ON TOP OF HOOD (Leon's Signature)
@@ -429,29 +627,46 @@ export class PlayerCharacter {
       pivot.add(upperArm);
 
       // Blue Sleeve Cuff
-      const cuffGeo = this.track(new THREE.TorusGeometry(0.13, 0.03, 8, 16));
+      const cuffGeo = this.track(new THREE.TorusGeometry(0.125, 0.035, 10, 20));
       cuffGeo.rotateX(Math.PI / 2);
       const cuff = new THREE.Mesh(cuffGeo, pocketBlueMat);
       cuff.position.set(0, -0.30, 0);
       cuff.castShadow = true;
       pivot.add(cuff);
 
-      // Forearm / Cartoon Hand
+      // Solid Peach Forearm / Wrist (bridges sleeve cuff directly into hand with zero gap)
+      const wristGeo = this.track(new THREE.CylinderGeometry(0.090, 0.082, 0.18, 14));
+      wristGeo.translate(0, -0.36, 0.01);
+      const wrist = new THREE.Mesh(wristGeo, skinToneMat);
+      wrist.castShadow = true;
+      pivot.add(wrist);
+
+      // Cartoon Hand / Fist attached directly at end of wrist
       const handGroup = new THREE.Group();
-      handGroup.position.set(0, -0.46, 0.02);
+      handGroup.position.set(0, -0.44, 0.015);
       pivot.add(handGroup);
 
       // Rounded Cartoon Fist / Palm
-      const palmGeo = this.track(new THREE.SphereGeometry(0.11, 14, 14));
-      palmGeo.scale(1.0, 0.9, 0.85);
+      const palmGeo = this.track(new THREE.SphereGeometry(0.105, 16, 14));
+      palmGeo.scale(1.0, 0.92, 0.90);
       const palm = new THREE.Mesh(palmGeo, skinToneMat);
       palm.castShadow = true;
       handGroup.add(palm);
 
+      // Knuckle ridges for cartoon brawl glove/fist
+      for (let k = 0; k < 3; k++) {
+        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.024, 0.048, 6, 8));
+        knuckleGeo.rotateZ(Math.PI / 2);
+        const knuckle = new THREE.Mesh(knuckleGeo, skinToneMat);
+        knuckle.position.set((k - 1) * 0.042, -0.040, 0.065);
+        knuckle.castShadow = true;
+        handGroup.add(knuckle);
+      }
+
       // Articulated Thumb
-      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.04, 0.08, 6, 8));
+      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.038, 0.075, 6, 8));
       const thumb = new THREE.Mesh(thumbGeo, skinToneMat);
-      thumb.position.set(xSign * -0.065, 0.015, 0.055);
+      thumb.position.set(xSign * -0.065, 0.012, 0.045);
       thumb.rotation.set(-0.25, 0, xSign * -0.55);
       thumb.castShadow = true;
       handGroup.add(thumb);
@@ -537,30 +752,24 @@ export class PlayerCharacter {
     buildLeonLeg(1, this.rightLegPivot);
   }
 
-  private buildContactShadow() {
-    // Soft ambient occlusion blob shadow disc beneath feet
-    const shadowGeo = this.track(new THREE.CircleGeometry(0.70, 32));
-    shadowGeo.rotateX(-Math.PI / 2);
-    const shadowMat = this.trackMat(
-      new THREE.MeshBasicMaterial({
-        color: 0x050811,
-        transparent: true,
-        opacity: 0.48,
-        depthWrite: false,
-      })
-    );
-    this.shadowDisc = new THREE.Mesh(shadowGeo, shadowMat);
-    this.shadowDisc.position.set(0, 0.02, 0);
-    this.group.add(this.shadowDisc);
-  }
-
   public setFacingAngle(targetAngle: number, dt: number) {
     this.targetYaw = targetAngle;
     let diff = this.targetYaw - this.currentYaw;
     while (diff > Math.PI) diff -= 2 * Math.PI;
     while (diff < -Math.PI) diff += 2 * Math.PI;
 
-    this.currentYaw += diff * Math.min(1, 18 * dt);
+    // Smooth bounded angular interpolation (Genshin Impact / BotW style turn easing)
+    // Ensures smooth turning curve without instantaneous jumps or angle teleporting
+    const maxAngularSpeed = 12.0; // rad/s (~680 deg/s max turn rate)
+    const responsiveness = 14.0;
+    const step = diff * (1 - Math.exp(-responsiveness * dt));
+    const maxStep = maxAngularSpeed * dt;
+    const clampedStep = THREE.MathUtils.clamp(step, -maxStep, maxStep);
+
+    this.currentYaw += clampedStep;
+    while (this.currentYaw > Math.PI) this.currentYaw -= 2 * Math.PI;
+    while (this.currentYaw < -Math.PI) this.currentYaw += 2 * Math.PI;
+
     this.group.rotation.y = this.currentYaw;
   }
 
@@ -570,23 +779,13 @@ export class PlayerCharacter {
     this.idleTime += dt;
 
     // ==========================================
-    // 1. SQUASH & STRETCH (Volume Preserving Cartoon Physics)
+    // 1. SOLID PROPORTION SCALE (No vertical shrinking on jump)
     // ==========================================
     let targetScaleY = 1.0;
-
-    if (!isGrounded) {
-      if (verticalVelocity > 1.8) {
-        targetScaleY = 1.0 + Math.min(0.28, verticalVelocity * 0.024);
-      } else if (verticalVelocity < -2.5) {
-        targetScaleY = 1.0 + Math.max(-0.16, verticalVelocity * 0.010);
-      }
-    } else {
-      targetScaleY = 1.0 - jumpSquash;
+    if (isGrounded && jumpSquash > 0) {
+      targetScaleY = Math.max(0.94, 1.0 - jumpSquash * 0.25);
     }
-
-    const scaleY = THREE.MathUtils.clamp(targetScaleY, 0.68, 1.34);
-    const scaleXZ = 1.0 / Math.sqrt(Math.max(0.4, scaleY));
-    this.modelRoot.scale.set(scaleXZ, scaleY, scaleXZ);
+    this.modelRoot.scale.set(1.0, targetScaleY, 1.0);
 
     // ==========================================
     // 2. DYNAMIC BANKING & LEAN (Athletic Weight Transfer)
@@ -600,37 +799,28 @@ export class PlayerCharacter {
     this.modelRoot.rotation.x = this.currentForwardLean;
 
     // ==========================================
-    // 3. GROUND CONTACT SHADOW
-    // ==========================================
-    this.shadowDisc.position.y = -this.group.position.y + 0.02;
-    const heightAboveGround = Math.max(0, this.group.position.y);
-    const shadowFactor = Math.max(0.08, 1 - heightAboveGround * 0.22);
-    this.shadowDisc.scale.set(shadowFactor, shadowFactor, shadowFactor);
-    (this.shadowDisc.material as THREE.MeshBasicMaterial).opacity = 0.48 * shadowFactor;
-
-    // ==========================================
     // 4. ANIMATION STATES (Airborne Jump, Run Stride, Idle)
     // ==========================================
     if (!isGrounded) {
-      // Airborne Jump Pose
+      // Airborne Jump Pose (Natural athletic jump, preserves vertical silhouette)
       this.walkCycleTime = 0;
 
       if (verticalVelocity > 0) {
-        this.leftArmPivot.rotation.x = -1.2;
-        this.rightArmPivot.rotation.x = -1.2;
-        this.leftArmPivot.rotation.z = -0.38;
-        this.rightArmPivot.rotation.z = 0.38;
-
-        this.leftLegPivot.rotation.x = 0.48;
-        this.rightLegPivot.rotation.x = -0.38;
-      } else {
         this.leftArmPivot.rotation.x = -0.65;
         this.rightArmPivot.rotation.x = -0.65;
-        this.leftArmPivot.rotation.z = -0.45;
-        this.rightArmPivot.rotation.z = 0.45;
+        this.leftArmPivot.rotation.z = -0.25;
+        this.rightArmPivot.rotation.z = 0.25;
 
-        this.leftLegPivot.rotation.x = 0.18;
-        this.rightLegPivot.rotation.x = -0.12;
+        this.leftLegPivot.rotation.x = 0.10;
+        this.rightLegPivot.rotation.x = -0.06;
+      } else {
+        this.leftArmPivot.rotation.x = -0.35;
+        this.rightArmPivot.rotation.x = -0.35;
+        this.leftArmPivot.rotation.z = -0.30;
+        this.rightArmPivot.rotation.z = 0.30;
+
+        this.leftLegPivot.rotation.x = 0.05;
+        this.rightLegPivot.rotation.x = -0.04;
       }
 
       this.torsoGroup.position.y = 0.86;

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
@@ -75,15 +75,14 @@ async function run() {
   let browser;
   try {
     browser = await chromium.launch({
-      channel: 'chrome',
       headless: true,
-      args: ['--use-gl=angle', '--use-angle=default', '--enable-webgl', '--no-sandbox'],
+      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--no-sandbox'],
     });
   } catch (err) {
     browser = await chromium.launch({
       channel: 'msedge',
       headless: true,
-      args: ['--use-gl=angle', '--use-angle=default', '--enable-webgl', '--no-sandbox'],
+      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-webgl', '--no-sandbox'],
     });
   }
 

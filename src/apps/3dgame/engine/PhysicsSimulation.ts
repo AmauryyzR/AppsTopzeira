@@ -76,12 +76,24 @@ export class PhysicsSimulation {
       moveDirZ = -normX * sinY + normZ * cosY;
 
       const targetFacing = Math.atan2(moveDirX, moveDirZ);
-      let angleDiff = targetFacing - this.prevFacingAngle;
+      let angleDiff = targetFacing - this.facingAngle;
       while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
       while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-      this.turnRate = angleDiff / Math.max(0.001, dt);
-      this.prevFacingAngle = targetFacing;
-      this.facingAngle = targetFacing;
+
+      // Smooth angular turning with bounded max angular velocity (Genshin / BotW style)
+      const maxAngularSpeed = 12.0; // rad/s (~680 deg/s max turn speed)
+      const angularStep = THREE.MathUtils.clamp(
+        angleDiff * (1 - Math.exp(-14 * dt)),
+        -maxAngularSpeed * dt,
+        maxAngularSpeed * dt
+      );
+
+      this.facingAngle += angularStep;
+      while (this.facingAngle > Math.PI) this.facingAngle -= 2 * Math.PI;
+      while (this.facingAngle < -Math.PI) this.facingAngle += 2 * Math.PI;
+
+      this.turnRate = angularStep / Math.max(0.0001, dt);
+      this.prevFacingAngle = this.facingAngle;
     } else {
       this.turnRate *= Math.max(0, 1 - 10 * dt);
     }
@@ -112,14 +124,9 @@ export class PhysicsSimulation {
       this.jumpSquash = -0.22;
     }
 
-    // 5. Gravitational Physics & Apex Float
+    // 5. Gravitational Physics (Clean, natural parabolic arc with zero apex hang)
     if (!this.isGrounded) {
-      // Apex float: when near the crest of the jump parabola (|vy| < 1.8 m/s),
-      // simulate aerodynamic stall and crest float with slightly moderated gravity
-      const isAtApex = Math.abs(this.velocity.y) < 1.8;
-      const effectiveGravity = isAtApex ? this.gravity * 0.76 : this.gravity;
-
-      this.velocity.y -= effectiveGravity * dt;
+      this.velocity.y -= this.gravity * dt;
 
       // Terminal fall velocity clamp
       if (this.velocity.y < this.terminalVelocity) {

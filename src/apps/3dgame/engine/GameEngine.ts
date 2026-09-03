@@ -4,6 +4,8 @@ import { ParkWorld } from './ParkWorld';
 import { PlayerCharacter } from './PlayerCharacter';
 import { PhysicsSimulation } from './PhysicsSimulation';
 import { InputManager } from '../input/InputManager';
+import { SkyDome } from './shaders/SkyDomeShader';
+import { disposeToonCache } from './shaders/ToonMaterial';
 
 export class GameEngine {
   public readonly scene: THREE.Scene;
@@ -13,6 +15,8 @@ export class GameEngine {
   public readonly playerCharacter: PlayerCharacter;
   public readonly physics: PhysicsSimulation;
   public readonly input: InputManager;
+  public readonly skyDome: SkyDome;
+  public sunLight!: THREE.DirectionalLight;
 
   private container: HTMLElement;
   private resizeObserver: ResizeObserver | null = null;
@@ -24,14 +28,18 @@ export class GameEngine {
     this.container = container;
     this.input = input;
 
-    // 1. Scene & Atmosphere
+    // 1. Scene & Atmosphere (Genshin / BoTW Anime Horizon)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x7dc5f5);
-    this.scene.fog = new THREE.FogExp2(0x9bd8ff, 0.008);
+    this.scene.background = new THREE.Color(0xc7e4fa);
+    this.scene.fog = new THREE.FogExp2(0xc7e4fa, 0.0055);
 
-    // 2. Camera Rig
+    // 2. Anime Cel-Shaded SkyDome
+    this.skyDome = new SkyDome();
+    this.scene.add(this.skyDome.mesh);
+
+    // 3. Camera Rig
     const aspect = container.clientWidth / (container.clientHeight || 1);
-    this.cameraRig = new CameraRig(58, aspect, 0.1, 400);
+    this.cameraRig = new CameraRig(58, aspect, 0.1, 800);
     this.cameraRig.attach(container);
 
     // 3. High-Performance WebGL2 Renderer
@@ -43,7 +51,7 @@ export class GameEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.renderer.setPixelRatio(dpr);
@@ -83,17 +91,19 @@ export class GameEngine {
     this.lastTime = performance.now();
     this.loop();
 
+    (window as any).__engine = this;
+
     onReady?.();
   }
 
   private setupLighting() {
-    // Hemispheric Ambient Light (Soft sky and grass bounce)
-    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x3d7e35, 0.9);
+    // Hemispheric Ambient Light (Soft anime sky and grass bounce)
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x86efac, 1.0);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
 
-    // Directional Sunlight with Soft Shadows
-    const sunLight = new THREE.DirectionalLight(0xfffaed, 1.8);
+    // Directional Sunlight with Soft Shadows (Warm welcoming anime sun)
+    const sunLight = new THREE.DirectionalLight(0xfff6e6, 2.0);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -106,6 +116,7 @@ export class GameEngine {
     sunLight.shadow.camera.bottom = -50;
     sunLight.shadow.bias = -0.0003;
     this.scene.add(sunLight);
+    this.sunLight = sunLight;
 
     // Subtle Fill Light from opposite angle
     const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
@@ -161,7 +172,16 @@ export class GameEngine {
     // 4. Update Roblox-Style Orbital Camera
     this.cameraRig.update(this.physics.position, dt);
 
-    // 5. Render Scene
+    // 5. Update Anime SkyDome & Atmosphere
+    this.skyDome.update(dt, this.sunLight?.position, this.cameraRig.camera.position);
+
+    // 6. Update Instanced Living GrassField (Wind Waves & Player Interaction)
+    this.parkWorld.grassField.update(dt, this.physics.position, this.sunLight?.position);
+
+    // 7. Update Stylized Water & Fountain Hydrodynamics (Waves, Caustics, Cascades)
+    this.parkWorld.update(dt, this.sunLight?.position);
+
+    // 8. Render Scene
     this.renderer.render(this.scene, this.cameraRig.camera);
 
     this.animFrameId = requestAnimationFrame(this.loop);
@@ -181,10 +201,15 @@ export class GameEngine {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+    this.skyDome.dispose();
     this.cameraRig.dispose();
     this.parkWorld.dispose();
     this.playerCharacter.dispose();
+    disposeToonCache();
     this.renderer.dispose();
+    if ((window as any).__engine === this) {
+      delete (window as any).__engine;
+    }
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);
     }
