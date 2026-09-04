@@ -566,7 +566,16 @@ export class SculptedTreesManager {
     // 1. MASTER MATERIALS (Curated Cel-Shaded Anime Palettes)
     // -------------------------------------------------------------
     // Trunk wood material
-    const woodMat = this.trackMat(createToonMaterial(TOON_PRESETS.wood));
+    const woodMat = this.trackMat(
+      createToonMaterial({
+        ...TOON_PRESETS.wood,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 0.85,
+        fineGlowPower: 4.2,
+        fineGlowMin: 0.72,
+        fineGlowMax: 0.98,
+      })
+    );
 
     // Summer Oak Foliage: Meadow Green & Emerald Sunlit Highlights
     const oakMeadowMat = this.trackMat(
@@ -574,8 +583,13 @@ export class SculptedTreesManager {
         color: 0x34b85c, // Vibrant Zelda BotW meadow green
         gradientBands: 3,
         rimColor: 0xa7f3d0, // Sunlit foliage edge glow
-        rimPower: 2.6,
-        rimIntensity: 0.65,
+        rimPower: 2.8,
+        rimIntensity: 0.55,
+        fineGlowColor: 0xffffff, // Crisp fine white Genshin glow rim (razor contour)
+        fineGlowIntensity: 1.25,
+        fineGlowPower: 4.4,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
         shadowColor: 0x14532d, // Deep jade anime shadow
         shadowIntensity: 0.55,
       })
@@ -587,7 +601,12 @@ export class SculptedTreesManager {
         gradientBands: 3,
         rimColor: 0xdcfce7,
         rimPower: 2.8,
-        rimIntensity: 0.70,
+        rimIntensity: 0.60,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 1.20,
+        fineGlowPower: 4.4,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
         shadowColor: 0x166534,
         shadowIntensity: 0.50,
       })
@@ -600,7 +619,12 @@ export class SculptedTreesManager {
         gradientBands: 4,
         rimColor: 0xffedd5, // Soft morning peach rim
         rimPower: 2.7,
-        rimIntensity: 0.55,
+        rimIntensity: 0.50,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 1.25,
+        fineGlowPower: 4.2,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
         shadowColor: 0xdb2777, // Rich magenta petal shadow (#db2777)
         shadowIntensity: 0.48,
       })
@@ -612,8 +636,13 @@ export class SculptedTreesManager {
         gradientBands: 4,
         rimColor: 0xfff1f2, // Pearl blossom rim
         rimPower: 2.5,
-        rimIntensity: 0.65,
-        shadowColor: 0xdb2777, // (#db2777)
+        rimIntensity: 0.55,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 1.20,
+        fineGlowPower: 4.2,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
+        shadowColor: 0xdb2777,
         shadowIntensity: 0.45,
       })
     );
@@ -624,8 +653,13 @@ export class SculptedTreesManager {
         color: 0x1e7846, // Cool alpine pine green
         gradientBands: 3,
         rimColor: 0xa7f3d0, // Mint frosted edge rim
-        rimPower: 2.7,
-        rimIntensity: 0.65,
+        rimPower: 2.8,
+        rimIntensity: 0.55,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 1.20,
+        fineGlowPower: 4.4,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
         shadowColor: 0x0f3d23, // Deep evergreen midnight shadow
         shadowIntensity: 0.60,
         side: THREE.DoubleSide,
@@ -637,8 +671,13 @@ export class SculptedTreesManager {
         color: 0x22c55e, // Fresh pine needle highlight
         gradientBands: 3,
         rimColor: 0xd1fae5,
-        rimPower: 2.5,
-        rimIntensity: 0.70,
+        rimPower: 2.6,
+        rimIntensity: 0.60,
+        fineGlowColor: 0xffffff,
+        fineGlowIntensity: 1.15,
+        fineGlowPower: 4.4,
+        fineGlowMin: 0.78,
+        fineGlowMax: 0.99,
         shadowColor: 0x14532d,
         shadowIntensity: 0.55,
         side: THREE.DoubleSide,

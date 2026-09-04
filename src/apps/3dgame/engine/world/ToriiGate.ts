@@ -128,10 +128,23 @@ export class ToriiGate {
     // 2. DIMENSIONS & STRUCTURAL PARAMETERS
     // -------------------------------------------------------------
     const pillarSpacingX = 2.85; // Distance from center to each pillar (total span 5.7m)
-    const pillarHeight = 6.8;
+    const pillarHeight = 5.0;    // Precise column shaft height
     const pillarRadiusBase = 0.36;
     const pillarRadiusTop = 0.31;
-    const tiltAngle = 0.038; // ~2.2 degrees inward tilt (uchikorobi)
+    const tiltAngle = 0.038;     // ~2.2 degrees inward tilt (uchikorobi)
+
+    const yBase = 0.66;          // Top of stone plinth drum where column begins
+    const capHeight = 0.18;      // Height of capital (Daiwa)
+    const cosTilt = Math.cos(tiltAngle);
+    const sinTilt = Math.sin(tiltAngle);
+
+    // Precise vertical elevations
+    const yPillarTop = yBase + pillarHeight * cosTilt;                 // 5.656m
+    const yCapTop = yPillarTop + capHeight * cosTilt;                   // 5.836m
+    const shimakiHeight = 0.36;
+    const yShimaki = yCapTop + shimakiHeight / 2;                       // 6.016m
+    const kasagiHeight = 0.54;
+    const yKasagi = yShimaki + shimakiHeight / 2 + kasagiHeight / 2;    // 6.466m
 
     // -------------------------------------------------------------
     // 3. STONE THRESHOLD APRON
@@ -160,14 +173,17 @@ export class ToriiGate {
     // Shared geometries
     const plinthSquareGeo = this.trackGeo(new THREE.BoxGeometry(1.25, 0.22, 1.25));
     const plinthDrumGeo = this.trackGeo(new THREE.CylinderGeometry(0.52, 0.58, 0.44, 20));
-    const nemakiGeo = this.trackGeo(new THREE.CylinderGeometry(0.38, 0.39, 0.72, 20));
+    const nemakiHeight = 0.72;
+    const nemakiGeo = this.trackGeo(new THREE.CylinderGeometry(0.38, 0.39, nemakiHeight, 20));
     const pillarGeo = this.trackGeo(
       new THREE.CylinderGeometry(pillarRadiusTop, pillarRadiusBase, pillarHeight, 20)
     );
-    const daiwaCapitalGeo = this.trackGeo(new THREE.CylinderGeometry(0.44, 0.36, 0.18, 20));
+    const daiwaCapitalGeo = this.trackGeo(new THREE.CylinderGeometry(0.44, 0.36, capHeight, 20));
 
     for (const side of [-1, 1]) {
       const px = side * pillarSpacingX;
+      // In Three.js, rotation around Z by (side * tiltAngle) tilts the top inward towards X = 0
+      const pillarRotZ = side * tiltAngle;
 
       // Stone Plinth Level 1: Square chamfered base slab
       const plinthSquare = new THREE.Mesh(plinthSquareGeo, stoneMat);
@@ -183,49 +199,49 @@ export class ToriiGate {
       plinthDrum.receiveShadow = true;
       this.group.add(plinthDrum);
 
-      // Protective Lacquered Black Sleeve (Nemaki)
+      // Protective Lacquered Black Sleeve (Nemaki) - concentric with column base
+      const nemakiMidX = px - side * (nemakiHeight / 2) * sinTilt;
+      const nemakiMidY = yBase + (nemakiHeight / 2) * cosTilt;
       const nemaki = new THREE.Mesh(nemakiGeo, lacquerBlackMat);
-      nemaki.position.set(px, 0.98, 0);
-      nemaki.rotation.z = -side * tiltAngle;
+      nemaki.position.set(nemakiMidX, nemakiMidY, 0);
+      nemaki.rotation.z = pillarRotZ;
       nemaki.castShadow = true;
       nemaki.receiveShadow = true;
       this.group.add(nemaki);
 
-      // Main Cinnabar Vermilion Column Shaft
+      // Main Cinnabar Vermilion Column Shaft - starts exactly at plinth center (px, yBase)
+      const pillarMidX = px - side * (pillarHeight / 2) * sinTilt;
+      const pillarMidY = yBase + (pillarHeight / 2) * cosTilt;
       const pillar = new THREE.Mesh(pillarGeo, vermilionMat);
-      pillar.position.set(
-        px - side * (pillarHeight / 2) * Math.sin(tiltAngle),
-        0.66 + (pillarHeight / 2) * Math.cos(tiltAngle),
-        0
-      );
-      pillar.rotation.z = -side * tiltAngle;
+      pillar.position.set(pillarMidX, pillarMidY, 0);
+      pillar.rotation.z = pillarRotZ;
       pillar.castShadow = true;
       pillar.receiveShadow = true;
       this.group.add(pillar);
 
-      // Pillar Top Capital Ring (Daiwa)
+      // Pillar Top Capital Ring (Daiwa) - sits flush at top of column
+      const capMidX = px - side * (pillarHeight + capHeight / 2) * sinTilt;
+      const capMidY = yBase + (pillarHeight + capHeight / 2) * cosTilt;
       const capital = new THREE.Mesh(daiwaCapitalGeo, lacquerBlackMat);
-      const capX = px - side * pillarHeight * Math.sin(tiltAngle);
-      const capY = 0.66 + pillarHeight * Math.cos(tiltAngle) + 0.08;
-      capital.position.set(capX, capY, 0);
-      capital.rotation.z = -side * tiltAngle;
+      capital.position.set(capMidX, capMidY, 0);
+      capital.rotation.z = pillarRotZ;
       capital.castShadow = true;
       this.group.add(capital);
 
       // Gilded ornamental band around capital
       const goldRingGeo = this.trackGeo(new THREE.CylinderGeometry(0.45, 0.45, 0.05, 20));
       const goldRing = new THREE.Mesh(goldRingGeo, goldMat);
-      goldRing.position.set(capX, capY, 0);
-      goldRing.rotation.z = -side * tiltAngle;
+      goldRing.position.set(capMidX, capMidY, 0);
+      goldRing.rotation.z = pillarRotZ;
       this.group.add(goldRing);
     }
 
     // -------------------------------------------------------------
     // 5. SECONDARY TIE-BEAM (NUKI) & WEDGES (KUSABI)
     // -------------------------------------------------------------
-    const nukiY = 4.65;
+    const nukiY = 4.25;
     const nukiLength = 8.6;
-    const nukiBeamGeo = this.trackGeo(new THREE.BoxGeometry(nukiLength, 0.42, 0.28));
+    const nukiBeamGeo = this.trackGeo(new THREE.BoxGeometry(nukiLength, 0.38, 0.28));
     const nukiBeam = new THREE.Mesh(nukiBeamGeo, vermilionMat);
     nukiBeam.position.set(0, nukiY, 0);
     nukiBeam.castShadow = true;
@@ -233,18 +249,19 @@ export class ToriiGate {
     this.group.add(nukiBeam);
 
     // Beveled end caps on Nuki
-    const nukiEndGeo = this.trackGeo(new THREE.BoxGeometry(0.18, 0.44, 0.30));
+    const nukiEndGeo = this.trackGeo(new THREE.BoxGeometry(0.18, 0.40, 0.30));
     for (const side of [-1, 1]) {
       const nukiEnd = new THREE.Mesh(nukiEndGeo, lacquerBlackMat);
       nukiEnd.position.set(side * (nukiLength / 2 - 0.08), nukiY, 0);
       nukiEnd.castShadow = true;
       this.group.add(nukiEnd);
 
-      // Wedge pegs (Kusabi) protruding through beam
+      // Wedge pegs (Kusabi) protruding through beam adjacent to pillar
+      const colAtNukiX = side * (pillarSpacingX - (nukiY - yBase) * Math.tan(tiltAngle));
       for (const f of [-1, 1]) {
-        const wedgeGeo = this.trackGeo(new THREE.BoxGeometry(0.10, 0.58, 0.08));
+        const wedgeGeo = this.trackGeo(new THREE.BoxGeometry(0.10, 0.54, 0.08));
         const wedge = new THREE.Mesh(wedgeGeo, lacquerBlackMat);
-        wedge.position.set(side * (pillarSpacingX - 0.55), nukiY, f * 0.16);
+        wedge.position.set(colAtNukiX - side * 0.42, nukiY, f * 0.16);
         this.group.add(wedge);
       }
     }
@@ -252,11 +269,13 @@ export class ToriiGate {
     // -------------------------------------------------------------
     // 6. CENTRAL PLAQUE STRUT (GAKUZUKA) & SHRINE TABLETS (DUAL-FACED)
     // -------------------------------------------------------------
-    const shimakiY = 6.45;
-    const strutH = shimakiY - (nukiY + 0.21);
+    const nukiTopY = nukiY + 0.19;
+    const shimakiBotY = yShimaki - shimakiHeight / 2;
+    const strutH = shimakiBotY - nukiTopY;
+    const strutMidY = nukiTopY + strutH / 2;
     const strutGeo = this.trackGeo(new THREE.BoxGeometry(0.52, strutH, 0.26));
     const strut = new THREE.Mesh(strutGeo, vermilionMat);
-    strut.position.set(0, nukiY + 0.21 + strutH / 2, 0);
+    strut.position.set(0, strutMidY, 0);
     strut.castShadow = true;
     strut.receiveShadow = true;
     this.group.add(strut);
@@ -266,39 +285,47 @@ export class ToriiGate {
       const tabletZ = f * 0.16;
 
       // Lacquered Black Tablet Board
-      const tabletBoardGeo = this.trackGeo(new THREE.BoxGeometry(0.96, 1.20, 0.05));
+      const tabletBoardGeo = this.trackGeo(new THREE.BoxGeometry(0.96, 1.10, 0.05));
       const tabletBoard = new THREE.Mesh(tabletBoardGeo, lacquerBlackMat);
-      tabletBoard.position.set(0, nukiY + 0.85, tabletZ);
+      tabletBoard.position.set(0, strutMidY, tabletZ);
       tabletBoard.castShadow = true;
       tabletBoard.receiveShadow = true;
       this.group.add(tabletBoard);
 
       // Gold frame bezel around tablet
-      const frameGeo = this.trackGeo(new THREE.BoxGeometry(1.04, 1.28, 0.03));
+      const frameGeo = this.trackGeo(new THREE.BoxGeometry(1.04, 1.18, 0.03));
       const frame = new THREE.Mesh(frameGeo, goldMat);
-      frame.position.set(0, nukiY + 0.85, tabletZ - f * 0.015);
+      frame.position.set(0, strutMidY, tabletZ - f * 0.015);
       this.group.add(frame);
 
       // Gold emblem / Kanji medallion
       const emblemGeo = this.trackGeo(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 16));
       emblemGeo.rotateX(Math.PI / 2);
       const emblem = new THREE.Mesh(emblemGeo, goldMat);
-      emblem.position.set(0, nukiY + 0.85, tabletZ + f * 0.032);
+      emblem.position.set(0, strutMidY, tabletZ + f * 0.032);
       this.group.add(emblem);
     }
 
     // -------------------------------------------------------------
     // 7. DUAL-TIER CURVED LINTEL (SHIMAKI & KASAGI WITH SORI)
     // -------------------------------------------------------------
-    // Build parametric upward-curving Kasagi (segmented for authentic anime curvature)
+    // Lower Shimaki beam resting directly on capitals
+    const shimakiLength = 8.6;
+    const kasagiWidth = 0.62;
+    const shimakiGeo = this.trackGeo(new THREE.BoxGeometry(shimakiLength, shimakiHeight, kasagiWidth * 0.88));
+    const shimaki = new THREE.Mesh(shimakiGeo, vermilionMat);
+    shimaki.position.set(0, yShimaki, 0);
+    shimaki.castShadow = true;
+    shimaki.receiveShadow = true;
+    this.group.add(shimaki);
+
+    // Build parametric upward-curving Kasagi resting on Shimaki
     const kasagiSegments = 24;
     const kasagiSpan = 9.8;
-    const kasagiWidth = 0.62;
-    const kasagiHeight = 0.54;
     const soriApexRise = 0.42; // Upward sweep at the tips
 
     const kasagiGroup = new THREE.Group();
-    kasagiGroup.position.set(0, shimakiY, 0);
+    kasagiGroup.position.set(0, yKasagi, 0);
 
     const segmentSpan = kasagiSpan / kasagiSegments;
     const segmentGeo = this.trackGeo(
@@ -351,15 +378,6 @@ export class ToriiGate {
     }
 
     this.group.add(kasagiGroup);
-
-    // Lower Shimaki beam just below kasagi
-    const shimakiLength = 8.6;
-    const shimakiGeo = this.trackGeo(new THREE.BoxGeometry(shimakiLength, 0.34, kasagiWidth * 0.88));
-    const shimaki = new THREE.Mesh(shimakiGeo, vermilionMat);
-    shimaki.position.set(0, shimakiY - 0.28, 0);
-    shimaki.castShadow = true;
-    shimaki.receiveShadow = true;
-    this.group.add(shimaki);
 
     // -------------------------------------------------------------
     // 8. FLANKING TRADITIONAL STONE LANTERNS (TŌRŌ)

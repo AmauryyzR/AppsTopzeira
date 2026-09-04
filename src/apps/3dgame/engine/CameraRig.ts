@@ -33,9 +33,18 @@ export class CameraRig {
 
   private domElement: HTMLElement | null = null;
 
+  public readonly baseFov: number;
+  private targetFov: number;
+
   constructor(fov = 56, aspect = 16 / 9, near = 0.1, far = 500) {
     this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    this.baseFov = fov;
+    this.targetFov = fov;
     this.updatePositionImmediate();
+  }
+
+  public setSprinting(isSprinting: boolean, speed: number) {
+    this.targetFov = isSprinting && speed > 5.0 ? this.baseFov + 7.0 : this.baseFov;
   }
 
   public attach(domElement: HTMLElement) {
@@ -273,6 +282,12 @@ export class CameraRig {
       camY + dirY * lookDist,
       camZ + dirZ * lookDist
     );
+
+    // Smooth dynamic FOV kick on sprint boost
+    if (Math.abs(this.camera.fov - this.targetFov) > 0.05) {
+      this.camera.fov += (this.targetFov - this.camera.fov) * Math.min(1, 8.0 * dt);
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   private updatePositionImmediate() {

@@ -7,11 +7,20 @@ import { InputManager } from '../input/InputManager';
 import { SkyDome } from './shaders/SkyDomeShader';
 import { disposeToonCache } from './shaders/ToonMaterial';
 import { AtmosphericVFXSystem } from './vfx/AtmosphericVFXSystem';
+import { GenshinDashTrailVFX } from './vfx/GenshinDashTrailVFX';
 import { SoundEffectsEngine } from './audio/SoundEffectsEngine';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export class GameEngine {
   public readonly scene: THREE.Scene;
   public readonly renderer: THREE.WebGLRenderer;
+  public readonly composer: EffectComposer;
+  public readonly bloomPass: UnrealBloomPass;
+  public readonly smaaPass: SMAAPass;
   public readonly cameraRig: CameraRig;
   public readonly parkWorld: ParkWorld;
   public readonly playerCharacter: PlayerCharacter;
@@ -19,6 +28,7 @@ export class GameEngine {
   public readonly input: InputManager;
   public readonly skyDome: SkyDome;
   public readonly vfx: AtmosphericVFXSystem;
+  public readonly dashVFX: GenshinDashTrailVFX;
   public readonly audio: SoundEffectsEngine;
   public sunLight!: THREE.DirectionalLight;
   public hemiLight!: THREE.HemisphereLight;
@@ -38,8 +48,8 @@ export class GameEngine {
 
     // 1. Scene & Atmosphere (Genshin / BoTW Anime Horizon)
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xc7e4fa);
-    this.scene.fog = new THREE.FogExp2(0xc7e4fa, 0.0055);
+    this.scene.background = new THREE.Color(0xb8daf4);
+    this.scene.fog = new THREE.Fog(0xb8daf4, 45, 250);
 
     // 2. Anime Cel-Shaded SkyDome
     this.skyDome = new SkyDome();
@@ -57,7 +67,7 @@ export class GameEngine {
       alpha: false,
     });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -79,7 +89,34 @@ export class GameEngine {
 
     container.appendChild(canvas);
 
-    // 4. Lighting Rig
+    // 4. Post-Processing Pipeline (Genshin Impact Bloom, SMAA Anti-Aliasing, ACES Tone Mapping)
+    const renderTarget = new THREE.WebGLRenderTarget(width * dpr, height * dpr, {
+      type: THREE.HalfFloatType,
+      samples: 4,
+    });
+    this.composer = new EffectComposer(this.renderer, renderTarget);
+    const renderPass = new RenderPass(this.scene, this.cameraRig.camera);
+    this.composer.addPass(renderPass);
+
+    // UnrealBloomPass calibrated for anime/Genshin aesthetic:
+    // Threshold 0.94 ensures only high-energy rim glow, sun highlights, and paper lanterns trigger bloom,
+    // keeping stone plaza, grass lawn, and water surfaces crystal-clear with punchy contrast
+    this.bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      0.18, // bloom strength (delicate anime halation)
+      0.32, // bloom radius
+      0.94  // bloom threshold
+    );
+    this.composer.addPass(this.bloomPass);
+
+    // SMAA Subpixel Morphological Anti-Aliasing for smooth, pristine anime edges
+    this.smaaPass = new SMAAPass();
+    this.composer.addPass(this.smaaPass);
+
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
+
+    // 5. Lighting Rig
     this.setupLighting();
 
     // 5. 3D Park World & Player Character
@@ -92,6 +129,10 @@ export class GameEngine {
     // Dynamic Cel-Shaded Atmospheric VFX (Loop 7: Sakura, Fireflies, Splashes, Dust)
     this.vfx = new AtmosphericVFXSystem();
     this.scene.add(this.vfx.group);
+
+    // Stylized Genshin Dash & Sprint Trail VFX (Ghost After-Images, Streamers, Shockwave, Sparks)
+    this.dashVFX = new GenshinDashTrailVFX(this.playerCharacter);
+    this.scene.add(this.dashVFX.group);
 
     // Procedural Web Audio Soundscapes (Loop 9: Jump, Land, Footsteps)
     this.audio = new SoundEffectsEngine();
@@ -113,13 +154,13 @@ export class GameEngine {
 
   private setupLighting() {
     // Hemispheric Ambient Light (Soft anime sky and grass bounce)
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x86efac, 1.0);
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x86efac, 0.70);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
     // Directional Sunlight with Soft Shadows (Warm welcoming anime sun)
-    const sunLight = new THREE.DirectionalLight(0xfff6e6, 2.0);
+    const sunLight = new THREE.DirectionalLight(0xfff6e6, 1.25);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -152,11 +193,15 @@ export class GameEngine {
     if (!this.container || this.isDisposed) return;
     const w = this.container.clientWidth || 320;
     const h = this.container.clientHeight || 240;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     this.cameraRig.camera.aspect = w / h;
     this.cameraRig.camera.updateProjectionMatrix();
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, true);
+    this.composer.setSize(w, h);
+    this.bloomPass.resolution.set(w, h);
+    this.smaaPass.setSize(w * dpr, h * dpr);
   }
 
   private loop = () => {
@@ -188,7 +233,14 @@ export class GameEngine {
       dt,
     });
 
-    // 4. Update Roblox-Style Orbital Camera
+    // Dash burst audio and shockwave trigger
+    if (inputState.isDashTriggered) {
+      this.dashVFX.triggerDashBurst(this.physics.position, this.physics.velocity);
+      this.audio.playDash();
+    }
+
+    // 4. Update Roblox-Style Orbital Camera & Sprint FOV Kick
+    this.cameraRig.setSprinting(inputState.isSprinting, this.physics.speed);
     this.cameraRig.update(this.physics.position, dt);
 
     // 5. Update Dynamic Sun & Sky Atmosphere (Loop 8: Diurnal Celestial Progression)
@@ -215,6 +267,17 @@ export class GameEngine {
       this.physics.speed
     );
 
+    // Stylized Genshin Dash Trail VFX (Ghost after-images, ribbon streamers, shockwave rings)
+    this.dashVFX.update(
+      dt,
+      this.playerCharacter,
+      this.physics.position,
+      this.physics.velocity,
+      this.physics.speed,
+      inputState.isSprinting,
+      this.physics.isGrounded
+    );
+
     // 9. Procedural Web Audio Sensory Triggers (Loop 9: Jump, Land, Footsteps)
     if (!this.wasGroundedLastFrame && this.physics.isGrounded) {
       this.audio.playLand(Math.abs(this.physics.verticalVelocity));
@@ -233,8 +296,8 @@ export class GameEngine {
       }
     }
 
-    // 10. Render Scene
-    this.renderer.render(this.scene, this.cameraRig.camera);
+    // 10. Render Scene via Post-Processing Pipeline (Bloom + Tone Mapping)
+    this.composer.render();
 
     this.animFrameId = requestAnimationFrame(this.loop);
   };
@@ -255,11 +318,15 @@ export class GameEngine {
     }
     this.audio.dispose();
     this.vfx.dispose();
+    this.dashVFX.dispose();
     this.skyDome.dispose();
     this.cameraRig.dispose();
     this.parkWorld.dispose();
     this.playerCharacter.dispose();
     disposeToonCache();
+    this.bloomPass.dispose();
+    this.smaaPass.dispose();
+    this.composer.dispose();
     this.renderer.dispose();
     if ((window as any).__engine === this) {
       delete (window as any).__engine;

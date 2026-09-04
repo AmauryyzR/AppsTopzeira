@@ -11,6 +11,12 @@ export interface ToonMaterialOptions {
   rimColor?: THREE.ColorRepresentation;
   rimPower?: number;
   rimIntensity?: number;
+  fineGlowColor?: THREE.ColorRepresentation;
+  fineGlowIntensity?: number;
+  fineGlowPower?: number;
+  fineGlowMin?: number;
+  fineGlowMax?: number;
+  enableWindSway?: boolean;
   shadowColor?: THREE.ColorRepresentation;
   shadowIntensity?: number;
   emissive?: THREE.ColorRepresentation;
@@ -102,23 +108,23 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
 
   // 2. Stone: Polished marble/granite with soft sky diffuse bounce and pearl rim
   stone: {
-    color: 0xd4d8e2, // Soft porcelain/marble grey with gentle cool tone
+    color: 0x94a3b8, // Clean slate-granite grey (Genshin / BotW stone)
     gradientBands: 4,
-    rimColor: 0xffffff, // Crisp pearl specular rim
-    rimPower: 2.8,
-    rimIntensity: 0.65,
-    shadowColor: 0x64748b, // Slate blue anime shadow
-    shadowIntensity: 0.55,
+    rimColor: 0xe2e8f0, // Subtle soft specular rim at grazing angles
+    rimPower: 4.2,
+    rimIntensity: 0.25,
+    shadowColor: 0x475569, // Rich slate blue anime shadow
+    shadowIntensity: 0.50,
   },
 
   // 3. Sandstone: Welcoming sun-warmed path stone (Gerudo/Hyrule style)
   sandstone: {
-    color: 0xedd3a1, // Burlywood golden sandstone
+    color: 0xd4b483, // Warm golden sandstone path
     gradientBands: 4,
-    rimColor: 0xfef3c7, // Warm amber-sun rim
-    rimPower: 3.2,
-    rimIntensity: 0.50,
-    shadowColor: 0xa8714b, // Warm terracotta shadow
+    rimColor: 0xfef3c7,
+    rimPower: 4.0,
+    rimIntensity: 0.20,
+    shadowColor: 0x92613b, // Warm terracotta shadow
     shadowIntensity: 0.45,
   },
 
@@ -151,6 +157,11 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0x86efac, // Bright leaf translucency rim
     rimPower: 2.7,
     rimIntensity: 0.60,
+    fineGlowColor: 0xffffff, // Crisp white Genshin glow rim
+    fineGlowIntensity: 1.45,
+    fineGlowPower: 4.0,
+    fineGlowMin: 0.70,
+    fineGlowMax: 0.98,
     shadowColor: 0x16532d, // Deep pine shadow
     shadowIntensity: 0.55,
   },
@@ -162,6 +173,11 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xa7f3d0,
     rimPower: 2.6,
     rimIntensity: 0.65,
+    fineGlowColor: 0xffffff,
+    fineGlowIntensity: 1.40,
+    fineGlowPower: 3.8,
+    fineGlowMin: 0.68,
+    fineGlowMax: 0.98,
     shadowColor: 0x0f3d23,
     shadowIntensity: 0.60,
   },
@@ -173,7 +189,12 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xffedd5, // Soft peach blossom rim
     rimPower: 2.8,
     rimIntensity: 0.55,
-    shadowColor: 0x9d174d, // Rich magenta petal shadow
+    fineGlowColor: 0xffffff,
+    fineGlowIntensity: 1.50,
+    fineGlowPower: 3.8,
+    fineGlowMin: 0.68,
+    fineGlowMax: 0.98,
+    shadowColor: 0xdb2777, // Rich magenta petal shadow
     shadowIntensity: 0.48,
   },
 
@@ -235,20 +256,36 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
   const shadowColor = new THREE.Color(options.shadowColor !== undefined ? options.shadowColor : 0x64748b);
   const shadowIntensity = options.shadowIntensity !== undefined ? options.shadowIntensity : 0.45;
 
+  const fineGlowColor = new THREE.Color(options.fineGlowColor !== undefined ? options.fineGlowColor : 0xffffff);
+  const fineGlowIntensity = options.fineGlowIntensity !== undefined ? options.fineGlowIntensity : 0.0;
+  const fineGlowPower = options.fineGlowPower !== undefined ? options.fineGlowPower : 4.2;
+  const fineGlowMin = options.fineGlowMin !== undefined ? options.fineGlowMin : 0.72;
+  const fineGlowMax = options.fineGlowMax !== undefined ? options.fineGlowMax : 0.98;
+
   mat.userData.rimColor = rimColor;
   mat.userData.rimPower = rimPower;
   mat.userData.rimIntensity = rimIntensity;
+  mat.userData.fineGlowColor = fineGlowColor;
+  mat.userData.fineGlowIntensity = fineGlowIntensity;
+  mat.userData.fineGlowPower = fineGlowPower;
+  mat.userData.fineGlowMin = fineGlowMin;
+  mat.userData.fineGlowMax = fineGlowMax;
   mat.userData.shadowColor = shadowColor;
   mat.userData.shadowIntensity = shadowIntensity;
 
   mat.customProgramCacheKey = () => {
-    return `ToonMat_b${bands}_m${options.map ? '1' : '0'}`;
+    return `ToonMat_b${bands}_m${options.map ? '1' : '0'}_fg${fineGlowIntensity > 0 ? '1' : '0'}`;
   };
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uRimColor = { value: rimColor };
     shader.uniforms.uRimPower = { value: rimPower };
     shader.uniforms.uRimIntensity = { value: rimIntensity };
+    shader.uniforms.uFineGlowColor = { value: fineGlowColor };
+    shader.uniforms.uFineGlowIntensity = { value: fineGlowIntensity };
+    shader.uniforms.uFineGlowPower = { value: fineGlowPower };
+    shader.uniforms.uFineGlowMin = { value: fineGlowMin };
+    shader.uniforms.uFineGlowMax = { value: fineGlowMax };
     shader.uniforms.uShadowColor = { value: shadowColor };
     shader.uniforms.uShadowIntensity = { value: shadowIntensity };
 
@@ -265,12 +302,17 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
       uniform vec3 uRimColor;
       uniform float uRimPower;
       uniform float uRimIntensity;
+      uniform vec3 uFineGlowColor;
+      uniform float uFineGlowIntensity;
+      uniform float uFineGlowPower;
+      uniform float uFineGlowMin;
+      uniform float uFineGlowMax;
       uniform vec3 uShadowColor;
       uniform float uShadowIntensity;
       `
     );
 
-    // Inject Stylized Shadows & Rim Lighting before final output
+    // Inject Stylized Shadows, Colored Rim Lighting, and Fine White Glow Edge before final output
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <opaque_fragment>',
       /* glsl */ `
@@ -292,15 +334,19 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
           shadowFactor * clamp(uShadowIntensity, 0.0, 1.0)
         );
 
-        // 2. Anime Fresnel Rim Lighting
+        // 2. Anime Fresnel Rim Lighting (Color Tone Rim)
         vec3 viewDir = normalize(vViewPosition);
         vec3 norm = normalize(normal);
         float NdotV = clamp(dot(norm, viewDir), 0.0, 1.0);
         float fresnel = 1.0 - NdotV;
-        float rim = smoothstep(0.20, 0.85, pow(fresnel, uRimPower));
-
-        // Add bright crisp rim silhouette light
+        float rim = smoothstep(0.22, 0.85, pow(fresnel, uRimPower));
         outgoingLight += uRimColor * (rim * uRimIntensity);
+
+        // 3. Crisp Fine White Glow Edge (Genshin Canopy & Silhouette Halo)
+        if (uFineGlowIntensity > 0.001) {
+          float fineRim = smoothstep(uFineGlowMin, uFineGlowMax, pow(fresnel, uFineGlowPower));
+          outgoingLight += uFineGlowColor * (fineRim * uFineGlowIntensity);
+        }
       }
       #include <opaque_fragment>
       `

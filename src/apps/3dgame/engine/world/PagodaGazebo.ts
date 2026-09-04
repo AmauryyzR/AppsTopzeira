@@ -309,7 +309,8 @@ export class PagodaGazebo {
       const c2 = columnCoords[(i + 1) % 8];
       const midX = (c1.x + c2.x) / 2;
       const midZ = (c1.z + c2.z) / 2;
-      const wallAngle = Math.atan2(c2.z - c1.z, c2.x - c1.x);
+      // In Three.js, rotation around Y rotates local +X towards -Z; negate dz to match heading
+      const wallAngle = Math.atan2(-(c2.z - c1.z), c2.x - c1.x);
 
       // Skip West entrance where stairs connect (midX < -2.8)
       if (midX < -2.6 && Math.abs(midZ) < 1.4) {
@@ -369,7 +370,7 @@ export class PagodaGazebo {
       const c2 = columnCoords[(i + 1) % 8];
       const midX = (c1.x + c2.x) / 2;
       const midZ = (c1.z + c2.z) / 2;
-      const wallAngle = Math.atan2(c2.z - c1.z, c2.x - c1.x);
+      const wallAngle = Math.atan2(-(c2.z - c1.z), c2.x - c1.x);
 
       const beam = new THREE.Mesh(architraveGeo, vermilionMat);
       beam.position.set(midX, eaveBeamY, midZ);

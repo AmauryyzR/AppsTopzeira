@@ -3,6 +3,7 @@ import { GameEngine } from './engine/GameEngine';
 import { InputManager } from './input/InputManager';
 import { RobloxJoystick } from './components/RobloxJoystick';
 import { MobileJumpButton } from './components/MobileJumpButton';
+import { MobileSprintButton } from './components/MobileSprintButton';
 import { MobileFullscreenButton } from './components/MobileFullscreenButton';
 
 export default function App3DGame() {
@@ -44,7 +45,7 @@ export default function App3DGame() {
           left: 0 !important;
           touch-action: none !important;
         }
-        @media (hover: hover) and (pointer: fine) {
+        @media (hover: hover) and (pointer: fine) and (min-width: 841px) {
           .tg-mobile-controls { display: none !important; }
         }
       `}</style>
@@ -56,6 +57,7 @@ export default function App3DGame() {
       <div className="tg-mobile-controls">
         <MobileFullscreenButton />
         <RobloxJoystick input={input} />
+        <MobileSprintButton input={input} />
         <MobileJumpButton input={input} />
       </div>
 

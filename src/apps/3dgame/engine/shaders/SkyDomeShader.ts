@@ -137,27 +137,26 @@ void main() {
   float skyCurve = pow(h, 0.60);
   vec3 sky = mix(uHorizonColor, uZenithColor, skyCurve);
 
-  // Atmospheric sun haze at lower sky
-  float sunAtmosphere = pow(max(0.0, dot(viewDir, sunDir)), 3.0) * 0.30;
+  // Atmospheric sun haze at lower sky (subtle, non-blinding)
+  float sunAtmosphere = pow(max(0.0, dot(viewDir, sunDir)), 8.0) * 0.12;
   sky = mix(sky, uSunColor, sunAtmosphere * (1.0 - skyCurve * 0.75));
 
-  // Below horizon blend (smoothly matching terrain / fog #c7e4fa)
+  // Below horizon blend (smoothly matching terrain / fog)
   if (viewDir.y < 0.0) {
     float belowH = clamp(-viewDir.y * 3.5, 0.0, 1.0);
     sky = mix(uHorizonColor, uHorizonColor * 0.94, belowH);
   }
 
   // -------------------------------------------------------------
-  // 2. STYLIZED SUN & CORONA
+  // 2. STYLIZED SUN & CORONA (Genshin crisp solar disk & soft corona)
   // -------------------------------------------------------------
   float sunCos = dot(viewDir, sunDir);
   // Crisp anime sun disk
   float sunDisk = smoothstep(0.9982, 0.9992, sunCos);
-  // Warm intense corona & outer bloom
-  float innerCorona = pow(max(0.0, sunCos), 96.0) * 0.85;
-  float outerCorona = pow(max(0.0, sunCos), 16.0) * 0.35;
-  float sunAura = pow(max(0.0, sunCos), 5.0) * 0.15;
-  vec3 sun = uSunColor * (sunDisk * 3.2 + innerCorona + outerCorona + sunAura);
+  // Delicate focused corona without atmospheric washout
+  float innerCorona = pow(max(0.0, sunCos), 120.0) * 0.40;
+  float outerCorona = pow(max(0.0, sunCos), 32.0) * 0.10;
+  vec3 sun = uSunColor * (sunDisk * 2.2 + innerCorona + outerCorona);
 
   // -------------------------------------------------------------
   // 3. FLUFFY ANIME CUMULUS CLOUDS (Studio Ghibli / Cel-shaded)

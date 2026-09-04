@@ -3,6 +3,7 @@ export interface InputState {
   moveZ: number; // -1 (forward) to 1 (backward)
   isJumping: boolean;
   isSprinting: boolean;
+  isDashTriggered: boolean;
 }
 
 export class InputManager {
@@ -11,6 +12,8 @@ export class InputManager {
   private touchMoveZ = 0;
   private touchJump = false;
   private jumpRequested = false;
+  private touchSprint = false;
+  private dashRequested = false;
 
   private onKeyDown = (e: KeyboardEvent) => {
     // Prevent default scrolling on space and arrow keys
@@ -18,6 +21,9 @@ export class InputManager {
       if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
         e.preventDefault();
       }
+    }
+    if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && !this.keys.has(e.code)) {
+      this.dashRequested = true;
     }
     this.keys.add(e.code);
     if (e.code === 'Space') {
@@ -32,6 +38,7 @@ export class InputManager {
   private onBlur = () => {
     this.keys.clear();
     this.jumpRequested = false;
+    this.dashRequested = false;
   };
 
   public attach() {
@@ -57,6 +64,17 @@ export class InputManager {
     if (jumping) {
       this.jumpRequested = true;
     }
+  }
+
+  public setTouchSprint(sprinting: boolean) {
+    this.touchSprint = sprinting;
+    if (sprinting) {
+      this.dashRequested = true;
+    }
+  }
+
+  public requestDash() {
+    this.dashRequested = true;
   }
 
   public requestJump() {
@@ -93,13 +111,16 @@ export class InputManager {
     // Consume single-frame jump impulse
     this.jumpRequested = false;
 
-    const isSprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+    const isSprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.touchSprint;
+    const isDashTriggered = this.dashRequested;
+    this.dashRequested = false;
 
     return {
       moveX,
       moveZ,
       isJumping,
       isSprinting,
+      isDashTriggered,
     };
   }
 }

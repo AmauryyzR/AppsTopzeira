@@ -27,10 +27,11 @@ export class PhysicsSimulation {
 
   // Horizontal Kinematics
   private readonly walkSpeed = 6.4;
-  private readonly sprintSpeed = 10.5;
-  private readonly groundAcceleration = 48.0;
+  private readonly sprintSpeed = 14.2;
+  private readonly dashBurstSpeed = 16.5;
+  private readonly groundAcceleration = 56.0;
   private readonly groundDeceleration = 34.0;
-  private readonly airAcceleration = 16.0;
+  private readonly airAcceleration = 18.0;
   private readonly airDeceleration = 8.0;
 
   // AAA Jump Enhancements
@@ -100,6 +101,18 @@ export class PhysicsSimulation {
     }
 
     // 3. Horizontal Acceleration & Air Resistance
+    if (input.isDashTriggered) {
+      if (inputLen > 0.05) {
+        this.velocity.x = moveDirX * this.dashBurstSpeed;
+        this.velocity.z = moveDirZ * this.dashBurstSpeed;
+      } else {
+        const facingX = Math.sin(this.facingAngle);
+        const facingZ = Math.cos(this.facingAngle);
+        this.velocity.x = facingX * this.dashBurstSpeed;
+        this.velocity.z = facingZ * this.dashBurstSpeed;
+      }
+    }
+
     const targetMaxSpeed = input.isSprinting ? this.sprintSpeed : this.walkSpeed;
     const targetVx = moveDirX * targetMaxSpeed * inputLen;
     const targetVz = moveDirZ * targetMaxSpeed * inputLen;

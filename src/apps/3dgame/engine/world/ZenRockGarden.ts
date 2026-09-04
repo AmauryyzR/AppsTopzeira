@@ -24,8 +24,10 @@ export class ZenRockGarden {
   private materials: THREE.Material[] = [];
 
   constructor(
-    private centerX = 16,
-    private centerZ = 18,
+    private centerX = 22,
+    private centerZ = 20,
+    private width = 17.0,
+    private depth = 11.0,
     private addCollision: AddCollisionFn
   ) {
     this.group.position.set(centerX, 0, centerZ);
@@ -48,20 +50,20 @@ export class ZenRockGarden {
   // 1. RAKED SAND BED & CURBED WOODEN BORDER (SAMON)
   // =========================================================================
   private buildGardenBed() {
-    const width = 14.0;
-    const depth = 10.0;
+    const width = this.width;
+    const depth = this.depth;
 
     // Dark polished cypress wood curb enclosure
     const curbMat = this.trackMat(createToonMaterial(TOON_PRESETS.wood));
     const sandMat = this.trackMat(
       createToonMaterial({
-        color: 0xfef9c3, // Pale warm raked quartz sand
+        color: 0xdfd5be, // Natural warm raked quartz sand
         gradientBands: 4,
-        rimColor: 0xffffff,
-        rimPower: 2.5,
-        rimIntensity: 0.65,
-        shadowColor: 0xfde047,
-        shadowIntensity: 0.35,
+        rimColor: 0xffedd5,
+        rimPower: 4.5,
+        rimIntensity: 0.15,
+        shadowColor: 0xb4a489,
+        shadowIntensity: 0.40,
       })
     );
 

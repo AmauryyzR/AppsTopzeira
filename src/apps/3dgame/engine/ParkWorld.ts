@@ -56,7 +56,6 @@ export class ParkWorld {
     this.lanterns = new LanternLightingManager();
     this.group.add(this.lanterns.group);
 
-    this.buildBenches();
     this.buildStreetLamps();
     this.buildCentralFountain();
     this.buildObstacleCourse();
@@ -88,7 +87,7 @@ export class ParkWorld {
 
     // 4. Authentic Zen Rock Garden (Karesansui) & Stepping Stones (Loop 10)
     this.zenRockGarden = new ZenRockGarden(
-      18, 20,
+      22, 20, 17.0, 11.0,
       (x, y, z, w, h, d) => this.addCollision(x, y, z, w, h, d)
     );
     this.group.add(this.zenRockGarden.group);
@@ -194,76 +193,6 @@ export class ParkWorld {
     ringMesh.position.set(0, 0.04, 0);
     ringMesh.receiveShadow = true;
     this.group.add(ringMesh);
-  }
-
-  private buildBenches() {
-    const woodMat = this.trackMat(createToonMaterial(TOON_PRESETS.wood));
-    const ironMat = this.trackMat(createToonMaterial(TOON_PRESETS.iron));
-
-    // Shared bench geometries across all benches
-    const seatPlankGeo = this.track(new THREE.BoxGeometry(2.2, 0.08, 0.17));
-    const backPlankGeo = this.track(new THREE.BoxGeometry(2.2, 0.19, 0.07));
-    const legGeo = this.track(new THREE.BoxGeometry(0.09, 0.44, 0.62));
-    const backUprightGeo = this.track(new THREE.BoxGeometry(0.08, 0.52, 0.08));
-    const armrestGeo = this.track(new THREE.BoxGeometry(0.08, 0.06, 0.48));
-
-    const benchConfigs = [
-      { x: 10, z: 5, rot: -Math.PI / 4 },
-      { x: -10, z: 5, rot: Math.PI / 4 },
-      { x: 10, z: -5, rot: -3 * Math.PI / 4 },
-      { x: -10, z: -5, rot: 3 * Math.PI / 4 },
-      { x: 0, z: 22, rot: Math.PI },
-      { x: 0, z: -22, rot: 0 },
-      { x: 22, z: 0, rot: -Math.PI / 2 },
-      { x: -22, z: 0, rot: Math.PI / 2 },
-    ];
-
-    for (const b of benchConfigs) {
-      const benchGroup = new THREE.Group();
-      benchGroup.position.set(b.x, 0, b.z);
-      benchGroup.rotation.y = b.rot;
-
-      // Triple Chamfered Wood Planks for Seat (visible anime wood seams)
-      for (let s = 0; s < 3; s++) {
-        const plank = new THREE.Mesh(seatPlankGeo, woodMat);
-        plank.position.set(0, 0.45, -0.19 + s * 0.19);
-        plank.castShadow = true;
-        plank.receiveShadow = true;
-        benchGroup.add(plank);
-      }
-
-      // Dual Chamfered Wood Planks for Backrest
-      for (let br = 0; br < 2; br++) {
-        const backPlank = new THREE.Mesh(backPlankGeo, woodMat);
-        backPlank.position.set(0, 0.72 + br * 0.22, -0.28);
-        backPlank.castShadow = true;
-        benchGroup.add(backPlank);
-      }
-
-      // Sculpted Wrought-Iron Side Supports & Armrests with Silver Rim
-      for (const sideX of [-0.95, 0.95]) {
-        // Leg riser
-        const leg = new THREE.Mesh(legGeo, ironMat);
-        leg.position.set(sideX, 0.22, 0);
-        leg.castShadow = true;
-        benchGroup.add(leg);
-
-        // Back upright
-        const backUpright = new THREE.Mesh(backUprightGeo, ironMat);
-        backUpright.position.set(sideX, 0.70, -0.26);
-        backUpright.castShadow = true;
-        benchGroup.add(backUpright);
-
-        // Armrest loop
-        const armrest = new THREE.Mesh(armrestGeo, ironMat);
-        armrest.position.set(sideX, 0.60, 0.02);
-        armrest.castShadow = true;
-        benchGroup.add(armrest);
-      }
-
-      this.group.add(benchGroup);
-      this.addCollision(b.x, 0, b.z, 2.4, 1.0, 0.9);
-    }
   }
 
   private buildStreetLamps() {

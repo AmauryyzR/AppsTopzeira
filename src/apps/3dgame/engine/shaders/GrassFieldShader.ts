@@ -44,10 +44,10 @@ export class GrassField {
   private totalTime = 0;
 
   constructor(options: GrassFieldOptions = {}) {
-    const targetCount = options.count ?? 36000;
+    const targetCount = options.count ?? 78000;
     const parkRadius = options.radius ?? 68;
 
-    // 1. Build Tapered Stylized Tuft Geometry (2 crossed blades with 4 vertical segments)
+    // 1. Build Tapered Stylized Tuft Geometry (3 crossed blades with 4 vertical segments for lush density)
     this.geometry = this.createTuftGeometry();
 
     // 2. Setup Custom GLSL Shader Material with Wind & Interaction
@@ -190,10 +190,13 @@ export class GrassField {
     };
 
     // Blade 1: Main tall blade
-    addBlade(0, 0.78, 0.15, 0.14, 0, 0);
+    addBlade(0, 0.74, 0.15, 0.13, 0, 0);
 
     // Blade 2: Secondary crossed blade angled at ~56 degrees
-    addBlade(0.98, 0.66, 0.13, 0.11, 0.02, -0.01);
+    addBlade(0.98, 0.62, 0.13, 0.11, 0.02, -0.01);
+
+    // Blade 3: Tertiary crossed blade angled at ~-62 degrees for lush 3D volume
+    addBlade(-1.08, 0.52, 0.12, 0.10, -0.02, 0.015);
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -225,12 +228,6 @@ export class GrassField {
       // Outer perimeter groves
       [48, 7], [-48, 7], [7, 48], [-7, -48],
       [45, 45], [-45, 45], [45, -45], [-45, -45],
-    ];
-
-    // Benches to exclude (radius ~1.7m)
-    const benchPositions: [number, number][] = [
-      [10, 5], [-10, 5], [10, -5], [-10, -5],
-      [0, 22], [0, -22], [22, 0], [-22, 0],
     ];
 
     // Lamp posts to exclude (radius ~0.8m)
@@ -270,11 +267,8 @@ export class GrassField {
       if (distCenter >= 37.4 && distCenter <= 43.6) return true;
 
       // 6. Authentic Zen Rock Garden (Karesansui) & Stepping Pillars:
-      // Sand bed + curbs: X in [10.2, 25.8], Z in [14.2, 25.8]
-      if (x >= 10.2 && x <= 25.8 && z >= 14.2 && z <= 25.8) return true;
-
-      // Obstacle course stepping pillars extension to the east:
-      if (x >= 25.8 && x <= 27.6 && z >= 16.5 && z <= 23.5) return true;
+      // Sand bed + curbs (enlarged Zen Garden): X in [13.0, 31.0], Z in [14.0, 26.0]
+      if (x >= 13.0 && x <= 31.0 && z >= 14.0 && z <= 26.0) return true;
 
       // 7. Stepping Stones (Tobi-Ishi) around Zen Garden
       for (let i = 0; i < zenSteppingStones.length; i++) {
@@ -301,13 +295,7 @@ export class GrassField {
         if (Math.hypot(x - tx, z - tz) < 1.20) return true;
       }
 
-      // 13. Benches
-      for (let i = 0; i < benchPositions.length; i++) {
-        const [bx, bz] = benchPositions[i];
-        if (Math.hypot(x - bx, z - bz) < 1.7) return true;
-      }
-
-      // 14. Street Lamps
+      // 13. Street Lamps
       for (let i = 0; i < lampPositions.length; i++) {
         const [lx, lz] = lampPositions[i];
         if (Math.hypot(x - lx, z - lz) < 0.8) return true;
@@ -316,8 +304,8 @@ export class GrassField {
       return false;
     };
 
-    // Stratified jittered grid sampling for even, natural distribution
-    const gridSize = 252;
+    // Stratified jittered grid sampling for even, ultra-dense natural distribution
+    const gridSize = 380;
     const step = (radius * 2) / gridSize;
 
     for (let ix = 0; ix < gridSize; ix++) {
@@ -347,7 +335,7 @@ export class GrassField {
 
     // If slightly fewer, add additional random samples in valid regions
     let attempts = 0;
-    while (positions.length < targetCount && attempts < 25000) {
+    while (positions.length < targetCount && attempts < 100000) {
       attempts++;
       const angle = Math.random() * Math.PI * 2;
       const r = Math.sqrt(Math.random()) * radius;
@@ -523,6 +511,10 @@ export class GrassField {
         float windSheen = smoothstep(0.48, 0.88, vWindIntensity) * vHeightFactor;
         vec3 sheenTone = vec3(0.92, 1.0, 0.72);
         finalColor += sheenTone * (windSheen * 0.28);
+
+        // 5. Fine White Glow Rim on Grass Tips (Genshin Meadow Shimmer)
+        float fineGrassRim = smoothstep(0.70, 0.98, pow(1.0 - NdotV, 3.8)) * vHeightFactor;
+        finalColor += vec3(0.98, 1.0, 0.92) * (fineGrassRim * 0.45);
 
         gl_FragColor = vec4(finalColor, 1.0);
 

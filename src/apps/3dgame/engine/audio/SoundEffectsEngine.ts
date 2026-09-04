@@ -144,6 +144,59 @@ export class SoundEffectsEngine {
     osc.stop(t + 0.06);
   }
 
+  /**
+   * Play anime aerodynamic dash whoosh & wind rush chime (Genshin style)
+   */
+  public playDash() {
+    if (this.isMuted || !this.ensureContext() || !this.ctx || !this.masterGain) return;
+
+    const t = this.ctx.currentTime;
+
+    // 1. Aerodynamic Wind Whoosh (Filtered Noise Burst)
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.24);
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+
+    const whiteNoise = this.ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 3.2;
+    filter.frequency.setValueAtTime(2200, t);
+    filter.frequency.exponentialRampToValueAtTime(420, t + 0.22);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.40, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.23);
+
+    whiteNoise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(this.masterGain);
+
+    whiteNoise.start(t);
+    whiteNoise.stop(t + 0.23);
+
+    // 2. High Chime Sweep Tone
+    const osc = this.ctx.createOscillator();
+    const oscGain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(480, t);
+    osc.frequency.exponentialRampToValueAtTime(1120, t + 0.16);
+
+    oscGain.gain.setValueAtTime(0.25, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+
+    osc.connect(oscGain);
+    oscGain.connect(this.masterGain);
+
+    osc.start(t);
+    osc.stop(t + 0.24);
+  }
+
   public dispose() {
     if (this.ctx && this.ctx.state !== 'closed') {
       this.ctx.close().catch(() => {});
