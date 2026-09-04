@@ -16,6 +16,7 @@ const sunShaftFragmentShader = /* glsl */ `
 uniform vec3 uColor;
 uniform float uOpacity;
 uniform float uTime;
+uniform vec3 uSunDirection;
 varying vec2 vUv;
 varying vec3 vWorldPosition;
 
@@ -31,10 +32,21 @@ void main() {
   // Subtle organic shimmer / light drift
   float shimmer = 0.90 + 0.10 * sin(uTime * 1.5 + vUv.x * 6.28 + vWorldPosition.y * 0.4);
 
-  float alpha = horizontalEdge * verticalFade * uOpacity * shimmer;
+  // Henyey-Greenstein Forward Scattering Phase Function (Photon Shaders aerosol model)
+  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+  vec3 sunDir = normalize(uSunDirection);
+  float cosTheta = dot(viewDir, sunDir);
+  float g = 0.74;
+  float g2 = g * g;
+  float hg = (1.0 - g2) / pow(max(0.001, 1.0 + g2 - 2.0 * g * cosTheta), 1.5);
+  float phaseMod = clamp(hg * 0.28 + 0.35, 0.35, 3.2);
+
+  float alpha = horizontalEdge * verticalFade * uOpacity * shimmer * phaseMod;
   if (alpha < 0.002) discard;
 
-  gl_FragColor = vec4(uColor, alpha);
+  // Photon warm golden tinted ray
+  vec3 rayColor = mix(uColor, vec3(1.0, 0.88, 0.58), clamp(phaseMod * 0.25, 0.0, 0.6));
+  gl_FragColor = vec4(rayColor, alpha);
 }
 `;
 
@@ -72,6 +84,7 @@ export class SunShaftsVFX {
         uColor: { value: new THREE.Color(0xfff3c4) }, // Warm honey golden morning/afternoon sun
         uOpacity: { value: 0.040 }, // Delicate anime atmospheric halation
         uTime: { value: 0 },
+        uSunDirection: { value: new THREE.Vector3(55, 65, 45).normalize() },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -158,6 +171,7 @@ export class SunShaftsVFX {
     this.material.uniforms.uTime.value = this.time;
 
     if (sunDir) {
+      this.material.uniforms.uSunDirection.value.copy(sunDir).normalize();
       const sunAngleX = Math.atan2(sunDir.y, Math.sqrt(sunDir.x * sunDir.x + sunDir.z * sunDir.z));
       const sunAngleY = Math.atan2(sunDir.x, sunDir.z);
 

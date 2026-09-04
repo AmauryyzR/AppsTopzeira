@@ -361,13 +361,21 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
         '#include <begin_vertex>',
         /* glsl */ `
         #include <begin_vertex>
-        // Organic Genshin Foliage Wind Sway
+        // Photon Shaders Multi-Octave Foliage Wind Harmonics
         vec4 vWorld = modelMatrix * vec4(position, 1.0);
-        float swayFactor = clamp(position.y * 0.16, 0.0, 1.0);
-        float windWave = sin(uTime * 1.8 + vWorld.x * 0.28 + vWorld.z * 0.24) * 0.14
-                       + cos(uTime * 3.1 + vWorld.z * 0.38) * 0.06;
-        vec3 windDir = normalize(vec3(0.85, 0.12, 0.52));
-        transformed += windDir * (windWave * swayFactor * uWindStrength);
+        float swayFactor = clamp(position.y * 0.18, 0.0, 1.0);
+        // Octave 1: Main canopy surge (slow, broad spatial wave)
+        float surge = sin(uTime * 1.35 + (vWorld.x + vWorld.z) * 0.18) * 0.12;
+        // Octave 2: Branch cluster oscillation
+        float branchWave = sin(uTime * 2.75 + vWorld.x * 0.45 + vWorld.y * 0.35) * 0.055;
+        // Octave 3: High-frequency leaf flutter
+        float leafFlutter = cos(uTime * 6.20 + vWorld.y * 1.80 + vWorld.z * 1.20) * 0.022;
+        
+        vec3 windDir = normalize(vec3(0.82, 0.15, 0.55));
+        vec3 windCross = vec3(-windDir.z, 0.0, windDir.x);
+        
+        transformed += windDir * ((surge + branchWave) * swayFactor * uWindStrength)
+                    + windCross * (leafFlutter * swayFactor * uWindStrength);
         `
       );
     }
@@ -428,19 +436,29 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
         #if (NUM_DIR_LIGHTS > 0)
         vec3 lightDir = directionalLights[0].direction;
 
-        // 2. Subsurface Scattering Translucency (Photon Shaders leaf backlight)
+        // 2. Subsurface Scattering Translucency (Minecraft Photon Shaders Dual-Lobe SSS)
         if (uSSSIntensity > 0.001) {
-          float eyeLightDot = max(0.0, dot(-viewDir, -lightDir));
-          float backNormal = max(0.0, dot(-norm, lightDir));
-          float sss = pow(eyeLightDot, 2.8) * backNormal * uSSSIntensity;
-          outgoingLight += diffuseColor.rgb * uSSSColor * (sss * 2.5);
+          // Direct forward transmission (sunlight passing directly through foliage membrane)
+          float forwardScatter = pow(clamp(dot(-viewDir, lightDir) * 0.55 + 0.45, 0.0, 1.0), 3.2);
+          // Diffuse wrapped transmission (backface isotropic scatter through chlorophyll)
+          float wrapBack = clamp((-dot(norm, lightDir) + 0.30) / 1.30, 0.0, 1.0);
+          float sssTotal = (forwardScatter * 0.60 + wrapBack * 0.40) * uSSSIntensity;
+          // Chromatic absorption: warm solar transmission enriched with chlorophyll tone
+          vec3 sssTint = mix(uSSSColor, vec3(1.0, 0.95, 0.45), 0.22);
+          outgoingLight += diffuseColor.rgb * sssTint * (sssTotal * directionalLights[0].color * 3.2);
         }
 
-        // 3. Micro-Specular Sheen (Photon Shaders stone/wood/metal glint)
+        // 3. Micro-Surface Specular Sheen (Photon Shaders labPBR Specular Model)
         if (uSpecularIntensity > 0.001) {
           vec3 halfVec = normalize(lightDir + viewDir);
           float NdotH = max(0.0, dot(norm, halfVec));
-          float spec = pow(NdotH, uSpecularRoughness) * uSpecularIntensity;
+          float VdotH = max(0.0, dot(viewDir, halfVec));
+          // Fresnel Schlick glancing glint
+          float f0 = mix(0.04, 0.65, clamp((uSpecularIntensity - 0.30) * 1.5, 0.0, 1.0));
+          float fresnelSpec = f0 + (1.0 - f0) * pow(1.0 - VdotH, 5.0);
+          // Energy-conserving Blinn-Phong micro-facet distribution
+          float normFactor = (uSpecularRoughness + 2.0) / 6.28318;
+          float spec = normFactor * pow(NdotH, uSpecularRoughness) * fresnelSpec * (uSpecularIntensity * 0.45);
           outgoingLight += directionalLights[0].color * uSpecularColor * spec;
         }
         #endif

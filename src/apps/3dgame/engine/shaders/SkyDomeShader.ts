@@ -126,20 +126,46 @@ float getCloudDensity(vec2 p) {
   return billow * 0.65 + detail * 0.35;
 }
 
+// Physical Rayleigh & Mie Atmospheric Scattering (Minecraft Photon Shaders Model)
+vec3 calculateAtmosphere(vec3 viewDir, vec3 sunDir, vec3 horizonCol, vec3 zenithCol, vec3 sunCol) {
+  float cosTheta = dot(viewDir, sunDir);
+  
+  // 1. Rayleigh Scattering Phase: 3/(16*pi) * (1 + cos^2(theta))
+  float rayleighPhase = 0.059683 * (1.0 + cosTheta * cosTheta);
+  
+  // 2. Mie Scattering Phase (Cornette-Shanks forward aerosol scattering, g = 0.78)
+  float g = 0.78;
+  float g2 = g * g;
+  float miePhase = (3.0 * (1.0 - g2)) / (2.0 * (2.0 + g2)) * (1.0 + cosTheta * cosTheta) /
+                   pow(max(0.001, 1.0 + g2 - 2.0 * g * cosTheta), 1.5);
+  
+  // 3. Optical airmass along ray path
+  float h = clamp(viewDir.y, 0.0, 1.0);
+  float airmass = 1.0 / (max(h, 0.035) + 0.12);
+  
+  // 4. Multi-wavelength Rayleigh extinction
+  vec3 betaRayleigh = vec3(0.055, 0.125, 0.285);
+  vec3 extinction = exp(-betaRayleigh * airmass * 1.8);
+  
+  // 5. Sky gradient blend with Rayleigh wavelength modulation
+  float skyCurve = pow(h, 0.55);
+  vec3 skyBase = mix(horizonCol, zenithCol, skyCurve);
+  vec3 rayleighSky = skyBase * (0.55 + 0.45 * extinction) + vec3(0.18, 0.38, 0.85) * (rayleighPhase * 0.85);
+  
+  // 6. Mie atmospheric forward scatter halo (Photon golden sun halo)
+  vec3 mieHalo = sunCol * (miePhase * 0.085 * (1.0 - h * 0.65));
+  
+  return rayleighSky + mieHalo;
+}
+
 void main() {
   vec3 viewDir = normalize(vWorldPosition - cameraPosition);
   vec3 sunDir = normalize(uSunPosition);
 
   // -------------------------------------------------------------
-  // 1. ANIME SKY GRADIENT (Genshin Impact / BoTW Atmosphere)
+  // 1. PHOTON SHADERS RAYLEIGH & MIE ATMOSPHERIC SCATTERING
   // -------------------------------------------------------------
-  float h = clamp(viewDir.y, 0.0, 1.0);
-  float skyCurve = pow(h, 0.60);
-  vec3 sky = mix(uHorizonColor, uZenithColor, skyCurve);
-
-  // Atmospheric sun haze at lower sky (subtle, non-blinding)
-  float sunAtmosphere = pow(max(0.0, dot(viewDir, sunDir)), 8.0) * 0.12;
-  sky = mix(sky, uSunColor, sunAtmosphere * (1.0 - skyCurve * 0.75));
+  vec3 sky = calculateAtmosphere(viewDir, sunDir, uHorizonColor, uZenithColor, uSunColor);
 
   // Below horizon blend (smoothly matching terrain / fog)
   if (viewDir.y < 0.0) {

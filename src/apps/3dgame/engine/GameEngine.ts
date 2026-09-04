@@ -159,14 +159,14 @@ export class GameEngine {
   }
 
   private setupLighting() {
-    // Hemispheric Ambient Light (Sky cerulean diffuse bounce & emerald grass bounce)
-    const hemiLight = new THREE.HemisphereLight(0xbfe0fe, 0x4ade80, 0.65);
+    // Hemispheric Ambient Light (Photon Shaders GI Bounce: Sky Cerulean + Foliage Emerald)
+    const hemiLight = new THREE.HemisphereLight(0xbfe6fe, 0x34d399, 0.72);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
-    // Directional Sunlight with Soft PCF Shadows (Warm 5200K anime/Photon sun)
-    const sunLight = new THREE.DirectionalLight(0xfff4db, 1.35);
+    // Directional Sunlight with Soft PCF Shadows (Photon Shaders 5400K Blackbody Sun)
+    const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.38);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -177,20 +177,20 @@ export class GameEngine {
     sunLight.shadow.camera.right = 50;
     sunLight.shadow.camera.top = 50;
     sunLight.shadow.camera.bottom = -50;
-    sunLight.shadow.bias = -0.00006;
-    sunLight.shadow.normalBias = 0.04;
-    sunLight.shadow.radius = 2.4;
+    sunLight.shadow.bias = -0.00005;
+    sunLight.shadow.normalBias = 0.035;
+    sunLight.shadow.radius = 2.6; // Soft variable penumbra filter
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
     // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter)
-    const fillLight = new THREE.DirectionalLight(0xa5f3fc, 0.45);
+    const fillLight = new THREE.DirectionalLight(0xa5f3fc, 0.42);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
     this.fillLight = fillLight;
 
     // Stylized Warm Rim / Backlight for character and geometry edge separation
-    const rimLight = new THREE.DirectionalLight(0xffedd5, 0.90);
+    const rimLight = new THREE.DirectionalLight(0xffedd5, 0.85);
     rimLight.position.set(-25, 45, -40);
     this.scene.add(rimLight);
   }

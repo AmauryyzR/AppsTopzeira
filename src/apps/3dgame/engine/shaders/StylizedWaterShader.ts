@@ -202,22 +202,26 @@ export function createStylizedWaterMaterial(
       // Cel-Graded Depth Gradient (Zelda BotW / Genshin Impact turquoise into sapphire)
       vec3 waterColor = mix(uShallowColor, uDeepColor, smoothstep(0.04, 0.85, depthFactor));
 
-      // 3. Two-Layer Procedural Voronoi Caustics
+      // 3. Two-Layer Procedural Voronoi Caustics with Chromatic Dispersion (Photon Shaders feature)
       vec2 uv1 = vWorldPosition.xz * 3.4 + vec2(uTime * 0.16, uTime * 0.11);
       vec2 uv2 = vWorldPosition.xz * 4.6 + vec2(-uTime * 0.13, uTime * 0.20);
 
-      float v1 = voronoi(uv1, uTime * 1.3);
+      // Chromatic dispersion offsets: red and blue wavelengths diverge slightly at wave boundaries
+      float v1R = voronoi(uv1 + vec2(0.018, 0.0), uTime * 1.3);
+      float v1G = voronoi(uv1, uTime * 1.3);
+      float v1B = voronoi(uv1 - vec2(0.018, 0.0), uTime * 1.3);
+
       float v2 = voronoi(uv2, uTime * 1.5 + 2.1);
 
-      // Inverted caustic filament lines
-      float c1 = pow(clamp(1.0 - v1, 0.0, 1.0), 2.6);
+      vec3 c1RGB = pow(clamp(1.0 - vec3(v1R, v1G, v1B), 0.0, 1.0), vec3(2.6));
       float c2 = pow(clamp(1.0 - v2, 0.0, 1.0), 2.6);
-      float causticIntensity = min(c1, c2) * 2.5 + (c1 * c2) * 2.2;
-      causticIntensity = smoothstep(0.12, 0.60, causticIntensity);
+      vec3 causticRGB = min(c1RGB, vec3(c2)) * 2.5 + (c1RGB * c2) * 2.2;
+      causticRGB = smoothstep(vec3(0.12), vec3(0.60), causticRGB);
 
       // Caustics are bright in sunny shallows and penetrate through the translucent pool
       float causticMask = (1.0 - depthFactor * 0.35);
-      waterColor += uCausticColor * causticIntensity * causticMask * 0.65;
+      vec3 causticTint = mix(uCausticColor, vec3(1.0, 0.98, 0.70), 0.35);
+      waterColor += causticTint * causticRGB * causticMask * 0.70;
 
       // 4. Stylized Shoreline Foam Rim (contact with stone basin coping and central pedestal)
       float theta = atan(vWorldPosition.z - uFountainCenter.y, vWorldPosition.x - uFountainCenter.x);
@@ -233,24 +237,25 @@ export function createStylizedWaterMaterial(
       float foamBubbles = step(0.30, bubbleNoise);
       float finalFoam = foamBand * (0.60 + 0.40 * foamBubbles);
 
-      // 5. Stepped Anime Specular Glint (Photon Shaders Water Sparkle)
+      // 5. Stepped Anime Specular Glint & Wave Crest Sparkle (Photon Shaders Water Sparkle)
       vec3 halfVec = normalize(sunDir + viewDir);
       float NdotH = max(0.0, dot(normal, halfVec));
 
       // Dual-step cel highlight (broad glint + intense starry apex sparkle)
       float specBroad = smoothstep(0.87, 0.91, NdotH) * 0.35;
       float specSharp = smoothstep(0.965, 0.985, NdotH) * 1.50;
-      // Modulate sharp sparkle on wave crests
       specSharp *= smoothstep(-0.005, 0.025, vWaveElevation);
 
       // Micro sun-glint shimmer on rippling water surface (Photon Shaders feature)
-      float photonGlint = pow(max(0.0, dot(normal, halfVec)), 80.0) * 1.6;
+      float photonGlint = pow(max(0.0, dot(normal, halfVec)), 85.0) * 1.8;
       vec3 specular = (specBroad + specSharp + photonGlint) * uSunColor;
 
-      // 6. Fresnel Rim Reflection (glancing anime sky bounce)
-      float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 3.5);
-      vec3 skyReflection = vec3(0.85, 0.94, 1.0);
-      waterColor = mix(waterColor, skyReflection, fresnel * 0.38);
+      // 6. Schlick Fresnel Water Reflection (Photon Physical Water Boundary)
+      float NdotV = max(0.0, dot(normal, viewDir));
+      float f0 = 0.025; // Water IOR = 1.333
+      float schlickFresnel = f0 + (1.0 - f0) * pow(1.0 - NdotV, 4.2);
+      vec3 skyReflection = mix(vec3(0.75, 0.88, 1.0), uSunColor, max(0.0, dot(reflect(-viewDir, normal), sunDir)) * 0.45);
+      waterColor = mix(waterColor, skyReflection, schlickFresnel * 0.65);
 
       // 7. Composite Color & Anime Shoreline Foam
       waterColor = mix(waterColor, uFoamColor, finalFoam);
