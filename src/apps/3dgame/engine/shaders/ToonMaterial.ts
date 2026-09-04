@@ -17,6 +17,13 @@ export interface ToonMaterialOptions {
   fineGlowMin?: number;
   fineGlowMax?: number;
   enableWindSway?: boolean;
+  windStrength?: number;
+  enableSSS?: boolean;
+  sssColor?: THREE.ColorRepresentation;
+  sssIntensity?: number;
+  specularIntensity?: number;
+  specularRoughness?: number;
+  specularColor?: THREE.ColorRepresentation;
   shadowColor?: THREE.ColorRepresentation;
   shadowIntensity?: number;
   emissive?: THREE.ColorRepresentation;
@@ -113,6 +120,9 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xe2e8f0, // Subtle soft specular rim at grazing angles
     rimPower: 4.2,
     rimIntensity: 0.25,
+    specularIntensity: 0.22, // Photon Shaders polished stone sheen
+    specularRoughness: 36.0,
+    specularColor: 0xe2e8f0,
     shadowColor: 0x475569, // Rich slate blue anime shadow
     shadowIntensity: 0.50,
   },
@@ -124,6 +134,9 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xfef3c7,
     rimPower: 4.0,
     rimIntensity: 0.20,
+    specularIntensity: 0.16, // Subtle warm path glint
+    specularRoughness: 26.0,
+    specularColor: 0xfef3c7,
     shadowColor: 0x92613b, // Warm terracotta shadow
     shadowIntensity: 0.45,
   },
@@ -135,6 +148,9 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xfde68a, // Sun catch rim on wooden edges
     rimPower: 3.6,
     rimIntensity: 0.42,
+    specularIntensity: 0.26, // Polished cedar satin gloss
+    specularRoughness: 42.0,
+    specularColor: 0xfde68a,
     shadowColor: 0x542c19, // Deep umber shadow
     shadowIntensity: 0.55,
   },
@@ -146,6 +162,9 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xe2e8f0, // Crisp silver edge highlight
     rimPower: 2.4,
     rimIntensity: 0.95,
+    specularIntensity: 0.70, // Crisp metallic specular glint
+    specularRoughness: 55.0,
+    specularColor: 0xf1f5f9,
     shadowColor: 0x181f2a, // Deep midnight shadow
     shadowIntensity: 0.65,
   },
@@ -155,13 +174,16 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     color: 0x2a9d56, // Lush Zelda BotW forest green
     gradientBands: 3,
     rimColor: 0x86efac, // Bright leaf translucency rim
-    rimPower: 2.7,
-    rimIntensity: 0.60,
-    fineGlowColor: 0xffffff, // Crisp white Genshin glow rim
-    fineGlowIntensity: 1.45,
-    fineGlowPower: 4.0,
-    fineGlowMin: 0.70,
-    fineGlowMax: 0.98,
+    rimPower: 3.4,
+    rimIntensity: 0.35,
+    fineGlowColor: 0xffffff, // Crisp white Genshin glow rim (razor-thin edge)
+    fineGlowIntensity: 0.70,
+    fineGlowPower: 6.2,
+    fineGlowMin: 0.86,
+    fineGlowMax: 0.995,
+    enableSSS: true, // Photon Shaders leaf translucency
+    sssColor: 0xa7f3d0,
+    sssIntensity: 0.42,
     shadowColor: 0x16532d, // Deep pine shadow
     shadowIntensity: 0.55,
   },
@@ -171,13 +193,16 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     color: 0x1e7846, // Cool pine green
     gradientBands: 3,
     rimColor: 0xa7f3d0,
-    rimPower: 2.6,
-    rimIntensity: 0.65,
+    rimPower: 3.5,
+    rimIntensity: 0.30,
     fineGlowColor: 0xffffff,
-    fineGlowIntensity: 1.40,
-    fineGlowPower: 3.8,
-    fineGlowMin: 0.68,
-    fineGlowMax: 0.98,
+    fineGlowIntensity: 0.60,
+    fineGlowPower: 6.5,
+    fineGlowMin: 0.88,
+    fineGlowMax: 0.995,
+    enableSSS: true,
+    sssColor: 0x86efac,
+    sssIntensity: 0.35,
     shadowColor: 0x0f3d23,
     shadowIntensity: 0.60,
   },
@@ -187,13 +212,16 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     color: 0xf472b6, // Vibrant sakura blossom pink
     gradientBands: 4,
     rimColor: 0xffedd5, // Soft peach blossom rim
-    rimPower: 2.8,
-    rimIntensity: 0.55,
+    rimPower: 3.2,
+    rimIntensity: 0.32,
     fineGlowColor: 0xffffff,
-    fineGlowIntensity: 1.50,
-    fineGlowPower: 3.8,
-    fineGlowMin: 0.68,
-    fineGlowMax: 0.98,
+    fineGlowIntensity: 0.65,
+    fineGlowPower: 6.0,
+    fineGlowMin: 0.86,
+    fineGlowMax: 0.995,
+    enableSSS: true,
+    sssColor: 0xfecdd3,
+    sssIntensity: 0.45,
     shadowColor: 0xdb2777, // Rich magenta petal shadow
     shadowIntensity: 0.48,
   },
@@ -205,6 +233,9 @@ export const TOON_PRESETS: Record<ToonPresetName, ToonMaterialOptions> = {
     rimColor: 0xffffff,
     rimPower: 2.2,
     rimIntensity: 0.85,
+    specularIntensity: 0.95,
+    specularRoughness: 80.0,
+    specularColor: 0xffffff,
     shadowColor: 0x0284c7,
     shadowIntensity: 0.40,
     transparent: true,
@@ -262,6 +293,17 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
   const fineGlowMin = options.fineGlowMin !== undefined ? options.fineGlowMin : 0.72;
   const fineGlowMax = options.fineGlowMax !== undefined ? options.fineGlowMax : 0.98;
 
+  const enableWindSway = options.enableWindSway ?? false;
+  const windStrength = options.windStrength !== undefined ? options.windStrength : 1.0;
+
+  const enableSSS = options.enableSSS ?? false;
+  const sssColor = new THREE.Color(options.sssColor !== undefined ? options.sssColor : 0xa7f3d0);
+  const sssIntensity = options.sssIntensity !== undefined ? options.sssIntensity : (enableSSS ? 0.48 : 0.0);
+
+  const specularIntensity = options.specularIntensity !== undefined ? options.specularIntensity : 0.0;
+  const specularRoughness = options.specularRoughness !== undefined ? options.specularRoughness : 32.0;
+  const specularColor = new THREE.Color(options.specularColor !== undefined ? options.specularColor : 0xffffff);
+
   mat.userData.rimColor = rimColor;
   mat.userData.rimPower = rimPower;
   mat.userData.rimIntensity = rimIntensity;
@@ -272,9 +314,17 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
   mat.userData.fineGlowMax = fineGlowMax;
   mat.userData.shadowColor = shadowColor;
   mat.userData.shadowIntensity = shadowIntensity;
+  mat.userData.enableWindSway = enableWindSway;
+  mat.userData.windStrength = windStrength;
+  mat.userData.enableSSS = enableSSS;
+  mat.userData.sssColor = sssColor;
+  mat.userData.sssIntensity = sssIntensity;
+  mat.userData.specularIntensity = specularIntensity;
+  mat.userData.specularRoughness = specularRoughness;
+  mat.userData.specularColor = specularColor;
 
   mat.customProgramCacheKey = () => {
-    return `ToonMat_b${bands}_m${options.map ? '1' : '0'}_fg${fineGlowIntensity > 0 ? '1' : '0'}`;
+    return `ToonMat_b${bands}_m${options.map ? '1' : '0'}_fg${fineGlowIntensity > 0 ? '1' : '0'}_ws${enableWindSway ? '1' : '0'}_sss${sssIntensity > 0 ? '1' : '0'}_sp${specularIntensity > 0 ? '1' : '0'}`;
   };
 
   mat.onBeforeCompile = (shader) => {
@@ -288,6 +338,39 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
     shader.uniforms.uFineGlowMax = { value: fineGlowMax };
     shader.uniforms.uShadowColor = { value: shadowColor };
     shader.uniforms.uShadowIntensity = { value: shadowIntensity };
+    shader.uniforms.uSSSColor = { value: sssColor };
+    shader.uniforms.uSSSIntensity = { value: sssIntensity };
+    shader.uniforms.uSpecularIntensity = { value: specularIntensity };
+    shader.uniforms.uSpecularRoughness = { value: specularRoughness };
+    shader.uniforms.uSpecularColor = { value: specularColor };
+
+    if (enableWindSway) {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uWindStrength = { value: windStrength };
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        /* glsl */ `
+        #include <common>
+        uniform float uTime;
+        uniform float uWindStrength;
+        `
+      );
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        /* glsl */ `
+        #include <begin_vertex>
+        // Organic Genshin Foliage Wind Sway
+        vec4 vWorld = modelMatrix * vec4(position, 1.0);
+        float swayFactor = clamp(position.y * 0.16, 0.0, 1.0);
+        float windWave = sin(uTime * 1.8 + vWorld.x * 0.28 + vWorld.z * 0.24) * 0.14
+                       + cos(uTime * 3.1 + vWorld.z * 0.38) * 0.06;
+        vec3 windDir = normalize(vec3(0.85, 0.12, 0.52));
+        transformed += windDir * (windWave * swayFactor * uWindStrength);
+        `
+      );
+    }
 
     // Inject high precision and uniforms into fragment shader
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -309,17 +392,21 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
       uniform float uFineGlowMax;
       uniform vec3 uShadowColor;
       uniform float uShadowIntensity;
+      uniform vec3 uSSSColor;
+      uniform float uSSSIntensity;
+      uniform float uSpecularIntensity;
+      uniform float uSpecularRoughness;
+      uniform vec3 uSpecularColor;
       `
     );
 
-    // Inject Stylized Shadows, Colored Rim Lighting, and Fine White Glow Edge before final output
+    // Inject Stylized Shadows, Colored Rim Lighting, SSS, and Specular Sheen before final output
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <opaque_fragment>',
       /* glsl */ `
-      // --- Cel-Shaded Anime Extensions (BotW / Genshin) ---
+      // --- Cel-Shaded Anime Extensions (Genshin + Minecraft Photon Shaders) ---
       {
         // 1. Stylized Shadow Harmonization
-        // Measure received direct illumination level
         float directLevel = clamp(
           length(reflectedLight.directDiffuse) / (max(0.0001, length(diffuseColor.rgb) * 1.732)),
           0.0,
@@ -327,22 +414,42 @@ export function createToonMaterial(options: ToonMaterialOptions): THREE.MeshToon
         );
         float shadowFactor = 1.0 - smoothstep(0.01, 0.85, directLevel);
 
-        // Blend with artistic anime shadow hue (warm terracotta, soft lavender, or deep jade)
         outgoingLight = mix(
           outgoingLight,
           uShadowColor * diffuseColor.rgb * 1.35,
           shadowFactor * clamp(uShadowIntensity, 0.0, 1.0)
         );
 
-        // 2. Anime Fresnel Rim Lighting (Color Tone Rim)
         vec3 viewDir = normalize(vViewPosition);
         vec3 norm = normalize(normal);
         float NdotV = clamp(dot(norm, viewDir), 0.0, 1.0);
         float fresnel = 1.0 - NdotV;
+
+        #if (NUM_DIR_LIGHTS > 0)
+        vec3 lightDir = directionalLights[0].direction;
+
+        // 2. Subsurface Scattering Translucency (Photon Shaders leaf backlight)
+        if (uSSSIntensity > 0.001) {
+          float eyeLightDot = max(0.0, dot(-viewDir, -lightDir));
+          float backNormal = max(0.0, dot(-norm, lightDir));
+          float sss = pow(eyeLightDot, 2.8) * backNormal * uSSSIntensity;
+          outgoingLight += diffuseColor.rgb * uSSSColor * (sss * 2.5);
+        }
+
+        // 3. Micro-Specular Sheen (Photon Shaders stone/wood/metal glint)
+        if (uSpecularIntensity > 0.001) {
+          vec3 halfVec = normalize(lightDir + viewDir);
+          float NdotH = max(0.0, dot(norm, halfVec));
+          float spec = pow(NdotH, uSpecularRoughness) * uSpecularIntensity;
+          outgoingLight += directionalLights[0].color * uSpecularColor * spec;
+        }
+        #endif
+
+        // 4. Anime Fresnel Rim Lighting (Color Tone Rim)
         float rim = smoothstep(0.22, 0.85, pow(fresnel, uRimPower));
         outgoingLight += uRimColor * (rim * uRimIntensity);
 
-        // 3. Crisp Fine White Glow Edge (Genshin Canopy & Silhouette Halo)
+        // 5. Crisp Fine White Glow Edge (Genshin Canopy & Silhouette Halo)
         if (uFineGlowIntensity > 0.001) {
           float fineRim = smoothstep(uFineGlowMin, uFineGlowMax, pow(fresnel, uFineGlowPower));
           outgoingLight += uFineGlowColor * (fineRim * uFineGlowIntensity);

@@ -60,6 +60,12 @@ export class AtmosphericVFXSystem {
   }> = [];
   private dustSpawnTimer = 0;
   private wasGroundedLastFrame = true;
+  // 5. Sun Dust Motes (Airborne golden sun particulates in sunbeams - Minecraft Photon Shaders feature)
+  private dustMoteCount = 140;
+  private dustMotePoints!: THREE.Points;
+  private dustMoteGeo!: THREE.BufferGeometry;
+  private dustMotePositions!: Float32Array;
+  private dustMotePhases!: Float32Array;
 
   // Trackers for clean disposal
   private geometries: THREE.BufferGeometry[] = [];
@@ -70,6 +76,7 @@ export class AtmosphericVFXSystem {
     this.initFireflies();
     this.initFountainSplashes();
     this.initDustPoofs();
+    this.initSunDustMotes();
   }
 
   // =========================================================================
@@ -353,6 +360,57 @@ export class AtmosphericVFXSystem {
   }
 
   // =========================================================================
+  // 5. SUN DUST MOTES (Photon Shaders Crepuscular Particulates)
+  // =========================================================================
+  private initSunDustMotes() {
+    this.dustMoteGeo = new THREE.BufferGeometry();
+    this.geometries.push(this.dustMoteGeo);
+
+    this.dustMotePositions = new Float32Array(this.dustMoteCount * 3);
+    this.dustMotePhases = new Float32Array(this.dustMoteCount);
+
+    for (let i = 0; i < this.dustMoteCount; i++) {
+      const idx = i * 3;
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2.0 + Math.random() * 22.0;
+      this.dustMotePositions[idx] = Math.cos(angle) * radius;
+      this.dustMotePositions[idx + 1] = 0.5 + Math.random() * 7.5;
+      this.dustMotePositions[idx + 2] = Math.sin(angle) * radius;
+      this.dustMotePhases[i] = Math.random() * Math.PI * 2;
+    }
+
+    this.dustMoteGeo.setAttribute('position', new THREE.BufferAttribute(this.dustMotePositions, 3));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d')!;
+    const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 15);
+    grad.addColorStop(0, 'rgba(255, 250, 220, 1.0)');
+    grad.addColorStop(0.35, 'rgba(254, 240, 138, 0.75)');
+    grad.addColorStop(0.70, 'rgba(250, 204, 21, 0.25)');
+    grad.addColorStop(1, 'rgba(234, 179, 8, 0.0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(16, 16, 15, 0, Math.PI * 2);
+    ctx.fill();
+
+    const moteTex = new THREE.CanvasTexture(canvas);
+    const moteMat = new THREE.PointsMaterial({
+      size: 0.28,
+      map: moteTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      color: 0xfffbeb,
+    });
+    this.materials.push(moteMat);
+
+    this.dustMotePoints = new THREE.Points(this.dustMoteGeo, moteMat);
+    this.group.add(this.dustMotePoints);
+  }
+
+  // =========================================================================
   // REAL-TIME UPDATE LOOP
   // =========================================================================
   public update(dt: number, playerPos: THREE.Vector3, isGrounded: boolean, speed: number) {
@@ -500,9 +558,31 @@ export class AtmosphericVFXSystem {
       this.dustMesh.setMatrixAt(i, this.dummyMatrix);
     }
     this.dustMesh.instanceMatrix.needsUpdate = true;
+
+    // Step Sun Dust Motes (Airborne golden glitter)
+    const timeSec = performance.now() * 0.001;
+    const motePos = this.dustMotePositions;
+    for (let i = 0; i < this.dustMoteCount; i++) {
+      const idx = i * 3;
+      const phase = this.dustMotePhases[i];
+      motePos[idx] += Math.sin(timeSec * 0.7 + phase) * 0.012;
+      motePos[idx + 1] += Math.cos(timeSec * 0.4 + phase * 1.3) * 0.008;
+      motePos[idx + 2] += Math.cos(timeSec * 0.6 + phase) * 0.012;
+
+      // Wrap around player active bounding sphere
+      const dx = motePos[idx] - playerPos.x;
+      const dz = motePos[idx + 2] - playerPos.z;
+      if (Math.abs(dx) > 20.0) motePos[idx] = playerPos.x - Math.sign(dx) * 19.0;
+      if (Math.abs(dz) > 20.0) motePos[idx + 2] = playerPos.z - Math.sign(dz) * 19.0;
+      if (motePos[idx + 1] < 0.4) motePos[idx + 1] = 7.0;
+      if (motePos[idx + 1] > 7.5) motePos[idx + 1] = 0.5;
+    }
+    this.dustMoteGeo.attributes.position.needsUpdate = true;
   }
 
   public dispose() {
+    this.dustMotePoints.geometry.dispose();
+    (this.dustMotePoints.material as THREE.PointsMaterial).dispose();
     this.fireflyPoints.geometry.dispose();
     (this.fireflyPoints.material as THREE.PointsMaterial).dispose();
     this.sakuraMesh.geometry.dispose();

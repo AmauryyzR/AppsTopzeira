@@ -499,7 +499,11 @@ export class GrassField {
         vec3 litTone = col * uSunColor;
         vec3 finalColor = mix(shadowTone, litTone, celBands);
         finalColor += col * uSkyColor * skyBounce;
-        finalColor += uTipColor * backlight;
+
+        // Photon Shaders Subsurface Scattering (SSS) on grass blade tips
+        float sunBacklight = pow(max(0.0, dot(-V, L)), 2.6);
+        float sssTranslucency = sunBacklight * smoothstep(0.30, 1.0, vHeightFactor) * 0.85;
+        finalColor += vec3(0.85, 1.0, 0.45) * sssTranslucency;
 
         // 3. Anime Rim Light (Fresnel edge glow)
         float NdotV = max(0.0, dot(N, V));
@@ -507,14 +511,22 @@ export class GrassField {
         vec3 rimTone = vec3(0.95, 1.0, 0.75) * 0.55 * vHeightFactor;
         finalColor += rimTone * rim;
 
-        // 4. Traveling Wind Specular Sheen Bands
+        // 4. Traveling Wind Specular Sheen & Sun Glint (Photon Shaders feature)
+        vec3 H = normalize(L + V);
+        float bladeSpec = pow(max(0.0, dot(N, H)), 22.0) * smoothstep(0.4, 1.0, vHeightFactor) * 0.30;
+        finalColor += uSunColor * bladeSpec * (0.65 + 0.35 * vWindIntensity);
+
         float windSheen = smoothstep(0.48, 0.88, vWindIntensity) * vHeightFactor;
         vec3 sheenTone = vec3(0.92, 1.0, 0.72);
-        finalColor += sheenTone * (windSheen * 0.28);
+        finalColor += sheenTone * (windSheen * 0.22);
 
-        // 5. Fine White Glow Rim on Grass Tips (Genshin Meadow Shimmer)
+        // 5. Root Contact Ambient Occlusion (anchors grass to soil, eliminating floating appearance)
+        float contactAO = smoothstep(0.02, 0.40, vHeightFactor);
+        finalColor *= mix(0.45, 1.0, contactAO);
+
+        // 6. Fine White Glow Rim on Grass Tips (Genshin Meadow Shimmer)
         float fineGrassRim = smoothstep(0.70, 0.98, pow(1.0 - NdotV, 3.8)) * vHeightFactor;
-        finalColor += vec3(0.98, 1.0, 0.92) * (fineGrassRim * 0.45);
+        finalColor += vec3(0.98, 1.0, 0.92) * (fineGrassRim * 0.38);
 
         gl_FragColor = vec4(finalColor, 1.0);
 

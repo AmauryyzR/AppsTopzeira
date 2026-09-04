@@ -233,7 +233,7 @@ export function createStylizedWaterMaterial(
       float foamBubbles = step(0.30, bubbleNoise);
       float finalFoam = foamBand * (0.60 + 0.40 * foamBubbles);
 
-      // 5. Stepped Anime Specular Glint
+      // 5. Stepped Anime Specular Glint (Photon Shaders Water Sparkle)
       vec3 halfVec = normalize(sunDir + viewDir);
       float NdotH = max(0.0, dot(normal, halfVec));
 
@@ -242,7 +242,10 @@ export function createStylizedWaterMaterial(
       float specSharp = smoothstep(0.965, 0.985, NdotH) * 1.50;
       // Modulate sharp sparkle on wave crests
       specSharp *= smoothstep(-0.005, 0.025, vWaveElevation);
-      vec3 specular = (specBroad + specSharp) * uSunColor;
+
+      // Micro sun-glint shimmer on rippling water surface (Photon Shaders feature)
+      float photonGlint = pow(max(0.0, dot(normal, halfVec)), 80.0) * 1.6;
+      vec3 specular = (specBroad + specSharp + photonGlint) * uSunColor;
 
       // 6. Fresnel Rim Reflection (glancing anime sky bounce)
       float fresnel = pow(1.0 - max(0.0, dot(normal, viewDir)), 3.5);

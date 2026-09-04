@@ -526,6 +526,7 @@ export class ParkWorld {
   }
 
   public update(dt: number, sunDir?: THREE.Vector3) {
+    this.treesManager.update(dt);
     this.water.update(dt, sunDir);
     this.lanterns.update(performance.now() * 0.001);
   }

@@ -8,6 +8,7 @@ import { SkyDome } from './shaders/SkyDomeShader';
 import { disposeToonCache } from './shaders/ToonMaterial';
 import { AtmosphericVFXSystem } from './vfx/AtmosphericVFXSystem';
 import { GenshinDashTrailVFX } from './vfx/GenshinDashTrailVFX';
+import { SunShaftsVFX } from './vfx/SunShaftsVFX';
 import { SoundEffectsEngine } from './audio/SoundEffectsEngine';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -29,6 +30,7 @@ export class GameEngine {
   public readonly skyDome: SkyDome;
   public readonly vfx: AtmosphericVFXSystem;
   public readonly dashVFX: GenshinDashTrailVFX;
+  public readonly sunShafts: SunShaftsVFX;
   public readonly audio: SoundEffectsEngine;
   public sunLight!: THREE.DirectionalLight;
   public hemiLight!: THREE.HemisphereLight;
@@ -130,6 +132,10 @@ export class GameEngine {
     this.vfx = new AtmosphericVFXSystem();
     this.scene.add(this.vfx.group);
 
+    // Stylized Volumetric Sunbeams / Crepuscular God Rays (Photon Shaders Atmosphere)
+    this.sunShafts = new SunShaftsVFX();
+    this.scene.add(this.sunShafts.group);
+
     // Stylized Genshin Dash & Sprint Trail VFX (Ghost After-Images, Streamers, Shockwave, Sparks)
     this.dashVFX = new GenshinDashTrailVFX(this.playerCharacter);
     this.scene.add(this.dashVFX.group);
@@ -153,14 +159,14 @@ export class GameEngine {
   }
 
   private setupLighting() {
-    // Hemispheric Ambient Light (Soft anime sky and grass bounce)
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x86efac, 0.70);
+    // Hemispheric Ambient Light (Sky cerulean diffuse bounce & emerald grass bounce)
+    const hemiLight = new THREE.HemisphereLight(0xbfe0fe, 0x4ade80, 0.65);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
-    // Directional Sunlight with Soft Shadows (Warm welcoming anime sun)
-    const sunLight = new THREE.DirectionalLight(0xfff6e6, 1.25);
+    // Directional Sunlight with Soft PCF Shadows (Warm 5200K anime/Photon sun)
+    const sunLight = new THREE.DirectionalLight(0xfff4db, 1.35);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -171,20 +177,20 @@ export class GameEngine {
     sunLight.shadow.camera.right = 50;
     sunLight.shadow.camera.top = 50;
     sunLight.shadow.camera.bottom = -50;
-    sunLight.shadow.bias = -0.00008;
-    sunLight.shadow.normalBias = 0.05;
-    sunLight.shadow.radius = 2.0;
+    sunLight.shadow.bias = -0.00006;
+    sunLight.shadow.normalBias = 0.04;
+    sunLight.shadow.radius = 2.4;
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
-    // Subtle Fill Light from opposite angle
-    const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
+    // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter)
+    const fillLight = new THREE.DirectionalLight(0xa5f3fc, 0.45);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
     this.fillLight = fillLight;
 
-    // Stylized Rim / Backlight for character edge pop (Blender aesthetic)
-    const rimLight = new THREE.DirectionalLight(0xfff1e6, 1.1);
+    // Stylized Warm Rim / Backlight for character and geometry edge separation
+    const rimLight = new THREE.DirectionalLight(0xffedd5, 0.90);
     rimLight.position.set(-25, 45, -40);
     this.scene.add(rimLight);
   }
@@ -267,6 +273,9 @@ export class GameEngine {
       this.physics.speed
     );
 
+    // Update Volumetric Sunbeams / God Rays (Crepuscular Rays)
+    this.sunShafts.update(dt, this.sunLight.position);
+
     // Stylized Genshin Dash Trail VFX (Ghost after-images, ribbon streamers, shockwave rings)
     this.dashVFX.update(
       dt,
@@ -318,6 +327,7 @@ export class GameEngine {
     }
     this.audio.dispose();
     this.vfx.dispose();
+    this.sunShafts.dispose();
     this.dashVFX.dispose();
     this.skyDome.dispose();
     this.cameraRig.dispose();

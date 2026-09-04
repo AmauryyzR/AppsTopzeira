@@ -211,6 +211,9 @@ export class PlayerCharacter {
         rimColor: 0xfecdd3,
         rimPower: 2.2,
         rimIntensity: 0.85,
+        specularIntensity: 0.85, // Candy gloss glint
+        specularRoughness: 60.0,
+        specularColor: 0xffffff,
         shadowColor: 0x881337,
         shadowIntensity: 0.55,
       })
@@ -240,6 +243,11 @@ export class PlayerCharacter {
         rimColor: 0x38bdf8,
         rimPower: 2.5,
         rimIntensity: 0.70,
+        fineGlowColor: 0x7dd3fc,
+        fineGlowIntensity: 0.80,
+        fineGlowPower: 3.8,
+        specularIntensity: 0.40, // Anime hair angel ring glint
+        specularRoughness: 32.0,
         shadowColor: 0x075985,
         shadowIntensity: 0.50,
       })

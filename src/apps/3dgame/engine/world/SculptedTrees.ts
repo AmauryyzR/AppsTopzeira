@@ -544,6 +544,9 @@ export class SculptedTreesManager {
   private masterGeometries: THREE.BufferGeometry[] = [];
   // Master shared materials
   private masterMaterials: THREE.Material[] = [];
+  // Tracked foliage materials for dynamic wind vertex swaying
+  private swayMaterials: THREE.MeshToonMaterial[] = [];
+  private time = 0;
 
   constructor(onAddCollision?: (x: number, y: number, z: number, w: number, h: number, d: number) => void) {
     this.buildMasterAssetsAndTrees(onAddCollision);
@@ -592,8 +595,11 @@ export class SculptedTreesManager {
         fineGlowMax: 0.99,
         shadowColor: 0x14532d, // Deep jade anime shadow
         shadowIntensity: 0.55,
+        enableWindSway: true,
+        windStrength: 1.0,
       })
     );
+    this.swayMaterials.push(oakMeadowMat);
 
     const oakEmeraldMat = this.trackMat(
       createToonMaterial({
@@ -609,8 +615,11 @@ export class SculptedTreesManager {
         fineGlowMax: 0.99,
         shadowColor: 0x166534,
         shadowIntensity: 0.50,
+        enableWindSway: true,
+        windStrength: 1.0,
       })
     );
+    this.swayMaterials.push(oakEmeraldMat);
 
     // Sakura Blossom Foliage: Anime Pink & Soft Pale Blossom
     const sakuraPinkMat = this.trackMat(
@@ -618,34 +627,46 @@ export class SculptedTreesManager {
         color: 0xf472b6, // Vibrant anime sakura petal pink (#f472b6)
         gradientBands: 4,
         rimColor: 0xffedd5, // Soft morning peach rim
-        rimPower: 2.7,
-        rimIntensity: 0.50,
+        rimPower: 3.2,
+        rimIntensity: 0.32,
         fineGlowColor: 0xffffff,
-        fineGlowIntensity: 1.25,
-        fineGlowPower: 4.2,
-        fineGlowMin: 0.78,
-        fineGlowMax: 0.99,
+        fineGlowIntensity: 0.65,
+        fineGlowPower: 6.2,
+        fineGlowMin: 0.86,
+        fineGlowMax: 0.995,
+        enableSSS: true,
+        sssColor: 0xfecdd3,
+        sssIntensity: 0.45,
         shadowColor: 0xdb2777, // Rich magenta petal shadow (#db2777)
         shadowIntensity: 0.48,
+        enableWindSway: true,
+        windStrength: 1.1,
       })
     );
+    this.swayMaterials.push(sakuraPinkMat);
 
     const sakuraHighlightMat = this.trackMat(
       createToonMaterial({
         color: 0xfbcfe8, // Soft pale petal crown (#fbcfe8)
         gradientBands: 4,
         rimColor: 0xfff1f2, // Pearl blossom rim
-        rimPower: 2.5,
-        rimIntensity: 0.55,
+        rimPower: 3.2,
+        rimIntensity: 0.35,
         fineGlowColor: 0xffffff,
-        fineGlowIntensity: 1.20,
-        fineGlowPower: 4.2,
-        fineGlowMin: 0.78,
-        fineGlowMax: 0.99,
+        fineGlowIntensity: 0.60,
+        fineGlowPower: 6.2,
+        fineGlowMin: 0.86,
+        fineGlowMax: 0.995,
+        enableSSS: true,
+        sssColor: 0xffedd5,
+        sssIntensity: 0.40,
         shadowColor: 0xdb2777,
         shadowIntensity: 0.45,
+        enableWindSway: true,
+        windStrength: 1.1,
       })
     );
+    this.swayMaterials.push(sakuraHighlightMat);
 
     // Alpine Pine Foliage: Deep Evergreen & Sunlit Pine
     const pineDeepMat = this.trackMat(
@@ -653,36 +674,48 @@ export class SculptedTreesManager {
         color: 0x1e7846, // Cool alpine pine green
         gradientBands: 3,
         rimColor: 0xa7f3d0, // Mint frosted edge rim
-        rimPower: 2.8,
-        rimIntensity: 0.55,
+        rimPower: 3.6,
+        rimIntensity: 0.28,
         fineGlowColor: 0xffffff,
-        fineGlowIntensity: 1.20,
-        fineGlowPower: 4.4,
-        fineGlowMin: 0.78,
-        fineGlowMax: 0.99,
+        fineGlowIntensity: 0.55,
+        fineGlowPower: 6.8,
+        fineGlowMin: 0.88,
+        fineGlowMax: 0.995,
+        enableSSS: true,
+        sssColor: 0x86efac,
+        sssIntensity: 0.35,
         shadowColor: 0x0f3d23, // Deep evergreen midnight shadow
         shadowIntensity: 0.60,
         side: THREE.DoubleSide,
+        enableWindSway: true,
+        windStrength: 0.75,
       })
     );
+    this.swayMaterials.push(pineDeepMat);
 
     const pineLightMat = this.trackMat(
       createToonMaterial({
         color: 0x22c55e, // Fresh pine needle highlight
         gradientBands: 3,
         rimColor: 0xd1fae5,
-        rimPower: 2.6,
-        rimIntensity: 0.60,
+        rimPower: 3.6,
+        rimIntensity: 0.30,
         fineGlowColor: 0xffffff,
-        fineGlowIntensity: 1.15,
-        fineGlowPower: 4.4,
-        fineGlowMin: 0.78,
-        fineGlowMax: 0.99,
+        fineGlowIntensity: 0.50,
+        fineGlowPower: 6.8,
+        fineGlowMin: 0.88,
+        fineGlowMax: 0.995,
+        enableSSS: true,
+        sssColor: 0xa7f3d0,
+        sssIntensity: 0.35,
         shadowColor: 0x14532d,
         shadowIntensity: 0.55,
         side: THREE.DoubleSide,
+        enableWindSway: true,
+        windStrength: 0.75,
       })
     );
+    this.swayMaterials.push(pineLightMat);
 
     // -------------------------------------------------------------
     // 2. MASTER TRUNK GEOMETRIES
@@ -867,10 +900,24 @@ export class SculptedTreesManager {
   }
 
   /**
+   * Updates wind animation time on all cel-shaded canopy materials.
+   */
+  public update(dt: number) {
+    this.time += dt;
+    for (let i = 0; i < this.swayMaterials.length; i++) {
+      const mat = this.swayMaterials[i];
+      if (mat.userData.shader?.uniforms?.uTime) {
+        mat.userData.shader.uniforms.uTime.value = this.time;
+      }
+    }
+  }
+
+  /**
    * Complete memory cleanup: disposes all master shared geometries and materials,
    * avoiding any WebGL buffer or texture leak.
    */
   public dispose() {
+    this.swayMaterials = [];
     for (const g of this.masterGeometries) {
       g.dispose();
     }
