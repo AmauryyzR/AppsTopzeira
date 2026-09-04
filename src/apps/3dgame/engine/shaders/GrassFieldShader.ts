@@ -212,13 +212,18 @@ export class GrassField {
   private generateGrassPositions(targetCount: number, radius: number): [number, number][] {
     const positions: [number, number][] = [];
 
-    // Tree trunks to exclude (collision radius ~0.9m)
+    // 28 Sculpted Tree Trunks (Oak, Sakura, Pine) across park
     const treePositions: [number, number][] = [
+      // Quadrant 1 (North-East)
       [16, 16], [28, 12], [22, 26], [34, 30], [12, 34],
+      // Quadrant 2 (North-West)
       [-16, 18], [-26, 14], [-20, 28], [-32, 26], [-14, 36],
+      // Quadrant 3 (South-East)
       [18, -16], [26, -22], [14, -30], [30, -32], [36, -14],
+      // Quadrant 4 (South-West)
       [-18, -18], [-28, -20], [-16, -32], [-32, -30], [-34, -14],
-      [48, 0], [-48, 0], [0, 48], [0, -48],
+      // Outer perimeter groves
+      [48, 7], [-48, 7], [7, 48], [-7, -48],
       [45, 45], [-45, 45], [45, -45], [-45, -45],
     ];
 
@@ -231,7 +236,19 @@ export class GrassField {
     // Lamp posts to exclude (radius ~0.8m)
     const lampPositions: [number, number][] = [
       [8, 8], [-8, 8], [8, -8], [-8, -8],
-      [0, 30], [0, -30], [30, 0], [-30, 0],
+      [2.4, 28], [-2.4, -28], [26, 2.4], [-24, 2.4],
+    ];
+
+    // Stepping Stones (Tobi-Ishi) leading to Zen Garden
+    const zenSteppingStones: [number, number, number][] = [
+      [18 - 5.5, 20 + 4.2, 0.95],
+      [18 - 4.2, 20 + 5.8, 1.00],
+      [18 - 2.6, 20 + 6.9, 0.98],
+      [18 - 0.8, 20 + 7.5, 1.05],
+      [18 + 1.2, 20 + 7.8, 1.00],
+      [18 + 3.1, 20 + 7.2, 0.96],
+      [18 + 4.8, 20 + 6.0, 1.05],
+      [18 + 6.2, 20 + 4.4, 1.00],
     ];
 
     const isExcluded = (x: number, z: number): boolean => {
@@ -252,35 +269,45 @@ export class GrassField {
       // 5. Outer Circular Jogging Ring (radius 37.4m to 43.6m)
       if (distCenter >= 37.4 && distCenter <= 43.6) return true;
 
-      // 6. Obstacle Course: Stepping Pillars in North-East
-      if (x >= 15.8 && x <= 28.2 && z >= 15.8 && z <= 24.2) return true;
+      // 6. Authentic Zen Rock Garden (Karesansui) & Stepping Pillars:
+      // Sand bed + curbs: X in [10.2, 25.8], Z in [14.2, 25.8]
+      if (x >= 10.2 && x <= 25.8 && z >= 14.2 && z <= 25.8) return true;
 
-      // 7. Obstacle Course: Wooden Walkway Bridge in South-West
+      // Obstacle course stepping pillars extension to the east:
+      if (x >= 25.8 && x <= 27.6 && z >= 16.5 && z <= 23.5) return true;
+
+      // 7. Stepping Stones (Tobi-Ishi) around Zen Garden
+      for (let i = 0; i < zenSteppingStones.length; i++) {
+        const [sx, sz, sr] = zenSteppingStones[i];
+        if (Math.hypot(x - sx, z - sz) < sr) return true;
+      }
+
+      // 8. Obstacle Course: Wooden Walkway Bridge in South-West
       if (x >= -26.5 && x <= -21.5 && z >= -32.0 && z <= -16.0) return true;
 
-      // 8. West Scenic Canal & Taiko Bashi Arched Bridge (x ~ -34m, z ~ -17m to +17m)
+      // 9. West Scenic Canal & Taiko Bashi Arched Bridge (x ~ -34m, z ~ -17m to +17m)
       // Completely excludes grass from growing inside water canal and stone embankments
       if (x >= -38.5 && x <= -29.5 && Math.abs(z) <= 17.5) return true;
 
-      // 9. East Zen Pagoda Gazebo Platform (x = 36m, z = 0m, radius 4.8m)
+      // 10. East Zen Pagoda Gazebo Platform (x = 36m, z = 0m, radius 4.8m)
       if (Math.hypot(x - 36, z) < 4.8) return true;
 
-      // 10. South Torii Gate Apron & Flanking Lanterns (z = 42m, x = 0m)
+      // 11. South Torii Gate Apron & Flanking Lanterns (z = 42m, x = 0m)
       if (Math.abs(x) < 4.6 && Math.abs(z - 42) < 3.2) return true;
 
-      // 11. Tree trunks
+      // 12. Tree trunks & root flares
       for (let i = 0; i < treePositions.length; i++) {
         const [tx, tz] = treePositions[i];
-        if (Math.hypot(x - tx, z - tz) < 0.95) return true;
+        if (Math.hypot(x - tx, z - tz) < 1.20) return true;
       }
 
-      // 9. Benches
+      // 13. Benches
       for (let i = 0; i < benchPositions.length; i++) {
         const [bx, bz] = benchPositions[i];
         if (Math.hypot(x - bx, z - bz) < 1.7) return true;
       }
 
-      // 10. Street Lamps
+      // 14. Street Lamps
       for (let i = 0; i < lampPositions.length; i++) {
         const [lx, lz] = lampPositions[i];
         if (Math.hypot(x - lx, z - lz) < 0.8) return true;

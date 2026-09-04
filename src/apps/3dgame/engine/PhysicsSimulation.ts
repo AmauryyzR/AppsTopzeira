@@ -168,9 +168,9 @@ export class PhysicsSimulation {
       nextY = groundHeight;
 
       if (!this.wasGroundedLastFrame && preCollisionVy < -1.5) {
-        // Impact landing squash proportional to impact velocity
+        // Impact landing squash proportional to impact velocity (snappy cartoon impulse)
         const impactSpeed = Math.abs(preCollisionVy);
-        this.jumpSquash = Math.min(0.38, impactSpeed * 0.028);
+        this.jumpSquash = Math.min(0.28, impactSpeed * 0.022);
         isLandingThisFrame = true;
       }
 
@@ -225,8 +225,8 @@ export class PhysicsSimulation {
     this.verticalVelocity = this.velocity.y;
     this.wasGroundedLastFrame = this.isGrounded;
 
-    // 10. Elastic recovery of squash/stretch
-    this.jumpSquash *= Math.max(0, 1 - 14 * dt);
+    // 10. Elastic recovery of squash/stretch (Snappy responsive recovery)
+    this.jumpSquash *= Math.max(0, 1 - 16 * dt);
   }
 
   public reset(spawnX = 0, spawnY = 0, spawnZ = 8) {

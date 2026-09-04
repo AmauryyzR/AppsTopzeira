@@ -41,6 +41,9 @@ export class PlayerCharacter {
   // Chameleon Tail at back
   private tailSegments: THREE.Group[] = [];
 
+  // Dynamic hoodie drawstrings
+  private drawstringGroups: THREE.Group[] = [];
+
   // Animation Timers & Smoothing
   private walkCycleTime = 0;
   private idleTime = 0;
@@ -48,6 +51,22 @@ export class PlayerCharacter {
   private targetYaw = 0;
   private currentBankAngle = 0;
   private currentForwardLean = 0;
+
+  // Smooth aerial and landing kinematics
+  private currentArmRot = {
+    leftX: 0, leftZ: -0.10,
+    rightX: 0, rightZ: 0.10,
+  };
+  private currentLegRot = {
+    leftX: 0, leftZ: 0,
+    rightX: 0, rightZ: 0,
+  };
+  private currentHeadRotX = 0;
+  private currentTorsoRotX = 0;
+  private currentScaleY = 1.0;
+  private currentScaleXZ = 1.0;
+  private currentTorsoY = 0.730;
+  private currentHeadY = 1.160;
 
   // Tracked Geometries & Materials for Clean Cleanup
   private geometries: THREE.BufferGeometry[] = [];
@@ -333,6 +352,7 @@ export class PlayerCharacter {
       drawstringGroup.add(tipMesh);
 
       this.torsoGroup.add(drawstringGroup);
+      this.drawstringGroups.push(drawstringGroup);
     }
 
     // Chameleon Tail at back (curling UPWARDS)
@@ -819,93 +839,226 @@ export class PlayerCharacter {
 
     this.idleTime += dt;
 
-    // Solid proportion scale
-    let targetScaleY = 1.0;
-    if (isGrounded && jumpSquash > 0) {
-      targetScaleY = Math.max(0.94, 1.0 - jumpSquash * 0.25);
-    }
-    this.modelRoot.scale.set(1.0, targetScaleY, 1.0);
-
-    // Dynamic banking & lean
+    // 1. Dynamic Banking (turns) & Forward Lean
     const targetBank = THREE.MathUtils.clamp(-turnRate * 0.065, -0.34, 0.34);
     this.currentBankAngle += (targetBank - this.currentBankAngle) * Math.min(1, 16 * dt);
     this.modelRoot.rotation.z = this.currentBankAngle;
 
-    const targetLean = isGrounded ? Math.min(0.32, speed * 0.032) : 0.08;
-    this.currentForwardLean += (targetLean - this.currentForwardLean) * Math.min(1, 14 * dt);
+    const baseLean = isGrounded ? Math.min(0.32, speed * 0.032) : 0.04;
+    this.currentForwardLean += (baseLean - this.currentForwardLean) * Math.min(1, 14 * dt);
     this.modelRoot.rotation.x = this.currentForwardLean;
 
-    // Animation States
+    // Kinematics Target Registers
+    let targetLeftArmX = 0;
+    let targetLeftArmZ = -0.10;
+    let targetRightArmX = 0;
+    let targetRightArmZ = 0.10;
+
+    let targetLeftLegX = 0;
+    let targetLeftLegZ = 0;
+    let targetRightLegX = 0;
+    let targetRightLegZ = 0;
+
+    let targetTorsoY = 0.730;
+    let targetHeadY = 1.160;
+    let targetTorsoRotX = 0;
+    let targetHeadRotX = 0;
+    let targetTorsoRotY = 0;
+    let targetHeadRotY = 0;
+
+    let targetScaleY = 1.0;
+    let tailVerticalOffset = 0;
+    let drawstringRotX = 0;
+
+    // 2. State Machine: Aerial (Jump/Fall) vs Grounded (Impact/Run/Idle)
     if (!isGrounded) {
-      // Airborne pose
       this.walkCycleTime = 0;
 
-      if (verticalVelocity > 0) {
-        this.leftArmPivot.rotation.x = -0.65;
-        this.rightArmPivot.rotation.x = -0.65;
-        this.leftArmPivot.rotation.z = -0.25;
-        this.rightArmPivot.rotation.z = 0.25;
+      const riseFactor = THREE.MathUtils.clamp(verticalVelocity / 11.2, 0, 1);
+      const fallFactor = THREE.MathUtils.clamp(-verticalVelocity / 22.0, 0, 1);
 
-        this.leftLegPivot.rotation.x = 0.10;
-        this.rightLegPivot.rotation.x = -0.06;
+      if (verticalVelocity >= 0) {
+        // --- ASCENT / TRIUMPHANT ATHLETIC BRAWLER LEAP ---
+        // Arms: Raised high above the head in an iconic celebratory/athletic jump!
+        targetLeftArmZ = -2.70 * riseFactor - 0.35 * (1 - riseFactor);
+        targetRightArmZ = 2.70 * riseFactor + 0.35 * (1 - riseFactor);
+        targetLeftArmX = -0.20 * riseFactor;
+        targetRightArmX = -0.20 * riseFactor;
+
+        // Legs: Dynamic athletic hurdle leap (Left knee tucked high, right leg kicking back)
+        targetLeftLegX = 0.95 * riseFactor + 0.20 * (1 - riseFactor);
+        targetLeftLegZ = -0.18 * riseFactor;
+        targetRightLegX = -0.65 * riseFactor + 0.10 * (1 - riseFactor);
+        targetRightLegZ = 0.16 * riseFactor;
+
+        // Head looking up at jump apex
+        targetHeadRotX = -0.28 * riseFactor;
+        targetTorsoRotX = -0.14 * riseFactor;
+
+        // Upward speed-line stretch
+        targetScaleY = 1.0 + 0.15 * riseFactor;
+
+        // Tail dragged down by upward rush of air
+        tailVerticalOffset = -0.45 * riseFactor;
+
+        // Drawstrings drag back against chest
+        drawstringRotX = -0.28 * riseFactor;
       } else {
-        this.leftArmPivot.rotation.x = -0.35;
-        this.rightArmPivot.rotation.x = -0.35;
-        this.leftArmPivot.rotation.z = -0.30;
-        this.rightArmPivot.rotation.z = 0.30;
+        // --- DESCENT / FAST AERODYNAMIC FALL ---
+        // Arms: Spread wide like wings for aerodynamic balance in rushing air
+        targetLeftArmZ = -0.95 * fallFactor - 0.50 * (1 - fallFactor);
+        targetRightArmZ = 0.95 * fallFactor + 0.50 * (1 - fallFactor);
+        targetLeftArmX = 0.25 * fallFactor;
+        targetRightArmX = 0.25 * fallFactor;
 
-        this.leftLegPivot.rotation.x = 0.05;
-        this.rightLegPivot.rotation.x = -0.04;
+        // Legs: Reaching downward, poised to absorb touchdown
+        targetLeftLegX = 0.25 * fallFactor + 0.10 * (1 - fallFactor);
+        targetLeftLegZ = -0.08 * fallFactor;
+        targetRightLegX = 0.15 * fallFactor + 0.08 * (1 - fallFactor);
+        targetRightLegZ = 0.08 * fallFactor;
+
+        // Head looking directly down at the landing zone
+        targetHeadRotX = 0.28 * fallFactor;
+        targetTorsoRotX = 0.20 * fallFactor;
+
+        // Subtle aerodynamic elongation
+        targetScaleY = 1.0 + 0.06 * fallFactor;
+
+        // Wind pushes tail straight up towards the sky
+        tailVerticalOffset = 0.70 * fallFactor;
+
+        // Drawstrings flutter dynamically upwards in the wind
+        drawstringRotX = 0.35 * fallFactor + Math.sin(this.idleTime * 28.0) * 0.14 * fallFactor;
       }
-
-      this.torsoGroup.position.y = 0.730;
-      this.headGroup.position.y = 1.160;
-    } else if (speed > 0.20) {
-      // Running pose
-      const strideCadence = Math.min(18, 6.5 + speed * 1.5);
-      this.walkCycleTime += dt * strideCadence;
-
-      const sinStride = Math.sin(this.walkCycleTime);
-      const cosStride = Math.cos(this.walkCycleTime);
-
-      this.leftLegPivot.rotation.x = sinStride * 0.95;
-      this.rightLegPivot.rotation.x = -sinStride * 0.95;
-
-      this.leftArmPivot.rotation.x = -sinStride * 0.92;
-      this.rightArmPivot.rotation.x = sinStride * 0.92;
-      this.leftArmPivot.rotation.z = -0.18 - Math.abs(cosStride) * 0.10;
-      this.rightArmPivot.rotation.z = 0.18 + Math.abs(cosStride) * 0.10;
-
-      const bounce = Math.abs(cosStride) * 0.04;
-      this.torsoGroup.position.y = 0.730 + bounce;
-      this.headGroup.position.y = 1.160 + bounce;
-      this.torsoGroup.rotation.y = sinStride * 0.12;
-      this.headGroup.rotation.y = -sinStride * 0.04;
     } else {
-      // Idle pose
-      this.walkCycleTime = 0;
+      // --- GROUNDED STATES ---
+      const squashFactor = THREE.MathUtils.clamp(jumpSquash * 0.75, 0, 0.22);
 
-      const breathe = Math.sin(this.idleTime * 2.8) * 0.012;
-      this.torsoGroup.position.y = 0.730 + breathe;
-      this.headGroup.position.y = 1.160 + breathe;
+      if (squashFactor > 0.01) {
+        // --- CRISP NATURAL IMPACT LANDING (NO COLLAPSE) ---
+        targetScaleY = Math.max(0.82, 1.0 - squashFactor); // Gentle, responsive cartoon squash
+        targetTorsoY = 0.730; // Solid anatomical torso height
+        targetHeadY = 1.160;  // Solid anatomical head height
 
-      this.leftLegPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
-      this.rightLegPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
-      this.leftArmPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
-      this.rightArmPivot.rotation.x *= Math.max(0, 1 - 16 * dt);
-      this.leftArmPivot.rotation.z = -0.10 + breathe * 0.5;
-      this.rightArmPivot.rotation.z = 0.10 - breathe * 0.5;
-      this.torsoGroup.rotation.y *= Math.max(0, 1 - 16 * dt);
-      this.headGroup.rotation.y *= Math.max(0, 1 - 16 * dt);
+        // Knees bend naturally forward to absorb touchdown shock
+        targetLeftLegX = squashFactor * 0.85;
+        targetRightLegX = squashFactor * 0.85;
+        targetLeftLegZ = -squashFactor * 0.12;
+        targetRightLegZ = squashFactor * 0.12;
+
+        // Arms drop naturally to sides
+        targetLeftArmX = squashFactor * 0.60;
+        targetRightArmX = squashFactor * 0.60;
+        targetLeftArmZ = -0.22 - squashFactor * 0.35;
+        targetRightArmZ = 0.22 + squashFactor * 0.35;
+
+        // Torso tilts slightly forward on impact
+        targetTorsoRotX = squashFactor * 0.22;
+        targetHeadRotX = -squashFactor * 0.10;
+
+        // Tail whips down on floor contact
+        tailVerticalOffset = -squashFactor * 0.50;
+
+        // Drawstrings slap forward on impact
+        drawstringRotX = squashFactor * 0.35;
+      } else if (speed > 0.20) {
+        // --- RUNNING / SPRINTING ---
+        const strideCadence = Math.min(18, 6.5 + speed * 1.5);
+        this.walkCycleTime += dt * strideCadence;
+
+        const sinStride = Math.sin(this.walkCycleTime);
+        const cosStride = Math.cos(this.walkCycleTime);
+
+        targetLeftLegX = sinStride * 0.95;
+        targetRightLegX = -sinStride * 0.95;
+
+        targetLeftArmX = -sinStride * 0.92;
+        targetRightArmX = sinStride * 0.92;
+        targetLeftArmZ = -0.18 - Math.abs(cosStride) * 0.10;
+        targetRightArmZ = 0.18 + Math.abs(cosStride) * 0.10;
+
+        const bounce = Math.abs(cosStride) * 0.04;
+        targetTorsoY = 0.730 + bounce;
+        targetHeadY = 1.160 + bounce;
+        targetTorsoRotY = sinStride * 0.12;
+        targetHeadRotY = -sinStride * 0.04;
+
+        drawstringRotX = sinStride * 0.12;
+      } else {
+        // --- IDLE WITH GENTLE BREATHING ---
+        this.walkCycleTime = 0;
+
+        const breathe = Math.sin(this.idleTime * 2.8) * 0.012;
+        targetTorsoY = 0.730 + breathe;
+        targetHeadY = 1.160 + breathe;
+
+        targetLeftArmZ = -0.10 + breathe * 0.5;
+        targetRightArmZ = 0.10 - breathe * 0.5;
+
+        drawstringRotX = breathe * 1.5;
+      }
     }
 
-    // Chameleon Tail Physics
+    // 3. Volume Preservation for Squash & Stretch
+    const targetScaleXZ = 1.0 / Math.sqrt(Math.max(0.2, targetScaleY));
+    const smoothRate = Math.min(1, 20 * dt);
+
+    this.currentScaleY += (targetScaleY - this.currentScaleY) * smoothRate;
+    this.currentScaleXZ += (targetScaleXZ - this.currentScaleXZ) * smoothRate;
+    this.modelRoot.scale.set(this.currentScaleXZ, this.currentScaleY, this.currentScaleXZ);
+
+    // 4. Smoothly Interpolate Skeleton Joints (Zero Snapping / Zero Popping)
+    const armLerpRate = Math.min(1, 24 * dt);
+    this.currentArmRot.leftX += (targetLeftArmX - this.currentArmRot.leftX) * armLerpRate;
+    this.currentArmRot.leftZ += (targetLeftArmZ - this.currentArmRot.leftZ) * armLerpRate;
+    this.currentArmRot.rightX += (targetRightArmX - this.currentArmRot.rightX) * armLerpRate;
+    this.currentArmRot.rightZ += (targetRightArmZ - this.currentArmRot.rightZ) * armLerpRate;
+
+    this.leftArmPivot.rotation.x = this.currentArmRot.leftX;
+    this.leftArmPivot.rotation.z = this.currentArmRot.leftZ;
+    this.rightArmPivot.rotation.x = this.currentArmRot.rightX;
+    this.rightArmPivot.rotation.z = this.currentArmRot.rightZ;
+
+    const legLerpRate = Math.min(1, 24 * dt);
+    this.currentLegRot.leftX += (targetLeftLegX - this.currentLegRot.leftX) * legLerpRate;
+    this.currentLegRot.leftZ += (targetLeftLegZ - this.currentLegRot.leftZ) * legLerpRate;
+    this.currentLegRot.rightX += (targetRightLegX - this.currentLegRot.rightX) * legLerpRate;
+    this.currentLegRot.rightZ += (targetRightLegZ - this.currentLegRot.rightZ) * legLerpRate;
+
+    this.leftLegPivot.rotation.x = this.currentLegRot.leftX;
+    this.leftLegPivot.rotation.z = this.currentLegRot.leftZ;
+    this.rightLegPivot.rotation.x = this.currentLegRot.rightX;
+    this.rightLegPivot.rotation.z = this.currentLegRot.rightZ;
+
+    this.currentHeadRotX += (targetHeadRotX - this.currentHeadRotX) * Math.min(1, 16 * dt);
+    this.headGroup.rotation.x = this.currentHeadRotX;
+    this.headGroup.rotation.y += (targetHeadRotY - this.headGroup.rotation.y) * Math.min(1, 16 * dt);
+
+    this.currentTorsoRotX += (targetTorsoRotX - this.currentTorsoRotX) * Math.min(1, 16 * dt);
+    this.torsoGroup.rotation.x = this.currentTorsoRotX;
+    this.torsoGroup.rotation.y += (targetTorsoRotY - this.torsoGroup.rotation.y) * Math.min(1, 16 * dt);
+
+    this.currentTorsoY += (targetTorsoY - this.currentTorsoY) * Math.min(1, 22 * dt);
+    this.currentHeadY += (targetHeadY - this.currentHeadY) * Math.min(1, 22 * dt);
+    this.torsoGroup.position.y = this.currentTorsoY;
+    this.headGroup.position.y = this.currentHeadY;
+
+    // 5. Dynamic Drawstring Flutter
+    for (const d of this.drawstringGroups) {
+      d.rotation.x += (drawstringRotX - d.rotation.x) * Math.min(1, 16 * dt);
+    }
+
+    // 6. Chameleon Tail Secondary Physics (Dynamic Balance & Aerodynamics)
     const tailSpeed = Math.min(1.0, speed * 0.12);
     const tailWave = Math.sin(this.idleTime * 3.0 + speed * 2.0) * (0.06 + speed * 0.04);
 
     for (let s = 0; s < this.tailSegments.length; s++) {
       const seg = this.tailSegments[s];
-      const targetRotX = THREE.MathUtils.clamp(-0.1 + tailSpeed * 0.2 + tailWave * 0.5, -0.3, 0.4);
+      const targetRotX = THREE.MathUtils.clamp(
+        -0.1 + tailSpeed * 0.2 + tailWave * 0.5 + tailVerticalOffset * (s + 1) * 0.25,
+        -0.55,
+        0.65
+      );
       seg.rotation.x += (targetRotX - seg.rotation.x) * Math.min(1, 14 * dt);
 
       const targetRotY = -this.currentBankAngle * (s + 1) * 0.25;
