@@ -376,8 +376,12 @@ export class ParkWorld {
       { x: 18, y: 1.80, z: 22, w: 2.2, h: 3.6, d: 2.2 },
     ];
 
+    // Shared corner post and plinth geometries for obstacle pillars
+    const cornerPostThick = 0.12;
+    const diamondCrestGeo = this.track(new THREE.BoxGeometry(0.42, 0.42, 0.04));
+
     for (const p of platforms) {
-      // Main pillar body
+      // 1. Main pillar core
       const mesh = new THREE.Mesh(
         this.track(new THREE.BoxGeometry(p.w, p.h, p.d)),
         amberMat
@@ -387,17 +391,49 @@ export class ParkWorld {
       mesh.receiveShadow = true;
       this.group.add(mesh);
 
-      // Chamfered cap plate on top for crisp cel-shading bevel rim
+      // 2. Base Skirting Plinth (Dark cedar wood foundation)
+      const basePlinth = new THREE.Mesh(
+        this.track(new THREE.BoxGeometry(p.w + 0.16, 0.14, p.d + 0.16)),
+        woodMat
+      );
+      basePlinth.position.set(p.x, 0.07, p.z);
+      basePlinth.castShadow = true;
+      basePlinth.receiveShadow = true;
+      this.group.add(basePlinth);
+
+      // 3. 4 Sculpted Cedar Corner Trim Posts
+      const postGeo = this.track(new THREE.BoxGeometry(cornerPostThick, p.h, cornerPostThick));
+      const halfW = p.w / 2 - cornerPostThick / 2 + 0.01;
+      const halfD = p.d / 2 - cornerPostThick / 2 + 0.01;
+      for (const cx of [-halfW, halfW]) {
+        for (const cz of [-halfD, halfD]) {
+          const cornerPost = new THREE.Mesh(postGeo, woodMat);
+          cornerPost.position.set(p.x + cx, p.y, p.z + cz);
+          cornerPost.castShadow = true;
+          this.group.add(cornerPost);
+        }
+      }
+
+      // 4. Chamfered Stone Cap Plate on Top with Crisp Cel-Shading Bevel
       const capTop = new THREE.Mesh(
-        this.track(new THREE.BoxGeometry(p.w + 0.15, 0.08, p.d + 0.15)),
+        this.track(new THREE.BoxGeometry(p.w + 0.18, 0.10, p.d + 0.18)),
         stoneMat
       );
-      capTop.position.set(p.x, p.y + p.h / 2 + 0.04, p.z);
+      capTop.position.set(p.x, p.y + p.h / 2 + 0.05, p.z);
       capTop.castShadow = true;
       capTop.receiveShadow = true;
       this.group.add(capTop);
 
-      this.addCollision(p.x, 0, p.z, p.w + 0.15, p.h + 0.08, p.d + 0.15);
+      // 5. Decorative Diamond Crest Medallion on Front Face (Liyue Adepti Style)
+      if (p.h > 1.0) {
+        const crest = new THREE.Mesh(diamondCrestGeo, woodMat);
+        crest.position.set(p.x, p.y, p.z - p.d / 2 - 0.02);
+        crest.rotation.z = Math.PI / 4;
+        crest.castShadow = true;
+        this.group.add(crest);
+      }
+
+      this.addCollision(p.x, 0, p.z, p.w + 0.18, p.h + 0.10, p.d + 0.18);
     }
 
     // 2. Elevated Cedar Wood Walkway Bridge in South-West Playground Area
