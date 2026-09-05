@@ -5,14 +5,21 @@ import { createSingleLeafMesh, createLeafSprigMesh } from './lowpoly/LowPolyLeaf
 import { createModularBranchGroup } from './lowpoly/LowPolyBranch';
 import { createLowPolyTrunkMesh } from './lowpoly/LowPolyTrunk';
 import { createCompleteLowPolyTree } from './lowpoly/LowPolyTree';
-import { createDinoChibi } from './dino/DinoChibi';
+import { createGemniDino, createDinoChibi } from './dino/DinoChibi';
 
 export const AVAILABLE_MODELS: ModelDefinition[] = [
   {
-    id: 'dino-chibi',
-    name: '🦖 Chibi Dinossauro (Rigged)',
+    id: 'gemni-dino',
+    name: '🦖 GemniDINO (Rigged)',
     category: 'Personagens',
-    description: 'Personagem chibi com capuz de dinossauro, roupa detalhada, esqueleto articulado e animações Idle, Walk e Wave. Menos de 100.000 triângulos.',
+    description: 'Personagem chibi com capuz de dinossauro inspirado na arte conceitual, com esqueleto articulado para jogos (30 ossos: braços, pernas, cabeça, cauda e sockets), animações completas e menos de 100.000 triângulos.',
+    create: createGemniDino,
+  },
+  {
+    id: 'dino-chibi',
+    name: '🦖 GemniDINO (Legado)',
+    category: 'Personagens',
+    description: 'Alias de compatibilidade do GemniDINO.',
     create: createDinoChibi,
   },
   {
@@ -80,4 +87,4 @@ export const AVAILABLE_MODELS: ModelDefinition[] = [
   },
 ];
 
-export const DEFAULT_MODEL_ID = 'tree-lowpoly';
+export const DEFAULT_MODEL_ID = 'gemni-dino';

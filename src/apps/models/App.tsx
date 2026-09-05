@@ -13,8 +13,12 @@ export default function ModelsApp() {
   const engineRef = useRef<ModelStudioEngine | null>(null);
 
   const [selectedModelId, setSelectedModelId] = useState<string>(() => {
-    const requested = new URLSearchParams(window.location.search).get('model');
-    return AVAILABLE_MODELS.some(model => model.id === requested) ? requested! : DEFAULT_MODEL_ID;
+    const requested = new URLSearchParams(window.location.search).get('model')?.trim().toLowerCase();
+    if (!requested) return DEFAULT_MODEL_ID;
+    const match = AVAILABLE_MODELS.find(
+      (m) => m.id.toLowerCase() === requested || m.id.replace(/-/g, '').toLowerCase() === requested.replace(/-/g, '')
+    );
+    return match ? match.id : DEFAULT_MODEL_ID;
   });
   const [shadingMode, setShadingMode] = useState<ShadingMode>('material');
   const [showGrid, setShowGrid] = useState<boolean>(true);
