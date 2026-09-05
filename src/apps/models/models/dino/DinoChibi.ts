@@ -15,44 +15,46 @@ export function createGemniDino(): THREE.Group {
   group.userData.previewDirection = [.24, .06, 1];
   const rig = createDinoRig(), builder = new SkinBuilder(rig);
 
-  const mat = (name: string, color: number, roughness = .85) => {
+  const mat = (name: string, color: number, roughness = .75) => {
     const material = new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
     material.name = name;
     return material;
   };
 
-  // Materials tuned to the concept artwork
-  const green = mat('Sage_fleece', 0x93ab3e);
-  green.emissive.set(0x283309);
-  green.emissiveIntensity = .12;
+  // Vibrant, cheerful anime chibi dinosaur palette
+  const green = mat('Sage_fleece', 0x52c41a);
+  green.emissive.set(0x134e19);
+  green.emissiveIntensity = .16;
 
-  const trim = mat('Olive_seams', 0x647929);
-  const inner = mat('Hood_lining', 0x334417);
-  const cream = mat('Cream_canvas', 0xf2dfa8);
-  const ivory = mat('Ivory_teeth_and_soles', 0xffeed0);
-  const amber = mat('Amber_buttons_and_spikes', 0xf89b20, .58);
+  const trim = mat('Olive_seams', 0x2e7d32);
+  const inner = mat('Hood_lining', 0x14532d);
+  const cream = mat('Cream_canvas', 0xfff3c4);
+  const ivory = mat('Ivory_teeth_and_soles', 0xfffbeb);
+  const amber = mat('Amber_buttons_and_spikes', 0xff9800, .52);
+  amber.emissive.set(0x78350f);
+  amber.emissiveIntensity = .14;
 
-  const skin = mat('Warm_skin', 0xf4b184, .68);
+  const skin = mat('Warm_skin', 0xfdc4a2, .65);
   skin.vertexColors = true;
-  skin.emissive.set(0xb76035);
+  skin.emissive.set(0x9a3412);
   skin.emissiveIntensity = .10;
 
-  const blush = mat('Cheek_blush', 0xee857b, .78);
-  blush.emissive.set(0x441416);
-  blush.emissiveIntensity = .08;
+  const blush = mat('Cheek_blush', 0xf43f5e, .75);
+  blush.emissive.set(0x881337);
+  blush.emissiveIntensity = .10;
 
-  const mouthCavity = mat('Mouth_cavity', 0x3d1416, .75);
-  const tongue = mat('Tongue_pink', 0xeb6b78, .55);
-  const mouth = mat('Closed_smile', 0x915438);
+  const mouthCavity = mat('Mouth_cavity', 0x4a0e17, .75);
+  const tongue = mat('Tongue_pink', 0xfb7185, .52);
+  const mouth = mat('Closed_smile', 0x881337);
 
-  const earInner = mat('Ear_inner', 0xdca17f);
-  const hair = mat('Chocolate_hair', 0x48291a, .72);
-  const hairLight = mat('Hair_highlights', 0x68412b, .76);
+  const earInner = mat('Ear_inner', 0xfba58c);
+  const hair = mat('Chocolate_hair', 0x4a2810, .70);
+  const hairLight = mat('Hair_highlights', 0x78421a, .74);
 
-  const white = mat('Eye_white', 0xfff9ea, .35);
-  const iris = mat('Hazel_iris', 0x7da420, .38);
-  const irisDark = mat('Iris_outer_ring', 0x314214, .45);
-  const black = mat('Pupils', 0x110e0a, .24);
+  const white = mat('Eye_white', 0xffffff, .30);
+  const iris = mat('Hazel_iris', 0x65a30d, .35);
+  const irisDark = mat('Iris_outer_ring', 0x1e3a0f, .42);
+  const black = mat('Pupils', 0x0f0b08, .20);
 
   const add = builder.add.bind(builder);
   const ball = (p: number[], s: number[], material: THREE.Material, bone = 'Head', segments = 24, rings = 16) =>
@@ -380,10 +382,10 @@ export function createGemniDino(): THREE.Group {
       16
     );
 
-    // Rosy Pink Cheeks (Blush) under each eye
+    // Rosy Pink Cheeks (Soft Chibi Blush) under each eye
     ball(
-      [sign * .330, 2.440, faceSurface(sign * .330, 2.440) + .006],
-      [.095, .052, .010],
+      [sign * .310, 2.420, faceSurface(sign * .310, 2.420) + .005],
+      [.105, .048, .006],
       blush,
       'Head',
       18,
@@ -394,15 +396,16 @@ export function createGemniDino(): THREE.Group {
   // Cute Button Nose
   ball([0, 2.452, .807], [.048, .037, .042], skin, 'Head', 24, 16);
 
-  // Joyful Open Smile (:D) with dark mouth cavity & cute pink tongue
+  // Joyful Open Smile (:D) with dark oral cavity & cute pink tongue
+  const mouthCenterY = 2.30;
   // Dark oral cavity
-  ball([0, 2.270, faceSurface(0, 2.270) + .002], [.092, .058, .016], mouthCavity, 'Jaw', 22, 14);
-  // Pink tongue at bottom of mouth cavity
-  ball([0, 2.242, faceSurface(0, 2.242) + .006], [.064, .032, .014], tongue, 'Jaw', 18, 12);
+  ball([0, mouthCenterY - .030, faceSurface(0, mouthCenterY - .030) + .003], [.090, .052, .016], mouthCavity, 'Jaw', 22, 14);
+  // Pink tongue nestled at bottom of mouth cavity
+  ball([0, mouthCenterY - .052, faceSurface(0, mouthCenterY - .052) + .007], [.066, .030, .015], tongue, 'Jaw', 18, 12);
   // Upper & lower smiling lip contours
   line(
-    [[-.095, 2.325], [-.050, 2.308], [0, 2.304], [.050, 2.308], [.095, 2.325]].map(([x, y]) => [
-      x, y, faceSurface(x, y) + .008
+    [[-.095, mouthCenterY + .018], [-.050, mouthCenterY + .002], [0, mouthCenterY], [.050, mouthCenterY + .002], [.095, mouthCenterY + .018]].map(([x, y]) => [
+      x, y, faceSurface(x, y) + .009
     ]),
     .007,
     mouth,
@@ -410,8 +413,8 @@ export function createGemniDino(): THREE.Group {
     20
   );
   line(
-    [[-.090, 2.322], [-.055, 2.228], [0, 2.215], [.055, 2.228], [.090, 2.322]].map(([x, y]) => [
-      x, y, faceSurface(x, y) + .008
+    [[-.090, mouthCenterY + .016], [-.060, mouthCenterY - .065], [0, mouthCenterY - .080], [.060, mouthCenterY - .065], [.090, mouthCenterY + .016]].map(([x, y]) => [
+      x, y, faceSurface(x, y) + .009
     ]),
     .006,
     mouth,
@@ -460,21 +463,15 @@ export function createGemniDino(): THREE.Group {
     ball([sign * .207, 3.258, .706], [.029, .024, .009], inner, 'Head', 16, 10);
   }
 
-  // Rounded Ivory Dinosaur Teeth Framing Hood Opening
+  // Rounded Ivory Dinosaur Teeth Framing Upper Hood Opening
   for (let i = 0; i < 7; i++) {
     const a = .29 + i / 6 * (Math.PI - .58);
     const x = Math.cos(a) * .613, y = 2.92 + Math.sin(a) * .280;
-    const tooth = softSpike(i === 3 ? .130 : .110, .132, .058);
+    const tooth = softSpike(i === 3 ? .125 : .105, .128, .054);
     tooth.rotateZ(Math.PI + (a - Math.PI / 2) * .36);
-    tooth.translate(x, y, .709);
+    tooth.rotateX(-.18);
+    tooth.translate(x, y, .675);
     add(tooth, ivory, 'Head');
-  }
-  // Two small corner teeth on lower hood opening
-  for (const sign of [-1, 1]) {
-    const lowerTooth = softSpike(.082, .095, .045);
-    lowerTooth.rotateZ(sign * .35);
-    lowerTooth.translate(sign * .52, 2.50, .66);
-    add(lowerTooth, ivory, 'Head');
   }
 
   // Hood Center Seam Line
@@ -486,15 +483,15 @@ export function createGemniDino(): THREE.Group {
   // 5 Warm Amber Hood Spikes along the midline, with prominent front crest
   const hoodSpikes = [
     // Front-most prominent crest spike (high above snout, pointing up-forward, clearly visible in front view)
-    { pos: [0, 3.56, .42], size: [.27, .32, .11], rotX: .22 },
+    { pos: [0, 3.52, .46], size: [.30, .36, .12], rotX: .28 },
     // Crown crest spike
-    { pos: [0, 3.66, .14], size: [.26, .30, .10], rotX: -.12 },
+    { pos: [0, 3.66, .18], size: [.28, .32, .11], rotX: -.08 },
     // Upper back crest spike
-    { pos: [0, 3.50, -.12], size: [.25, .28, .095], rotX: -.48 },
+    { pos: [0, 3.52, -.10], size: [.26, .29, .10], rotX: -.45 },
     // Mid back crest spike
-    { pos: [0, 3.18, -.34], size: [.23, .26, .090], rotX: -.88 },
+    { pos: [0, 3.20, -.32], size: [.24, .27, .095], rotX: -.85 },
     // Lower back crest spike
-    { pos: [0, 2.76, -.44], size: [.21, .24, .085], rotX: -1.28 }
+    { pos: [0, 2.76, -.44], size: [.22, .24, .090], rotX: -1.25 }
   ];
 
   for (const item of hoodSpikes) {

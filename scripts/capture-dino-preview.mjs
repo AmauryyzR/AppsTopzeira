@@ -22,25 +22,41 @@ async function run() {
 
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 
-  // 1. Front Screenshot
+  // 1. Front Full-body Screenshot
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_front.png') });
   console.log('Front screenshot saved.');
 
-  // 2. Close-up of face and hood
+  // 2. High-precision Face & Hood close-up using setCameraView
   await page.evaluate(() => {
-    const canvas = document.querySelector('canvas');
-    // Scroll or dispatch wheel event to zoom in
-    canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -400, clientX: 640, clientY: 350 }));
+    const engine = window.__studioEngine;
+    if (engine) {
+      engine.setCameraView({ x: 0.02, y: 0.38, z: 0.42 }, { x: 0, y: 0.37, z: 0.05 });
+    }
   });
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_face_closeup.png') });
   console.log('Face close-up screenshot saved.');
 
-  // Reset zoom [F]
+  // Reset camera view with [F]
   await page.keyboard.press('f');
   await page.waitForTimeout(400);
 
-  // 3. Toggle skeleton
+  // 3. Three-quarter Perspective View
+  await page.evaluate(() => {
+    const engine = window.__studioEngine;
+    if (engine) {
+      engine.setCameraView({ x: 0.45, y: 0.35, z: 0.65 }, { x: 0, y: 0.25, z: 0 });
+    }
+  });
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_perspective.png') });
+  console.log('Perspective screenshot saved.');
+
+  // Reset camera view with [F]
+  await page.keyboard.press('f');
+  await page.waitForTimeout(400);
+
+  // 4. Toggle skeleton
   const checkbox = await page.$('input[type="checkbox"]');
   if (checkbox) {
     await checkbox.check();
@@ -51,7 +67,7 @@ async function run() {
     await page.waitForTimeout(300);
   }
 
-  // 4. Animation: Wave
+  // 5. Animation: Wave (cheerful greeting matching reference image)
   const animSelect = await page.$('#rig-animation');
   if (animSelect) {
     await animSelect.selectOption('Wave');
@@ -59,7 +75,7 @@ async function run() {
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_wave.png') });
     console.log('Wave screenshot saved.');
 
-    // 5. Animation: Walk
+    // 6. Animation: Walk
     await animSelect.selectOption('Walk');
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_walk.png') });
@@ -69,7 +85,7 @@ async function run() {
     await page.waitForTimeout(300);
   }
 
-  // 6. Clay Shading
+  // 7. Clay Shading
   const clayBtn = await page.$('button[title*="Clay"]');
   if (clayBtn) {
     await clayBtn.click();
