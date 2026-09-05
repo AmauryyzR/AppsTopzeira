@@ -152,14 +152,16 @@ vec3 calculateAtmosphere(vec3 viewDir, vec3 sunDir, vec3 horizonCol, vec3 zenith
   vec3 skyBase = mix(horizonCol, zenithCol, skyCurve);
   vec3 rayleighSky = skyBase * (0.55 + 0.45 * extinction) + vec3(0.18, 0.38, 0.85) * (rayleighPhase * 0.85);
   
-  // 6. Mie atmospheric forward scatter halo (Photon golden sun halo)
-  vec3 mieHalo = sunCol * (miePhase * 0.085 * (1.0 - h * 0.65));
+  // 6. Mie atmospheric forward scatter halo (Photon golden sun halo - softened)
+  vec3 mieHalo = sunCol * (miePhase * 0.052 * (1.0 - h * 0.65));
   
   return rayleighSky + mieHalo;
 }
 
 void main() {
-  vec3 viewDir = normalize(vWorldPosition - cameraPosition);
+  vec3 viewVec = vWorldPosition - cameraPosition;
+  float viewDist = length(viewVec);
+  vec3 viewDir = viewDist > 0.001 ? (viewVec / viewDist) : vec3(0.0, 1.0, 0.0);
   vec3 sunDir = normalize(uSunPosition);
 
   // -------------------------------------------------------------
@@ -180,9 +182,9 @@ void main() {
   // Crisp anime sun disk
   float sunDisk = smoothstep(0.9982, 0.9992, sunCos);
   // Delicate focused corona without atmospheric washout
-  float innerCorona = pow(max(0.0, sunCos), 120.0) * 0.40;
-  float outerCorona = pow(max(0.0, sunCos), 32.0) * 0.10;
-  vec3 sun = uSunColor * (sunDisk * 2.2 + innerCorona + outerCorona);
+  float innerCorona = pow(max(0.0, sunCos), 120.0) * 0.28;
+  float outerCorona = pow(max(0.0, sunCos), 32.0) * 0.07;
+  vec3 sun = uSunColor * (sunDisk * 1.8 + innerCorona + outerCorona);
 
   // -------------------------------------------------------------
   // 3. FLUFFY ANIME CUMULUS CLOUDS (Studio Ghibli / Cel-shaded)
@@ -260,7 +262,7 @@ export class SkyDome {
       uniforms: {
         uTime: { value: 0 },
         uSunPosition: { value: initialSunPos },
-        uHorizonColor: { value: new THREE.Color(options?.horizonColor ?? 0xdbeafe) },
+        uHorizonColor: { value: new THREE.Color(options?.horizonColor ?? 0xbcd8f8) },
         uZenithColor: { value: new THREE.Color(options?.zenithColor ?? 0x1d4ed8) },
         uCloudColor: { value: new THREE.Color(options?.cloudColor ?? 0xffffff) },
         uCloudShadowColor: { value: new THREE.Color(options?.cloudShadowColor ?? 0x93c5fd) },

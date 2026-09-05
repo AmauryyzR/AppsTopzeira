@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { PlayerCharacter } from '../PlayerCharacter';
 
 interface GhostInstance {
@@ -105,7 +106,7 @@ export class GenshinDashTrailVFX {
     ];
 
     for (let i = 0; i < this.ghostCount; i++) {
-      const clonedRoot = playerCharacter.group.clone(true);
+      const clonedRoot = clone(playerCharacter.group) as THREE.Group;
       clonedRoot.visible = false;
       this.group.add(clonedRoot);
 
@@ -159,6 +160,7 @@ export class GenshinDashTrailVFX {
 
     // Synchronize full skeleton and pose without allocations
     this.copyNodeTransforms(playerCharacter.group, ghost.root);
+    ghost.root.updateMatrixWorld(true);
 
     ghost.age = 0;
     ghost.lifetime = 0.34;

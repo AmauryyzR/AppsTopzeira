@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { createToonMaterial } from './shaders/ToonMaterial';
+﻿import * as THREE from 'three';
+import { createDinoChibi } from '../../models/models/dino/DinoChibi';
 
 export interface CharacterAnimState {
   speed: number;
@@ -11,38 +11,55 @@ export interface CharacterAnimState {
 }
 
 /**
- * Authentic Professional Leon Character Model (Brawl Stars Chibi Aesthetic)
+ * PlayerCharacter - Chibi Dinosaur Character with Procedural 30-Bone Skeleton Animation
  * 
- * MATHEMATICAL RIGGING & CONNECTION SPECIFICATION:
- * - World Ground Plane: Y = 0.000
- * - Feet & Shoes: Sits from Y = 0.000 to Y = 0.155 (Sole: Y = 0.000 to 0.045, Upper: Y = 0.045 to 0.155)
- * - Leg Insertion: Leg cylinder spans Y = 0.105 to Y = 0.380. Enters 5.0cm INSIDE the shoe collar (Y = 0.155). ZERO GAP.
- * - Bermuda Shorts: Spans Y = 0.270 to Y = 0.490. Overlaps leg by 11.0cm. Pelvis at Y = 0.490.
- * - Torso: Spans Y = 0.470 to Y = 0.990. Hem at Y = 0.470 overlaps shorts by 2.0cm.
- * - Padded Collar / Cowl: Torus centered at Y = 0.990, spans Y = 0.940 to Y = 1.060, reaches Z = +0.250.
- * - Head & Hood: Pivot at Y = 1.160. Hood base reaches Y = 0.900 (penetrates 9.0cm inside torso collar). ZERO GAP.
- * - Drawstrings: Rooted at eyelets (Y = 0.950, Z = 0.180), draped forward at Z = 0.270 over chest (Z_chest = 0.245). NEVER penetrates chest.
- * - Arms: Anchored to torso at Y = 0.910. Sleeves end at blue cuffs. Forearms emerge from inside cuffs.
+ * Replaces the previous primitive Leon model with the rigged, high-definition Chibi Dinosaur
+ * costume model from /models. Adapts all existing gameplay kinematic animations:
+ * - Dynamic Locomotion (Walk / Sprint gait with knee flexion, ankle roll & counter arm pump)
+ * - Triumphant Jump Ascent (Athletic hurdle leap with raised arms and tucked knee)
+ * - Aerodynamic Jump Descent (Glider pose with wide arms, poised legs & wind-lifted tail)
+ * - Impact Landing Shock Absorption (Knee flexion, torso tilt, tail whip & volume squash)
+ * - Idle Breathing & Head Glance (Rhythmic chest breathing and lazy tail sway)
+ * - Dynamic Turn Banking & Forward Lean (Centrifugal tilt and air-resistance lean)
+ * - 4-Segment Secondary Tail Physics (Locomotion wave, wind drag, banking counter-sway)
+ * - Volume Preservation Squash & Stretch (Elastic vertical deformation)
  */
 export class PlayerCharacter {
   public readonly group = new THREE.Group();
 
-  // Root deformation container for squash & stretch
-  private modelRoot = new THREE.Group();
+  // Root container for squash & stretch, banking and forward lean
+  public readonly modelRoot: THREE.Group;
 
-  // Skeleton hierarchy
-  private headGroup = new THREE.Group();
-  private torsoGroup = new THREE.Group();
-  private leftArmPivot = new THREE.Group();
-  private rightArmPivot = new THREE.Group();
-  private leftLegPivot = new THREE.Group();
-  private rightLegPivot = new THREE.Group();
+  // Cached bones of the 30-bone Dino rig
+  private hipsBone!: THREE.Bone;
+  private spineBone!: THREE.Bone;
+  private chestBone!: THREE.Bone;
+  private neckBone!: THREE.Bone;
+  private headBone!: THREE.Bone;
+  private jawBone!: THREE.Bone;
 
-  // Chameleon Tail at back
-  private tailSegments: THREE.Group[] = [];
+  private upperArmL!: THREE.Bone;
+  private forearmL!: THREE.Bone;
+  private handL!: THREE.Bone;
 
-  // Dynamic hoodie drawstrings
-  private drawstringGroups: THREE.Group[] = [];
+  private upperArmR!: THREE.Bone;
+  private forearmR!: THREE.Bone;
+  private handR!: THREE.Bone;
+
+  private thighL!: THREE.Bone;
+  private shinL!: THREE.Bone;
+  private footL!: THREE.Bone;
+  private toeL!: THREE.Bone;
+
+  private thighR!: THREE.Bone;
+  private shinR!: THREE.Bone;
+  private footR!: THREE.Bone;
+  private toeR!: THREE.Bone;
+
+  private tailBones: THREE.Bone[] = [];
+
+  // Rest reference transform
+  private restHipsY = 0.91;
 
   // Animation Timers & Smoothing
   private walkCycleTime = 0;
@@ -52,775 +69,87 @@ export class PlayerCharacter {
   private currentBankAngle = 0;
   private currentForwardLean = 0;
 
-  // Smooth aerial and landing kinematics
-  private currentArmRot = {
-    leftX: 0, leftZ: -0.10,
-    rightX: 0, rightZ: 0.10,
-  };
-  private currentLegRot = {
-    leftX: 0, leftZ: 0,
-    rightX: 0, rightZ: 0,
-  };
-  private currentHeadRotX = 0;
-  private currentTorsoRotX = 0;
+  // Current interpolated rotations for silky 60fps transitions
+  private currentThighL = { x: 0, z: 0 };
+  private currentThighR = { x: 0, z: 0 };
+  private currentShinL = 0;
+  private currentShinR = 0;
+  private currentFootL = 0;
+  private currentFootR = 0;
+
+  private currentUpperArmL = { x: 0, z: 0 };
+  private currentUpperArmR = { x: 0, z: 0 };
+  private currentForearmL = 0;
+  private currentForearmR = 0;
+
+  private currentHipsY = 0.91;
+  private currentSpine = { pitch: 0, yaw: 0 };
+  private currentChest = { pitch: 0, yaw: 0 };
+  private currentHead = { pitch: 0, yaw: 0, roll: 0 };
+
+  private currentTail: { pitch: number; yaw: number }[] = [
+    { pitch: 0, yaw: 0 },
+    { pitch: 0, yaw: 0 },
+    { pitch: 0, yaw: 0 },
+    { pitch: 0, yaw: 0 },
+  ];
+
   private currentScaleY = 1.0;
   private currentScaleXZ = 1.0;
-  private currentTorsoY = 0.730;
-  private currentHeadY = 1.160;
-
-  // Tracked Geometries & Materials for Clean Cleanup
-  private geometries: THREE.BufferGeometry[] = [];
-  private materials: THREE.Material[] = [];
 
   constructor() {
-    this.group.name = 'PlayerCharacter_Verdinho_Leon';
+    this.group.name = 'PlayerCharacter_Dino_Chibi';
+
+    // Build the procedural Chibi Dinosaur model with its 30-bone skeleton
+    this.modelRoot = createDinoChibi();
     this.group.add(this.modelRoot);
-    this.modelRoot.position.y = 0; // Feet sit flush on ground plane at world y = 0.000
-    this.buildCharacterModel();
+
+    this.cacheBones();
   }
 
-  private track<T extends THREE.BufferGeometry>(geo: T): T {
-    this.geometries.push(geo);
-    return geo;
-  }
+  private cacheBones() {
+    const getBone = (name: string): THREE.Bone => {
+      const bone = this.modelRoot.getObjectByName(name);
+      if (!bone || !(bone as THREE.Bone).isBone) {
+        throw new Error(`Bone "${name}" not found in DinoChibi rig`);
+      }
+      return bone as THREE.Bone;
+    };
 
-  private trackMat<T extends THREE.Material>(mat: T): T {
-    this.materials.push(mat);
-    return mat;
-  }
+    this.hipsBone = getBone('Hips');
+    this.spineBone = getBone('Spine');
+    this.chestBone = getBone('Chest');
+    this.neckBone = getBone('Neck');
+    this.headBone = getBone('Head');
+    this.jawBone = getBone('Jaw');
 
-  private buildCharacterModel() {
-    // ==========================================
-    // 1. CEL-SHADED ANIME TOON PALETTE
-    // ==========================================
-    const hoodieGreenMat = this.trackMat(
-      createToonMaterial({
-        color: 0x10b981, // Vibrant Emerald Chameleon Green
-        gradientBands: 4,
-        rimColor: 0x86efac,
-        rimPower: 2.8,
-        rimIntensity: 0.65,
-        shadowColor: 0x064e3b,
-        shadowIntensity: 0.50,
-        side: THREE.DoubleSide,
-      })
-    );
-    const hoodTrimDarkGreenMat = this.trackMat(
-      createToonMaterial({
-        color: 0x059669, // Forest green hood rim & visor trim
-        gradientBands: 4,
-        rimColor: 0xa7f3d0,
-        rimPower: 3.0,
-        rimIntensity: 0.55,
-        shadowColor: 0x022c22,
-        shadowIntensity: 0.55,
-      })
-    );
-    const pocketBlueMat = this.trackMat(
-      createToonMaterial({
-        color: 0x2563eb, // Royal Blue Kangaroo Pouch & Cuffs
-        gradientBands: 4,
-        rimColor: 0x93c5fd,
-        rimPower: 2.9,
-        rimIntensity: 0.60,
-        shadowColor: 0x1e3a8a,
-        shadowIntensity: 0.52,
-      })
-    );
-    const zipperYellowMat = this.trackMat(
-      createToonMaterial({
-        color: 0xfbbf24, // Bright Golden Yellow Zipper & Drawstring Tips
-        gradientBands: 3,
-        rimColor: 0xfef08a,
-        rimPower: 2.5,
-        rimIntensity: 0.75,
-        shadowColor: 0x854d0e,
-        shadowIntensity: 0.45,
-      })
-    );
-    const drawstringCreamMat = this.trackMat(
-      createToonMaterial({
-        color: 0xf8fafc, // Cream-white drawstrings
-        gradientBands: 4,
-        rimColor: 0xffffff,
-        rimPower: 3.0,
-        rimIntensity: 0.65,
-        shadowColor: 0x94a3b8,
-        shadowIntensity: 0.50,
-      })
-    );
-    const skinToneMat = this.trackMat(
-      createToonMaterial({
-        color: 0xffdfc2, // Warm peach skin
-        gradientBands: 4,
-        rimColor: 0xffedd5,
-        rimPower: 3.2,
-        rimIntensity: 0.50,
-        shadowColor: 0xc2785c,
-        shadowIntensity: 0.45,
-      })
-    );
-    const shortsIndigoMat = this.trackMat(
-      createToonMaterial({
-        color: 0x1e293b, // Dark indigo slate denim
-        gradientBands: 4,
-        rimColor: 0x94a3b8,
-        rimPower: 2.8,
-        rimIntensity: 0.60,
-        shadowColor: 0x0f172a,
-        shadowIntensity: 0.55,
-      })
-    );
-    const sneakerRedMat = this.trackMat(
-      createToonMaterial({
-        color: 0xef4444, // Crimson Brawler Sneaker Upper
-        gradientBands: 4,
-        rimColor: 0xfca5a5,
-        rimPower: 2.7,
-        rimIntensity: 0.65,
-        shadowColor: 0x991b1b,
-        shadowIntensity: 0.52,
-      })
-    );
-    const sneakerWhiteMat = this.trackMat(
-      createToonMaterial({
-        color: 0xffffff, // White Sole & Rubber Shell-Toe
-        gradientBands: 4,
-        rimColor: 0xffffff,
-        rimPower: 2.6,
-        rimIntensity: 0.75,
-        shadowColor: 0x94a3b8,
-        shadowIntensity: 0.50,
-      })
-    );
-    const sneakerStripeMat = this.trackMat(
-      createToonMaterial({
-        color: 0x0f172a, // Sole racing groove
-        gradientBands: 3,
-        rimColor: 0x64748b,
-        rimPower: 3.0,
-        rimIntensity: 0.45,
-        shadowColor: 0x020617,
-        shadowIntensity: 0.60,
-      })
-    );
-    const lollipopCherryMat = this.trackMat(
-      createToonMaterial({
-        color: 0xe11d48, // Glossy cherry red lollipop
-        gradientBands: 4,
-        rimColor: 0xfecdd3,
-        rimPower: 2.2,
-        rimIntensity: 0.85,
-        specularIntensity: 0.85, // Candy gloss glint
-        specularRoughness: 60.0,
-        specularColor: 0xffffff,
-        shadowColor: 0x881337,
-        shadowIntensity: 0.55,
-      })
-    );
-    const whiteAccentMat = this.trackMat(
-      createToonMaterial({
-        color: 0xffffff,
-        gradientBands: 3,
-        rimColor: 0xffffff,
-        rimPower: 2.5,
-        rimIntensity: 0.70,
-        shadowColor: 0x94a3b8,
-        shadowIntensity: 0.40,
-      })
-    );
+    this.upperArmL = getBone('UpperArm.L');
+    this.forearmL = getBone('Forearm.L');
+    this.handL = getBone('Hand.L');
 
-    // Eye Turret Materials
-    const chamEyeYellowMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-    const chamEyePupilMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0f172a }));
-    const chamEyeHighlightMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    this.upperArmR = getBone('UpperArm.R');
+    this.forearmR = getBone('Forearm.R');
+    this.handR = getBone('Hand.R');
 
-    // Face Materials
-    const hairTealMat = this.trackMat(
-      createToonMaterial({
-        color: 0x0284c7, // Vibrant cyan-teal anime hair
-        gradientBands: 3,
-        rimColor: 0x38bdf8,
-        rimPower: 2.5,
-        rimIntensity: 0.70,
-        fineGlowColor: 0x7dd3fc,
-        fineGlowIntensity: 0.80,
-        fineGlowPower: 3.8,
-        specularIntensity: 0.40, // Anime hair angel ring glint
-        specularRoughness: 32.0,
-        shadowColor: 0x075985,
-        shadowIntensity: 0.50,
-      })
-    );
-    const eyeScleraWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eyeIrisCyanMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
-    const eyePupilBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
-    const eyeHighlightWhiteMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const eyeBrowBlackMat = this.trackMat(new THREE.MeshBasicMaterial({ color: 0x090d16 }));
-    const blushPeachMat = this.trackMat(
-      createToonMaterial({
-        color: 0xf43f5e,
-        gradientBands: 2,
-        transparent: true,
-        opacity: 0.42,
-      })
-    );
+    this.thighL = getBone('Thigh.L');
+    this.shinL = getBone('Shin.L');
+    this.footL = getBone('Foot.L');
+    this.toeL = getBone('Toe.L');
 
-    // ==========================================
-    // 2. TORSO & HOODIE BODY (World Y = 0.470 to Y = 0.990)
-    // ==========================================
-    // Torso centered at y = 0.730
-    this.torsoGroup.position.set(0, 0.730, 0);
-    this.modelRoot.add(this.torsoGroup);
+    this.thighR = getBone('Thigh.R');
+    this.shinR = getBone('Shin.R');
+    this.footR = getBone('Foot.R');
+    this.toeR = getBone('Toe.R');
 
-    // Torso LatheGeometry: spans local y = -0.260 to y = +0.260 (World Y: 0.470 to 0.990)
-    const torsoPoints: THREE.Vector2[] = [
-      new THREE.Vector2(0.01, -0.26),
-      new THREE.Vector2(0.23, -0.26), // Hem (overlaps shorts)
-      new THREE.Vector2(0.25, -0.16), // Hip
-      new THREE.Vector2(0.24, -0.05), // Waist
-      new THREE.Vector2(0.27, 0.10),  // Chest expansion (z_max ~ 0.25)
-      new THREE.Vector2(0.28, 0.18),  // Upper chest
-      new THREE.Vector2(0.24, 0.23),  // Shoulder taper
-      new THREE.Vector2(0.16, 0.26),  // Collar base
-      new THREE.Vector2(0.01, 0.26),
-    ];
-    const torsoGeo = this.track(new THREE.LatheGeometry(torsoPoints, 48));
-    torsoGeo.scale(1.0, 1.0, 0.92);
-    const torsoMesh = new THREE.Mesh(torsoGeo, hoodieGreenMat);
-    torsoMesh.castShadow = true;
-    torsoMesh.receiveShadow = true;
-    this.torsoGroup.add(torsoMesh);
-
-    // PADDED HOODIE COWL / COLLAR ROLL (Bridging Torso seamlessly into Head in 360°)
-    // Local y = 0.260 (World Y = 0.990). Torus radius 0.170, tube 0.048.
-    // Extends from local y = 0.210 to 0.310 (World Y = 0.940 to 1.040).
-    // Extends forward in Z to +0.225, wrapping directly under the chin!
-    const cowlGeo = this.track(new THREE.TorusGeometry(0.170, 0.048, 24, 48));
-    cowlGeo.scale(1.0, 0.85, 1.05);
-    const cowlMesh = new THREE.Mesh(cowlGeo, hoodieGreenMat);
-    cowlMesh.position.set(0, 0.260, 0.025);
-    cowlMesh.rotation.x = Math.PI / 2 - 0.14;
-    cowlMesh.castShadow = true;
-    this.torsoGroup.add(cowlMesh);
-
-    // Inner neck cylinder to guarantee zero hollow void
-    const neckInnerGeo = this.track(new THREE.CylinderGeometry(0.145, 0.155, 0.20, 28));
-    const neckInnerMesh = new THREE.Mesh(neckInnerGeo, hoodieGreenMat);
-    neckInnerMesh.position.set(0, 0.280, 0.015);
-    this.torsoGroup.add(neckInnerMesh);
-
-    // Royal Blue Kangaroo Front Pouch Pocket
-    const pouchGeo = this.track(new THREE.CylinderGeometry(0.245, 0.260, 0.16, 24, 1, false, -0.80, 1.60));
-    pouchGeo.scale(1.03, 1.0, 0.95);
-    const pouchMesh = new THREE.Mesh(pouchGeo, pocketBlueMat);
-    pouchMesh.position.set(0, -0.12, 0.03);
-    pouchMesh.castShadow = true;
-    this.torsoGroup.add(pouchMesh);
-
-    // Golden Front Zipper Line (Starts strictly at top of pocket at y = -0.04 up to collar at y = 0.25)
-    const zipperGeo = this.track(new THREE.BoxGeometry(0.030, 0.28, 0.020));
-    const zipperMesh = new THREE.Mesh(zipperGeo, zipperYellowMat);
-    zipperMesh.position.set(0, 0.11, 0.255);
-    zipperMesh.castShadow = true;
-    this.torsoGroup.add(zipperMesh);
-
-    // Golden Zipper Pull Tab
-    const pullerGeo = this.track(new THREE.BoxGeometry(0.042, 0.055, 0.025));
-    const pullerMesh = new THREE.Mesh(pullerGeo, zipperYellowMat);
-    pullerMesh.position.set(0, 0.19, 0.270);
-    this.torsoGroup.add(pullerMesh);
-
-    // Cream Hoodie Drawstrings (Engineered with positive Z clearance: NEVER penetrates torso!)
-    for (const xSign of [-1, 1]) {
-      const drawstringGroup = new THREE.Group();
-      // Eyelet at collar
-      drawstringGroup.position.set(xSign * 0.075, 0.230, 0.185);
-
-      // Angled upper string curving forward over chest
-      const upperStrLen = 0.140;
-      const upperStrGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, upperStrLen, 10));
-      upperStrGeo.rotateX(-0.55); // Angles forward in +Z as it goes down
-      const upperStrMesh = new THREE.Mesh(upperStrGeo, drawstringCreamMat);
-      upperStrMesh.position.set(0, -upperStrLen * 0.42, upperStrLen * 0.28);
-      drawstringGroup.add(upperStrMesh);
-
-      // Hanging lower string with golden aglet tip (Drapes freely at Z = 0.080 in local coords -> Z_world = 0.265 > Z_torso = 0.240)
-      const lowerStrLen = 0.070;
-      const lowerStrGeo = this.track(new THREE.CylinderGeometry(0.007, 0.007, lowerStrLen, 10));
-      const lowerStrMesh = new THREE.Mesh(lowerStrGeo, drawstringCreamMat);
-      lowerStrMesh.position.set(xSign * 0.005, -upperStrLen * 0.85 - lowerStrLen * 0.5, upperStrLen * 0.56);
-      drawstringGroup.add(lowerStrMesh);
-
-      // Golden Aglet Tip
-      const tipLen = 0.030;
-      const tipGeo = this.track(new THREE.CylinderGeometry(0.012, 0.012, tipLen, 10));
-      const tipMesh = new THREE.Mesh(tipGeo, zipperYellowMat);
-      tipMesh.position.set(xSign * 0.005, -upperStrLen * 0.85 - lowerStrLen - tipLen * 0.5, upperStrLen * 0.56);
-      drawstringGroup.add(tipMesh);
-
-      this.torsoGroup.add(drawstringGroup);
-      this.drawstringGroups.push(drawstringGroup);
-    }
-
-    // Chameleon Tail at back (curling UPWARDS)
-    const tailRoot = new THREE.Group();
-    tailRoot.position.set(0, -0.16, -0.22);
-    this.torsoGroup.add(tailRoot);
-
-    const tailOffsets = [
-      { pos: new THREE.Vector3(0, 0, 0), r: 0.080 },
-      { pos: new THREE.Vector3(0, -0.01, -0.07), r: 0.070 },
-      { pos: new THREE.Vector3(0, 0.03, -0.13), r: 0.060 },
-      { pos: new THREE.Vector3(0, 0.09, -0.16), r: 0.050 },
-      { pos: new THREE.Vector3(0, 0.16, -0.15), r: 0.040 },
-      { pos: new THREE.Vector3(0, 0.21, -0.10), r: 0.032 },
+    this.tailBones = [
+      getBone('Tail.01'),
+      getBone('Tail.02'),
+      getBone('Tail.03'),
+      getBone('Tail.04'),
     ];
 
-    let prevTail = tailRoot;
-    for (let t = 0; t < tailOffsets.length; t++) {
-      const node = tailOffsets[t];
-      const seg = new THREE.Group();
-      if (t > 0) {
-        const prevNode = tailOffsets[t - 1];
-        seg.position.copy(node.pos).sub(prevNode.pos);
-      } else {
-        seg.position.copy(node.pos);
-      }
-
-      const segGeo = this.track(new THREE.SphereGeometry(node.r, 16, 14));
-      segGeo.scale(1.0, 0.95, 1.15);
-      const segMesh = new THREE.Mesh(segGeo, t % 2 === 0 ? hoodieGreenMat : pocketBlueMat);
-      segMesh.castShadow = true;
-      seg.add(segMesh);
-
-      prevTail.add(seg);
-      prevTail = seg;
-      this.tailSegments.push(seg);
-    }
-
-    // ==========================================
-    // 3. THE CHAMELEON HOOD & EXPRESSIVE HERO FACE
-    // ==========================================
-    // Head pivot at y = 1.160 (Overlaps torso cowl at y = 0.990 by 9.0cm - ZERO GAPS)
-    this.headGroup.position.set(0, 1.160, 0.015);
-    this.modelRoot.add(this.headGroup);
-
-    // Outer Chameleon Hood (Seamless spherical dome: 100% solid top, back, and sides)
-    // Using thetaLength = 0.68*PI rotated -PI/2 around X axis.
-    // The pole is at -Z (back of skull). Sphere wraps continuously across top, nape, and sides,
-    // terminating cleanly in a smooth circular face opening in front (+Z). ZERO HOLES ON TOP!
-    const hoodGeo = this.track(
-      new THREE.SphereGeometry(
-        0.270,
-        48,
-        36,
-        0,
-        Math.PI * 2,
-        0,
-        Math.PI * 0.68
-      )
-    );
-    hoodGeo.rotateX(-Math.PI / 2);
-    hoodGeo.scale(1.02, 1.04, 1.02);
-    const hoodMesh = new THREE.Mesh(hoodGeo, hoodieGreenMat);
-    hoodMesh.position.set(0, 0.01, -0.01);
-    hoodMesh.castShadow = true;
-    hoodMesh.receiveShadow = true;
-    this.headGroup.add(hoodMesh);
-
-    // 3 Chameleon Ridge Spikes along Back of Hood
-    for (let r = 0; r < 3; r++) {
-      const spikeGeo = this.track(new THREE.ConeGeometry(0.035, 0.070, 10));
-      spikeGeo.rotateX(Math.PI / 2);
-      const spike = new THREE.Mesh(spikeGeo, pocketBlueMat);
-      spike.position.set(0, 0.20 - r * 0.080, -0.21 - r * 0.05);
-      spike.rotation.x = -0.35 - r * 0.25;
-      spike.castShadow = true;
-      this.headGroup.add(spike);
-    }
-
-    // Peach Face Front Dome (Convex cap STRICTLY confined inside the hood rim: ZERO skin leaks on sides/temples/top)
-    const faceCapGeo = this.track(new THREE.SphereGeometry(0.190, 36, 28, 0, Math.PI * 2, 0, Math.PI * 0.44));
-    faceCapGeo.rotateX(Math.PI / 2);
-    faceCapGeo.scale(1.0, 1.06, 0.60);
-    const faceMesh = new THREE.Mesh(faceCapGeo, skinToneMat);
-    faceMesh.position.set(0, -0.005, 0.095);
-    faceMesh.castShadow = true;
-    this.headGroup.add(faceMesh);
-
-    // Dark Green Hood Face Rim (Thick padded bezel framing the face opening)
-    // Sits flush at z = 0.140, completely overlapping the boundary of the face cap and hood opening
-    const hoodRimGeo = this.track(new THREE.TorusGeometry(0.205, 0.036, 24, 48));
-    hoodRimGeo.scale(1.0, 1.06, 0.70);
-    const hoodRim = new THREE.Mesh(hoodRimGeo, hoodTrimDarkGreenMat);
-    hoodRim.position.set(0, 0.00, 0.140);
-    hoodRim.castShadow = true;
-    this.headGroup.add(hoodRim);
-
-    // Curved Hood Visor / Brim over the forehead
-    const visorShape = new THREE.Shape();
-    visorShape.moveTo(-0.20, 0);
-    visorShape.quadraticCurveTo(0, 0.13, 0.20, 0);
-    visorShape.quadraticCurveTo(0, 0.05, -0.20, 0);
-
-    const visorGeo = this.track(
-      new THREE.ExtrudeGeometry(visorShape, {
-        depth: 0.024,
-        bevelEnabled: true,
-        bevelSegments: 2,
-        steps: 1,
-        bevelSize: 0.010,
-        bevelThickness: 0.010,
-      })
-    );
-    visorGeo.center();
-    const visorMesh = new THREE.Mesh(visorGeo, hoodTrimDarkGreenMat);
-    visorMesh.position.set(0, 0.140, 0.165);
-    visorMesh.rotation.set(0.18, 0, 0);
-    visorMesh.castShadow = true;
-    this.headGroup.add(visorMesh);
-
-    // ==========================================
-    // SCULPTED VOLUMETRIC ANIME HAIR LOCKS
-    // ==========================================
-    const hairGroup = new THREE.Group();
-    hairGroup.position.set(0, 0.120, 0.155);
-
-    const createHairLockShape = (width: number, length: number, curveX: number) => {
-      const s = new THREE.Shape();
-      s.moveTo(-width / 2, 0);
-      s.quadraticCurveTo(curveX * 0.4, -length * 0.45, -width * 0.15 + curveX, -length);
-      s.quadraticCurveTo(curveX * 0.7 + width * 0.15, -length * 0.50, width / 2, 0);
-      s.closePath();
-      return s;
-    };
-
-    const lockExtrudeSettings = {
-      depth: 0.015,
-      bevelEnabled: true,
-      bevelSegments: 2,
-      steps: 1,
-      bevelSize: 0.006,
-      bevelThickness: 0.006,
-    };
-
-    const hairLocksConfig = [
-      // 1. Center Hero Lock (Graceful sweep to right)
-      { width: 0.062, len: 0.115, curveX: 0.025, x: 0.010, y: -0.015, z: 0.025, rx: 0.24, rz: 0.06 },
-      // 2. Left Framing Lock (Swoop left framing the brow)
-      { width: 0.052, len: 0.095, curveX: -0.030, x: -0.055, y: -0.010, z: 0.018, rx: 0.20, rz: 0.25 },
-      // 3. Right Framing Lock (Swoop right framing the brow)
-      { width: 0.054, len: 0.100, curveX: 0.028, x: 0.065, y: -0.010, z: 0.020, rx: 0.22, rz: -0.22 },
-      // 4. Dimensional Top-Volume Lock (Layered above center)
-      { width: 0.044, len: 0.075, curveX: 0.018, x: 0.005, y: 0.005, z: 0.034, rx: 0.28, rz: 0.04 },
-      // 5. Left Temple Tendril
-      { width: 0.035, len: 0.070, curveX: -0.020, x: -0.100, y: -0.030, z: 0.008, rx: 0.14, rz: 0.40 },
-      // 6. Right Temple Tendril
-      { width: 0.035, len: 0.070, curveX: 0.020, x: 0.105, y: -0.030, z: 0.010, rx: 0.15, rz: -0.38 },
-    ];
-
-    for (const h of hairLocksConfig) {
-      const lockShape = createHairLockShape(h.width, h.len, h.curveX);
-      const lockGeo = this.track(new THREE.ExtrudeGeometry(lockShape, lockExtrudeSettings));
-      lockGeo.center();
-      const lockMesh = new THREE.Mesh(lockGeo, hairTealMat);
-      lockMesh.position.set(h.x, h.y, h.z);
-      lockMesh.rotation.set(h.rx, 0, h.rz);
-      lockMesh.castShadow = true;
-      hairGroup.add(lockMesh);
-    }
-    this.headGroup.add(hairGroup);
-
-    // Expressive Hero Eyes
-    const buildExpressiveHeroEye = (xSign: number) => {
-      const eyeGroup = new THREE.Group();
-      eyeGroup.position.set(xSign * 0.085, 0.015, 0.198);
-      eyeGroup.rotation.z = xSign * -0.08;
-
-      const scleraGeo = this.track(new THREE.SphereGeometry(0.044, 20, 16));
-      scleraGeo.scale(1.20, 1.05, 0.25);
-      const sclera = new THREE.Mesh(scleraGeo, eyeScleraWhiteMat);
-      eyeGroup.add(sclera);
-
-      const irisGeo = this.track(new THREE.SphereGeometry(0.030, 20, 16));
-      irisGeo.scale(1.0, 1.05, 0.18);
-      const iris = new THREE.Mesh(irisGeo, eyeIrisCyanMat);
-      iris.position.set(xSign * -0.003, -0.002, 0.012);
-      eyeGroup.add(iris);
-
-      const pupilGeo = this.track(new THREE.SphereGeometry(0.018, 14, 12));
-      pupilGeo.scale(1.0, 1.15, 0.18);
-      const pupil = new THREE.Mesh(pupilGeo, eyePupilBlackMat);
-      pupil.position.set(xSign * -0.003, -0.002, 0.016);
-      eyeGroup.add(pupil);
-
-      const sparkleMainGeo = this.track(new THREE.CircleGeometry(0.010, 12));
-      const sparkleMain = new THREE.Mesh(sparkleMainGeo, eyeHighlightWhiteMat);
-      sparkleMain.position.set(xSign * 0.007, 0.011, 0.021);
-      eyeGroup.add(sparkleMain);
-
-      const sparkleSubGeo = this.track(new THREE.CircleGeometry(0.005, 10));
-      const sparkleSub = new THREE.Mesh(sparkleSubGeo, eyeHighlightWhiteMat);
-      sparkleSub.position.set(xSign * -0.007, -0.007, 0.021);
-      eyeGroup.add(sparkleSub);
-
-      const lashGeo = this.track(new THREE.TorusGeometry(0.046, 0.008, 8, 16, Math.PI * 0.72));
-      lashGeo.rotateZ(Math.PI * 0.14);
-      const lash = new THREE.Mesh(lashGeo, eyeBrowBlackMat);
-      lash.position.set(0, 0.023, 0.017);
-      eyeGroup.add(lash);
-
-      const browGeo = this.track(new THREE.BoxGeometry(0.058, 0.013, 0.013));
-      const brow = new THREE.Mesh(browGeo, eyeBrowBlackMat);
-      brow.position.set(xSign * 0.004, 0.053, 0.011);
-      brow.rotation.z = xSign * 0.20;
-      eyeGroup.add(brow);
-
-      return eyeGroup;
-    };
-
-    this.headGroup.add(buildExpressiveHeroEye(-1));
-    this.headGroup.add(buildExpressiveHeroEye(1));
-
-    // Cheek Blush
-    for (const xSign of [-1, 1]) {
-      const blushGeo = this.track(new THREE.SphereGeometry(0.040, 14, 10));
-      blushGeo.scale(1.25, 0.65, 0.15);
-      const blush = new THREE.Mesh(blushGeo, blushPeachMat);
-      blush.position.set(xSign * 0.125, -0.048, 0.190);
-      this.headGroup.add(blush);
-    }
-
-    // Smirk Mouth
-    const mouthGeo = this.track(new THREE.TorusGeometry(0.030, 0.006, 6, 14, Math.PI * 0.65));
-    mouthGeo.rotateZ(Math.PI * 0.18);
-    const mouth = new THREE.Mesh(mouthGeo, eyeBrowBlackMat);
-    mouth.position.set(0.008, -0.072, 0.202);
-    this.headGroup.add(mouth);
-
-    // Iconic Round Candy Lollipop
-    const lollipopGroup = new THREE.Group();
-    lollipopGroup.position.set(0.048, -0.068, 0.206);
-    lollipopGroup.rotation.set(0.12, 0.20, -0.28);
-
-    const candyGeo = this.track(new THREE.SphereGeometry(0.038, 20, 16));
-    candyGeo.scale(1.0, 1.0, 0.85);
-    const candyMesh = new THREE.Mesh(candyGeo, lollipopCherryMat);
-    candyMesh.castShadow = true;
-    lollipopGroup.add(candyMesh);
-
-    const swirlGeo = this.track(new THREE.TorusGeometry(0.021, 0.004, 8, 16));
-    const swirlMesh = new THREE.Mesh(swirlGeo, whiteAccentMat);
-    swirlMesh.position.set(0, 0, 0.030);
-    lollipopGroup.add(swirlMesh);
-
-    const stickGeo = this.track(new THREE.CylinderGeometry(0.005, 0.005, 0.10, 10));
-    stickGeo.rotateZ(Math.PI / 2);
-    const stickMesh = new THREE.Mesh(stickGeo, whiteAccentMat);
-    stickMesh.position.set(-0.055, -0.003, 0);
-    lollipopGroup.add(stickMesh);
-
-    this.headGroup.add(lollipopGroup);
-
-    // Chameleon Eye Turrets on Top of Hood
-    const buildChamEyeTurret = (xSign: number) => {
-      const turretRoot = new THREE.Group();
-      turretRoot.position.set(xSign * 0.15, 0.21, 0.05);
-      turretRoot.rotation.set(-0.16, xSign * 0.28, xSign * 0.18);
-
-      const turretGeo = this.track(new THREE.SphereGeometry(0.085, 24, 18));
-      const turret = new THREE.Mesh(turretGeo, hoodieGreenMat);
-      turret.castShadow = true;
-      turretRoot.add(turret);
-
-      const eyeballGeo = this.track(new THREE.SphereGeometry(0.070, 24, 18));
-      eyeballGeo.scale(1.0, 1.0, 0.70);
-      const eyeball = new THREE.Mesh(eyeballGeo, chamEyeYellowMat);
-      eyeball.position.set(0, 0, 0.042);
-      turretRoot.add(eyeball);
-
-      const pupilGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.036, 6, 10));
-      const pupil = new THREE.Mesh(pupilGeo, chamEyePupilMat);
-      pupil.position.set(0, 0, 0.090);
-      turretRoot.add(pupil);
-
-      const hlGeo = this.track(new THREE.SphereGeometry(0.016, 10, 10));
-      const hl = new THREE.Mesh(hlGeo, chamEyeHighlightMat);
-      hl.position.set(xSign * 0.016, 0.016, 0.098);
-      turretRoot.add(hl);
-
-      const lidGeo = this.track(new THREE.SphereGeometry(0.073, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.38));
-      const lid = new THREE.Mesh(lidGeo, hoodieGreenMat);
-      lid.position.set(0, 0, 0.042);
-      lid.rotation.x = -0.22;
-      turretRoot.add(lid);
-
-      return turretRoot;
-    };
-
-    this.headGroup.add(buildChamEyeTurret(-1));
-    this.headGroup.add(buildChamEyeTurret(1));
-
-    // ==========================================
-    // 4. ARMS & CARTOON HANDS (Anchored to Torso)
-    // ==========================================
-    const buildLeonArm = (xSign: number, pivot: THREE.Group) => {
-      // Anchored to torsoGroup at local y = 0.160 (World Y = 0.890)
-      pivot.position.set(xSign * 0.24, 0.160, 0.00);
-      this.torsoGroup.add(pivot);
-
-      // Smooth Rounded Shoulder
-      const shoulderGeo = this.track(new THREE.SphereGeometry(0.110, 32, 24));
-      const shoulder = new THREE.Mesh(shoulderGeo, hoodieGreenMat);
-      shoulder.castShadow = true;
-      pivot.add(shoulder);
-
-      // Upper Arm (Green hoodie sleeve)
-      const upperArmGeo = this.track(new THREE.CylinderGeometry(0.095, 0.080, 0.19, 32));
-      upperArmGeo.translate(0, -0.11, 0);
-      const upperArm = new THREE.Mesh(upperArmGeo, hoodieGreenMat);
-      upperArm.castShadow = true;
-      pivot.add(upperArm);
-
-      // Blue Sleeve Cuff
-      const cuffGeo = this.track(new THREE.TorusGeometry(0.085, 0.024, 16, 32));
-      cuffGeo.rotateX(Math.PI / 2);
-      const cuff = new THREE.Mesh(cuffGeo, pocketBlueMat);
-      cuff.position.set(0, -0.20, 0);
-      cuff.castShadow = true;
-      pivot.add(cuff);
-
-      // Solid Peach Forearm / Wrist emerging from inside cuff
-      const wristGeo = this.track(new THREE.CylinderGeometry(0.060, 0.055, 0.12, 24));
-      wristGeo.translate(0, -0.24, 0.01);
-      const wrist = new THREE.Mesh(wristGeo, skinToneMat);
-      wrist.castShadow = true;
-      pivot.add(wrist);
-
-      // Cartoon Brawl Fist
-      const handGroup = new THREE.Group();
-      handGroup.position.set(0, -0.30, 0.015);
-      pivot.add(handGroup);
-
-      const palmGeo = this.track(new THREE.SphereGeometry(0.070, 28, 20));
-      palmGeo.scale(1.0, 0.92, 0.90);
-      const palm = new THREE.Mesh(palmGeo, skinToneMat);
-      palm.castShadow = true;
-      handGroup.add(palm);
-
-      for (let k = 0; k < 3; k++) {
-        const knuckleGeo = this.track(new THREE.CapsuleGeometry(0.016, 0.032, 8, 12));
-        knuckleGeo.rotateZ(Math.PI / 2);
-        const knuckle = new THREE.Mesh(knuckleGeo, skinToneMat);
-        knuckle.position.set((k - 1) * 0.028, -0.026, 0.042);
-        knuckle.castShadow = true;
-        handGroup.add(knuckle);
-      }
-
-      const thumbGeo = this.track(new THREE.CapsuleGeometry(0.026, 0.048, 8, 12));
-      const thumb = new THREE.Mesh(thumbGeo, skinToneMat);
-      thumb.position.set(xSign * -0.042, 0.006, 0.030);
-      thumb.rotation.set(-0.25, 0, xSign * -0.55);
-      thumb.castShadow = true;
-      handGroup.add(thumb);
-    };
-
-    buildLeonArm(-1, this.leftArmPivot);
-    buildLeonArm(1, this.rightArmPivot);
-
-    // ==========================================
-    // 5. SHORTS, LEGS & SNEAKERS (ENGINEERED ZERO-GAP ANATOMY)
-    // ==========================================
-    // Hip joint anchored to modelRoot at Y = 0.460
-    // Floor is at Y = 0.000 (Local y = -0.460)
-    const buildLeonLeg = (xSign: number, pivot: THREE.Group) => {
-      pivot.position.set(xSign * 0.12, 0.460, 0);
-      this.modelRoot.add(pivot);
-
-      // Dark Indigo Bermuda Shorts: spans local y = 0.020 to y = -0.170 (Height 0.190)
-      const shortGeo = this.track(new THREE.CylinderGeometry(0.120, 0.128, 0.190, 32));
-      shortGeo.translate(0, -0.075, 0);
-      const shorts = new THREE.Mesh(shortGeo, shortsIndigoMat);
-      shorts.castShadow = true;
-      pivot.add(shorts);
-
-      // Peach Skin Leg Cylinder:
-      // Starts DEEP inside the shorts at local y = -0.060
-      // Extends down to local y = -0.390 (penetrating 5.0cm INSIDE the shoe collar!)
-      // Total length: 0.330m. Centered at y = -0.225.
-      const legGeo = this.track(new THREE.CylinderGeometry(0.065, 0.060, 0.330, 32));
-      legGeo.translate(0, -0.225, 0);
-      const leg = new THREE.Mesh(legGeo, skinToneMat);
-      leg.castShadow = true;
-      pivot.add(leg);
-
-      // CHUNKY BRAWL SNEAKER:
-      // Floor contact: local y = -0.460 (World Y = 0.000)
-      // Top of shoe collar: local y = -0.340 (World Y = 0.120)
-      // Since leg extends to local y = -0.390, the leg is 5.0cm INSIDE the shoe! ZERO GAP!
-      const shoeGroup = new THREE.Group();
-      shoeGroup.position.set(0, 0, 0.020);
-      pivot.add(shoeGroup);
-
-      // White Molded Rubber Sole:
-      // Bottom at local y = -0.460, top at local y = -0.415 (Height 0.045, width 0.170, length 0.250)
-      const soleGeo = this.track(new THREE.BoxGeometry(0.170, 0.045, 0.250));
-      soleGeo.translate(0, -0.4375, 0.020);
-      const sole = new THREE.Mesh(soleGeo, sneakerWhiteMat);
-      sole.castShadow = true;
-      shoeGroup.add(sole);
-
-      // Sole Dark Stripe
-      const stripeGeo = this.track(new THREE.BoxGeometry(0.175, 0.010, 0.230));
-      stripeGeo.translate(0, -0.4375, 0.020);
-      const stripe = new THREE.Mesh(stripeGeo, sneakerStripeMat);
-      shoeGroup.add(stripe);
-
-      // Crimson Red Sneaker Upper:
-      // Sits on top of sole: from local y = -0.415 up to local y = -0.340
-      const upperGeo = this.track(new THREE.CapsuleGeometry(0.075, 0.120, 10, 24));
-      upperGeo.rotateX(Math.PI / 2);
-      upperGeo.translate(0, -0.365, 0.025);
-      const upper = new THREE.Mesh(upperGeo, sneakerRedMat);
-      upper.castShadow = true;
-      shoeGroup.add(upper);
-
-      // Rounded White Rubber Shell-Toe Cap
-      const toeCapGeo = this.track(new THREE.SphereGeometry(0.085, 24, 14, 0, Math.PI, 0, Math.PI * 0.55));
-      toeCapGeo.rotateX(Math.PI / 2);
-      const toeCap = new THREE.Mesh(toeCapGeo, sneakerWhiteMat);
-      toeCap.position.set(0, -0.395, 0.105);
-      toeCap.scale.set(0.95, 0.72, 0.85);
-      toeCap.castShadow = true;
-      shoeGroup.add(toeCap);
-
-      // Padded Sneaker Ankle Collar (Where the leg enters the shoe - Hermetic visual seal)
-      const collarTorusGeo = this.track(new THREE.TorusGeometry(0.068, 0.016, 12, 24));
-      collarTorusGeo.rotateX(Math.PI / 2);
-      const collarTorus = new THREE.Mesh(collarTorusGeo, sneakerWhiteMat);
-      collarTorus.position.set(0, -0.340, 0.005);
-      collarTorus.castShadow = true;
-      shoeGroup.add(collarTorus);
-
-      // Sneaker Tongue & Laces
-      const tongueGeo = this.track(new THREE.BoxGeometry(0.075, 0.090, 0.025));
-      const tongue = new THREE.Mesh(tongueGeo, sneakerWhiteMat);
-      tongue.position.set(0, -0.320, 0.080);
-      tongue.rotation.x = -0.32;
-      shoeGroup.add(tongue);
-
-      for (let l = 0; l < 3; l++) {
-        const laceGeo = this.track(new THREE.BoxGeometry(0.080, 0.012, 0.025));
-        const lace = new THREE.Mesh(laceGeo, sneakerWhiteMat);
-        lace.position.set(0, -0.355 + l * 0.026, 0.045 + l * 0.014);
-        lace.castShadow = true;
-        shoeGroup.add(lace);
-      }
-    };
-
-    buildLeonLeg(-1, this.leftLegPivot);
-    buildLeonLeg(1, this.rightLegPivot);
+    this.restHipsY = this.hipsBone.position.y;
+    this.currentHipsY = this.restHipsY;
   }
 
   public setFacingAngle(targetAngle: number, dt: number) {
@@ -847,7 +176,9 @@ export class PlayerCharacter {
 
     this.idleTime += dt;
 
-    // 1. Dynamic Banking (turns) & Forward Lean
+    // =========================================================================
+    // 1. DYNAMIC CENTRIFUGAL BANKING & SPEED LEAN
+    // =========================================================================
     const targetBank = THREE.MathUtils.clamp(-turnRate * 0.065, -0.34, 0.34);
     this.currentBankAngle += (targetBank - this.currentBankAngle) * Math.min(1, 16 * dt);
     this.modelRoot.rotation.z = this.currentBankAngle;
@@ -856,29 +187,45 @@ export class PlayerCharacter {
     this.currentForwardLean += (baseLean - this.currentForwardLean) * Math.min(1, 14 * dt);
     this.modelRoot.rotation.x = this.currentForwardLean;
 
-    // Kinematics Target Registers
-    let targetLeftArmX = 0;
-    let targetLeftArmZ = -0.10;
-    let targetRightArmX = 0;
-    let targetRightArmZ = 0.10;
+    // =========================================================================
+    // 2. KINEMATICS TARGET REGISTERS
+    // =========================================================================
+    let targetThighLX = 0;
+    let targetThighLZ = 0.05;
+    let targetThighRX = 0;
+    let targetThighRZ = -0.05;
 
-    let targetLeftLegX = 0;
-    let targetLeftLegZ = 0;
-    let targetRightLegX = 0;
-    let targetRightLegZ = 0;
+    let targetShinLX = 0;
+    let targetShinRX = 0;
+    let targetFootLX = 0;
+    let targetFootRX = 0;
 
-    let targetTorsoY = 0.730;
-    let targetHeadY = 1.160;
-    let targetTorsoRotX = 0;
-    let targetHeadRotX = 0;
-    let targetTorsoRotY = 0;
-    let targetHeadRotY = 0;
+    let targetUpperArmLX = 0;
+    let targetUpperArmLZ = 0.10;
+    let targetUpperArmRX = 0;
+    let targetUpperArmRZ = -0.10;
+
+    let targetForearmLX = 0.20;
+    let targetForearmRX = 0.20;
+
+    let targetHipsY = this.restHipsY;
+    let targetSpinePitch = 0;
+    let targetSpineYaw = 0;
+    let targetChestPitch = 0;
+    let targetChestYaw = 0;
+
+    let targetHeadPitch = 0;
+    let targetHeadYaw = 0;
+    let targetHeadRoll = 0;
+
+    const targetTailPitch = [0, 0, 0, 0];
+    const targetTailYaw = [0, 0, 0, 0];
 
     let targetScaleY = 1.0;
-    let tailVerticalOffset = 0;
-    let drawstringRotX = 0;
 
-    // 2. State Machine: Aerial (Jump/Fall) vs Grounded (Impact/Run/Idle)
+    // =========================================================================
+    // 3. STATE MACHINE: AERIAL VS GROUNDED
+    // =========================================================================
     if (!isGrounded) {
       this.walkCycleTime = 0;
 
@@ -887,190 +234,260 @@ export class PlayerCharacter {
 
       if (verticalVelocity >= 0) {
         // --- ASCENT / TRIUMPHANT ATHLETIC BRAWLER LEAP ---
-        // Arms: Raised high above the head in an iconic celebratory/athletic jump!
-        targetLeftArmZ = -2.70 * riseFactor - 0.35 * (1 - riseFactor);
-        targetRightArmZ = 2.70 * riseFactor + 0.35 * (1 - riseFactor);
-        targetLeftArmX = -0.20 * riseFactor;
-        targetRightArmX = -0.20 * riseFactor;
+        // Arms: Raised high in celebratory jump!
+        targetUpperArmLZ = 1.65 * riseFactor + 0.15 * (1 - riseFactor);
+        targetUpperArmRZ = -1.65 * riseFactor - 0.15 * (1 - riseFactor);
+        targetUpperArmLX = -0.32 * riseFactor;
+        targetUpperArmRX = -0.32 * riseFactor;
+        targetForearmLX = 0.60 * riseFactor;
+        targetForearmRX = 0.60 * riseFactor;
 
-        // Legs: Dynamic athletic hurdle leap (Left knee tucked high, right leg kicking back)
-        targetLeftLegX = 0.95 * riseFactor + 0.20 * (1 - riseFactor);
-        targetLeftLegZ = -0.18 * riseFactor;
-        targetRightLegX = -0.65 * riseFactor + 0.10 * (1 - riseFactor);
-        targetRightLegZ = 0.16 * riseFactor;
+        // Legs: Dynamic athletic hurdle leap (Left knee tucked high, right leg trailing back)
+        targetThighLX = 0.75 * riseFactor + 0.10 * (1 - riseFactor);
+        targetShinLX = 0.70 * riseFactor;
+        targetFootLX = -0.15 * riseFactor;
+
+        targetThighRX = -0.50 * riseFactor + 0.05 * (1 - riseFactor);
+        targetShinRX = 0.30 * riseFactor;
+        targetFootRX = 0.15 * riseFactor;
 
         // Head looking up at jump apex
-        targetHeadRotX = -0.28 * riseFactor;
-        targetTorsoRotX = -0.14 * riseFactor;
+        targetHeadPitch = -0.26 * riseFactor;
+        targetSpinePitch = -0.12 * riseFactor;
+        targetChestPitch = -0.10 * riseFactor;
 
         // Upward speed-line stretch
         targetScaleY = 1.0 + 0.15 * riseFactor;
 
         // Tail dragged down by upward rush of air
-        tailVerticalOffset = -0.45 * riseFactor;
-
-        // Drawstrings drag back against chest
-        drawstringRotX = -0.28 * riseFactor;
+        targetTailPitch[0] = -0.35 * riseFactor;
+        targetTailPitch[1] = -0.45 * riseFactor;
+        targetTailPitch[2] = -0.40 * riseFactor;
+        targetTailPitch[3] = -0.35 * riseFactor;
       } else {
         // --- DESCENT / FAST AERODYNAMIC FALL ---
-        // Arms: Spread wide like wings for aerodynamic balance in rushing air
-        targetLeftArmZ = -0.95 * fallFactor - 0.50 * (1 - fallFactor);
-        targetRightArmZ = 0.95 * fallFactor + 0.50 * (1 - fallFactor);
-        targetLeftArmX = 0.25 * fallFactor;
-        targetRightArmX = 0.25 * fallFactor;
+        // Arms: Spread wide like glider wings for aerodynamic balance in rushing air
+        targetUpperArmLZ = 0.92 * fallFactor + 0.20 * (1 - fallFactor);
+        targetUpperArmRZ = -0.92 * fallFactor - 0.20 * (1 - fallFactor);
+        targetUpperArmLX = 0.22 * fallFactor;
+        targetUpperArmRX = 0.22 * fallFactor;
+        targetForearmLX = 0.35 * fallFactor;
+        targetForearmRX = 0.35 * fallFactor;
 
         // Legs: Reaching downward, poised to absorb touchdown
-        targetLeftLegX = 0.25 * fallFactor + 0.10 * (1 - fallFactor);
-        targetLeftLegZ = -0.08 * fallFactor;
-        targetRightLegX = 0.15 * fallFactor + 0.08 * (1 - fallFactor);
-        targetRightLegZ = 0.08 * fallFactor;
+        targetThighLX = 0.20 * fallFactor;
+        targetShinLX = 0.25 * fallFactor;
+        targetThighRX = 0.15 * fallFactor;
+        targetShinRX = 0.25 * fallFactor;
 
-        // Head looking directly down at the landing zone
-        targetHeadRotX = 0.28 * fallFactor;
-        targetTorsoRotX = 0.20 * fallFactor;
+        // Head looking directly down at landing zone
+        targetHeadPitch = 0.28 * fallFactor;
+        targetSpinePitch = 0.16 * fallFactor;
+        targetChestPitch = 0.14 * fallFactor;
 
         // Subtle aerodynamic elongation
         targetScaleY = 1.0 + 0.06 * fallFactor;
 
         // Wind pushes tail straight up towards the sky
-        tailVerticalOffset = 0.70 * fallFactor;
-
-        // Drawstrings flutter dynamically upwards in the wind
-        drawstringRotX = 0.35 * fallFactor + Math.sin(this.idleTime * 28.0) * 0.14 * fallFactor;
+        targetTailPitch[0] = 0.45 * fallFactor;
+        targetTailPitch[1] = 0.60 * fallFactor;
+        targetTailPitch[2] = 0.55 * fallFactor;
+        targetTailPitch[3] = 0.50 * fallFactor;
       }
     } else {
       // --- GROUNDED STATES ---
-      const squashFactor = THREE.MathUtils.clamp(jumpSquash * 0.75, 0, 0.22);
+      const squashFactor = THREE.MathUtils.clamp(jumpSquash * 0.75, 0, 0.24);
 
       if (squashFactor > 0.01) {
         // --- CRISP NATURAL IMPACT LANDING (NO COLLAPSE) ---
-        targetScaleY = Math.max(0.82, 1.0 - squashFactor); // Gentle, responsive cartoon squash
-        targetTorsoY = 0.730; // Solid anatomical torso height
-        targetHeadY = 1.160;  // Solid anatomical head height
+        targetScaleY = Math.max(0.80, 1.0 - squashFactor);
+        targetHipsY = this.restHipsY - squashFactor * 0.35;
 
-        // Knees bend naturally forward to absorb touchdown shock
-        targetLeftLegX = squashFactor * 0.85;
-        targetRightLegX = squashFactor * 0.85;
-        targetLeftLegZ = -squashFactor * 0.12;
-        targetRightLegZ = squashFactor * 0.12;
+        // Knees bend naturally forward & flex outward to absorb shock
+        targetThighLX = squashFactor * 0.90;
+        targetThighRX = squashFactor * 0.90;
+        targetThighLZ = 0.05 + squashFactor * 0.15;
+        targetThighRZ = -0.05 - squashFactor * 0.15;
+        targetShinLX = squashFactor * 1.10;
+        targetShinRX = squashFactor * 1.10;
 
         // Arms drop naturally to sides
-        targetLeftArmX = squashFactor * 0.60;
-        targetRightArmX = squashFactor * 0.60;
-        targetLeftArmZ = -0.22 - squashFactor * 0.35;
-        targetRightArmZ = 0.22 + squashFactor * 0.35;
+        targetUpperArmLX = squashFactor * 0.45;
+        targetUpperArmRX = squashFactor * 0.45;
+        targetUpperArmLZ = 0.10 + squashFactor * 0.30;
+        targetUpperArmRZ = -0.10 - squashFactor * 0.30;
+        targetForearmLX = 0.25 + squashFactor * 0.35;
+        targetForearmRX = 0.25 + squashFactor * 0.35;
 
         // Torso tilts slightly forward on impact
-        targetTorsoRotX = squashFactor * 0.22;
-        targetHeadRotX = -squashFactor * 0.10;
+        targetSpinePitch = squashFactor * 0.24;
+        targetChestPitch = squashFactor * 0.20;
+        targetHeadPitch = -squashFactor * 0.12;
 
         // Tail whips down on floor contact
-        tailVerticalOffset = -squashFactor * 0.50;
-
-        // Drawstrings slap forward on impact
-        drawstringRotX = squashFactor * 0.35;
+        targetTailPitch[0] = -squashFactor * 0.55;
+        targetTailPitch[1] = -squashFactor * 0.65;
+        targetTailPitch[2] = -squashFactor * 0.60;
+        targetTailPitch[3] = -squashFactor * 0.50;
       } else if (speed > 0.20) {
-        // --- RUNNING / SPRINTING ---
-        const strideCadence = Math.min(18, 6.5 + speed * 1.5);
+        // --- RUNNING / SPRINTING LOCOMOTION ---
+        const strideCadence = Math.min(18, 6.5 + speed * 1.6);
         this.walkCycleTime += dt * strideCadence;
 
         const sinStride = Math.sin(this.walkCycleTime);
         const cosStride = Math.cos(this.walkCycleTime);
+        const runFactor = THREE.MathUtils.clamp(speed / 6.0, 0.4, 1.35);
 
-        targetLeftLegX = sinStride * 0.95;
-        targetRightLegX = -sinStride * 0.95;
+        // Legs: Pitch forward and back with springy knee flexion on recovery
+        targetThighLX = sinStride * (0.48 * runFactor);
+        targetThighRX = -sinStride * (0.48 * runFactor);
 
-        targetLeftArmX = -sinStride * 0.92;
-        targetRightArmX = sinStride * 0.92;
-        targetLeftArmZ = -0.18 - Math.abs(cosStride) * 0.10;
-        targetRightArmZ = 0.18 + Math.abs(cosStride) * 0.10;
+        targetShinLX = Math.max(0, -sinStride) * (0.75 * runFactor) + Math.max(0, cosStride * 0.2) * runFactor;
+        targetShinRX = Math.max(0, sinStride) * (0.75 * runFactor) + Math.max(0, -cosStride * 0.2) * runFactor;
 
-        const bounce = Math.abs(cosStride) * 0.04;
-        targetTorsoY = 0.730 + bounce;
-        targetHeadY = 1.160 + bounce;
-        targetTorsoRotY = sinStride * 0.12;
-        targetHeadRotY = -sinStride * 0.04;
+        targetFootLX = cosStride * (-0.18 * runFactor);
+        targetFootRX = -cosStride * (-0.18 * runFactor);
 
-        drawstringRotX = sinStride * 0.12;
+        // Arms: Energetic counter-pump with natural elbow bend
+        targetUpperArmLX = -sinStride * (0.42 * runFactor);
+        targetUpperArmRX = sinStride * (0.42 * runFactor);
+        targetUpperArmLZ = 0.14 + Math.abs(cosStride) * 0.08 * runFactor;
+        targetUpperArmRZ = -0.14 - Math.abs(cosStride) * 0.08 * runFactor;
+
+        targetForearmLX = 0.30 + Math.max(0, sinStride) * (0.35 * runFactor);
+        targetForearmRX = 0.30 + Math.max(0, -sinStride) * (0.35 * runFactor);
+
+        // Pelvic bounce and torso counter-twist
+        const bounce = Math.abs(cosStride) * (0.045 * runFactor);
+        targetHipsY = this.restHipsY + bounce;
+        targetSpineYaw = sinStride * (0.12 * runFactor);
+        targetChestYaw = sinStride * (0.06 * runFactor);
+        targetChestPitch = 0.08 * runFactor;
+
+        targetHeadYaw = -sinStride * (0.05 * runFactor);
+        targetHeadPitch = -0.04 * runFactor;
+
+        // Tail: Rhythmic side-to-side wagging following the hips
+        targetTailYaw[0] = sinStride * (0.20 * runFactor);
+        targetTailYaw[1] = Math.sin(this.walkCycleTime - 0.3) * (0.28 * runFactor);
+        targetTailYaw[2] = Math.sin(this.walkCycleTime - 0.6) * (0.35 * runFactor);
+        targetTailYaw[3] = Math.sin(this.walkCycleTime - 0.9) * (0.42 * runFactor);
+        targetTailPitch[0] = bounce * 1.5;
+        targetTailPitch[1] = bounce * 2.0;
       } else {
         // --- IDLE WITH GENTLE BREATHING ---
         this.walkCycleTime = 0;
 
-        const breathe = Math.sin(this.idleTime * 2.8) * 0.012;
-        targetTorsoY = 0.730 + breathe;
-        targetHeadY = 1.160 + breathe;
+        const breathe = Math.sin(this.idleTime * 2.6);
 
-        targetLeftArmZ = -0.10 + breathe * 0.5;
-        targetRightArmZ = 0.10 - breathe * 0.5;
+        targetChestPitch = 0.025 + breathe * 0.03;
+        targetSpinePitch = 0.01 + breathe * 0.015;
+        targetHipsY = this.restHipsY + breathe * 0.012;
 
-        drawstringRotX = breathe * 1.5;
+        targetUpperArmLX = 0.05;
+        targetUpperArmLZ = 0.08 + breathe * 0.025;
+        targetUpperArmRX = 0.05;
+        targetUpperArmRZ = -0.08 - breathe * 0.025;
+        targetForearmLX = 0.18;
+        targetForearmRX = 0.18;
+
+        targetHeadPitch = -breathe * 0.02 + Math.sin(this.idleTime * 0.9) * 0.035;
+        targetHeadYaw = Math.sin(this.idleTime * 0.7) * 0.05;
+        targetHeadRoll = Math.sin(this.idleTime * 0.8) * 0.025;
+
+        // Tail: Gentle, lazy hypnotic sway
+        targetTailYaw[0] = Math.sin(this.idleTime * 1.5) * 0.08;
+        targetTailYaw[1] = Math.sin(this.idleTime * 1.5 - 0.4) * 0.14;
+        targetTailYaw[2] = Math.sin(this.idleTime * 1.5 - 0.8) * 0.18;
+        targetTailYaw[3] = Math.sin(this.idleTime * 1.5 - 1.2) * 0.22;
+        targetTailPitch[0] = Math.sin(this.idleTime * 2.2) * 0.03;
+        targetTailPitch[1] = Math.sin(this.idleTime * 2.2 - 0.3) * 0.05;
       }
     }
 
-    // 3. Volume Preservation for Squash & Stretch
+    // Centrifugal banking counter-sway on the tail
+    targetTailYaw[0] += -this.currentBankAngle * 0.35;
+    targetTailYaw[1] += -this.currentBankAngle * 0.55;
+    targetTailYaw[2] += -this.currentBankAngle * 0.70;
+    targetTailYaw[3] += -this.currentBankAngle * 0.85;
+
+    // =========================================================================
+    // 4. VOLUME PRESERVATION (SQUASH & STRETCH)
+    // =========================================================================
     const targetScaleXZ = 1.0 / Math.sqrt(Math.max(0.2, targetScaleY));
     const smoothRate = Math.min(1, 20 * dt);
 
     this.currentScaleY += (targetScaleY - this.currentScaleY) * smoothRate;
     this.currentScaleXZ += (targetScaleXZ - this.currentScaleXZ) * smoothRate;
-    this.modelRoot.scale.set(this.currentScaleXZ, this.currentScaleY, this.currentScaleXZ);
+    this.modelRoot.scale.set(
+      0.35 * this.currentScaleXZ,
+      0.35 * this.currentScaleY,
+      0.35 * this.currentScaleXZ
+    );
 
-    // 4. Smoothly Interpolate Skeleton Joints (Zero Snapping / Zero Popping)
-    const armLerpRate = Math.min(1, 24 * dt);
-    this.currentArmRot.leftX += (targetLeftArmX - this.currentArmRot.leftX) * armLerpRate;
-    this.currentArmRot.leftZ += (targetLeftArmZ - this.currentArmRot.leftZ) * armLerpRate;
-    this.currentArmRot.rightX += (targetRightArmX - this.currentArmRot.rightX) * armLerpRate;
-    this.currentArmRot.rightZ += (targetRightArmZ - this.currentArmRot.rightZ) * armLerpRate;
-
-    this.leftArmPivot.rotation.x = this.currentArmRot.leftX;
-    this.leftArmPivot.rotation.z = this.currentArmRot.leftZ;
-    this.rightArmPivot.rotation.x = this.currentArmRot.rightX;
-    this.rightArmPivot.rotation.z = this.currentArmRot.rightZ;
-
+    // =========================================================================
+    // 5. SMOOTH INTERPOLATION ACROSS ALL BONES (ZERO JITTER / POPPING)
+    // =========================================================================
     const legLerpRate = Math.min(1, 24 * dt);
-    this.currentLegRot.leftX += (targetLeftLegX - this.currentLegRot.leftX) * legLerpRate;
-    this.currentLegRot.leftZ += (targetLeftLegZ - this.currentLegRot.leftZ) * legLerpRate;
-    this.currentLegRot.rightX += (targetRightLegX - this.currentLegRot.rightX) * legLerpRate;
-    this.currentLegRot.rightZ += (targetRightLegZ - this.currentLegRot.rightZ) * legLerpRate;
+    this.currentThighL.x += (targetThighLX - this.currentThighL.x) * legLerpRate;
+    this.currentThighL.z += (targetThighLZ - this.currentThighL.z) * legLerpRate;
+    this.currentThighR.x += (targetThighRX - this.currentThighR.x) * legLerpRate;
+    this.currentThighR.z += (targetThighRZ - this.currentThighR.z) * legLerpRate;
 
-    this.leftLegPivot.rotation.x = this.currentLegRot.leftX;
-    this.leftLegPivot.rotation.z = this.currentLegRot.leftZ;
-    this.rightLegPivot.rotation.x = this.currentLegRot.rightX;
-    this.rightLegPivot.rotation.z = this.currentLegRot.rightZ;
+    this.currentShinL += (targetShinLX - this.currentShinL) * legLerpRate;
+    this.currentShinR += (targetShinRX - this.currentShinR) * legLerpRate;
+    this.currentFootL += (targetFootLX - this.currentFootL) * legLerpRate;
+    this.currentFootR += (targetFootRX - this.currentFootR) * legLerpRate;
 
-    this.currentHeadRotX += (targetHeadRotX - this.currentHeadRotX) * Math.min(1, 16 * dt);
-    this.headGroup.rotation.x = this.currentHeadRotX;
-    this.headGroup.rotation.y += (targetHeadRotY - this.headGroup.rotation.y) * Math.min(1, 16 * dt);
+    const armLerpRate = Math.min(1, 24 * dt);
+    this.currentUpperArmL.x += (targetUpperArmLX - this.currentUpperArmL.x) * armLerpRate;
+    this.currentUpperArmL.z += (targetUpperArmLZ - this.currentUpperArmL.z) * armLerpRate;
+    this.currentUpperArmR.x += (targetUpperArmRX - this.currentUpperArmR.x) * armLerpRate;
+    this.currentUpperArmR.z += (targetUpperArmRZ - this.currentUpperArmR.z) * armLerpRate;
+    this.currentForearmL += (targetForearmLX - this.currentForearmL) * armLerpRate;
+    this.currentForearmR += (targetForearmRX - this.currentForearmR) * armLerpRate;
 
-    this.currentTorsoRotX += (targetTorsoRotX - this.currentTorsoRotX) * Math.min(1, 16 * dt);
-    this.torsoGroup.rotation.x = this.currentTorsoRotX;
-    this.torsoGroup.rotation.y += (targetTorsoRotY - this.torsoGroup.rotation.y) * Math.min(1, 16 * dt);
+    const spineLerpRate = Math.min(1, 18 * dt);
+    this.currentHipsY += (targetHipsY - this.currentHipsY) * Math.min(1, 22 * dt);
+    this.currentSpine.pitch += (targetSpinePitch - this.currentSpine.pitch) * spineLerpRate;
+    this.currentSpine.yaw += (targetSpineYaw - this.currentSpine.yaw) * spineLerpRate;
+    this.currentChest.pitch += (targetChestPitch - this.currentChest.pitch) * spineLerpRate;
+    this.currentChest.yaw += (targetChestYaw - this.currentChest.yaw) * spineLerpRate;
 
-    this.currentTorsoY += (targetTorsoY - this.currentTorsoY) * Math.min(1, 22 * dt);
-    this.currentHeadY += (targetHeadY - this.currentHeadY) * Math.min(1, 22 * dt);
-    this.torsoGroup.position.y = this.currentTorsoY;
-    this.headGroup.position.y = this.currentHeadY;
+    const headLerpRate = Math.min(1, 16 * dt);
+    this.currentHead.pitch += (targetHeadPitch - this.currentHead.pitch) * headLerpRate;
+    this.currentHead.yaw += (targetHeadYaw - this.currentHead.yaw) * headLerpRate;
+    this.currentHead.roll += (targetHeadRoll - this.currentHead.roll) * headLerpRate;
 
-    // 5. Dynamic Drawstring Flutter
-    for (const d of this.drawstringGroups) {
-      d.rotation.x += (drawstringRotX - d.rotation.x) * Math.min(1, 16 * dt);
+    const tailLerpRate = Math.min(1, 14 * dt);
+    for (let i = 0; i < 4; i++) {
+      this.currentTail[i].pitch += (targetTailPitch[i] - this.currentTail[i].pitch) * tailLerpRate;
+      this.currentTail[i].yaw += (targetTailYaw[i] - this.currentTail[i].yaw) * tailLerpRate;
     }
 
-    // 6. Chameleon Tail Secondary Physics (Dynamic Balance & Aerodynamics)
-    const tailSpeed = Math.min(1.0, speed * 0.12);
-    const tailWave = Math.sin(this.idleTime * 3.0 + speed * 2.0) * (0.06 + speed * 0.04);
+    // =========================================================================
+    // 6. APPLY TO DINOSAUR SKELETON
+    // =========================================================================
+    this.hipsBone.position.y = this.currentHipsY;
 
-    for (let s = 0; s < this.tailSegments.length; s++) {
-      const seg = this.tailSegments[s];
-      const targetRotX = THREE.MathUtils.clamp(
-        -0.1 + tailSpeed * 0.2 + tailWave * 0.5 + tailVerticalOffset * (s + 1) * 0.25,
-        -0.55,
-        0.65
-      );
-      seg.rotation.x += (targetRotX - seg.rotation.x) * Math.min(1, 14 * dt);
+    this.thighL.rotation.set(this.currentThighL.x, 0, this.currentThighL.z);
+    this.thighR.rotation.set(this.currentThighR.x, 0, this.currentThighR.z);
+    this.shinL.rotation.set(this.currentShinL, 0, 0);
+    this.shinR.rotation.set(this.currentShinR, 0, 0);
+    this.footL.rotation.set(this.currentFootL, 0, 0);
+    this.footR.rotation.set(this.currentFootR, 0, 0);
 
-      const targetRotY = -this.currentBankAngle * (s + 1) * 0.25;
-      seg.rotation.y += (targetRotY - seg.rotation.y) * Math.min(1, 14 * dt);
+    this.upperArmL.rotation.set(this.currentUpperArmL.x, 0, this.currentUpperArmL.z);
+    this.upperArmR.rotation.set(this.currentUpperArmR.x, 0, this.currentUpperArmR.z);
+    this.forearmL.rotation.set(this.currentForearmL, 0, 0.15);
+    this.forearmR.rotation.set(this.currentForearmR, 0, -0.15);
+
+    this.spineBone.rotation.set(this.currentSpine.pitch, this.currentSpine.yaw, 0);
+    this.chestBone.rotation.set(this.currentChest.pitch, this.currentChest.yaw, 0);
+    this.headBone.rotation.set(this.currentHead.pitch, this.currentHead.yaw, this.currentHead.roll);
+
+    for (let i = 0; i < 4; i++) {
+      this.tailBones[i].rotation.set(this.currentTail[i].pitch, this.currentTail[i].yaw, 0);
     }
   }
 
@@ -1079,9 +496,16 @@ export class PlayerCharacter {
   }
 
   public dispose() {
-    for (const g of this.geometries) g.dispose();
-    for (const m of this.materials) m.dispose();
-    this.geometries = [];
-    this.materials = [];
+    this.modelRoot.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.geometry?.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => m.dispose());
+        } else if (mesh.material) {
+          mesh.material.dispose();
+        }
+      }
+    });
   }
 }

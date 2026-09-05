@@ -5,13 +5,17 @@ import { AVAILABLE_MODELS, DEFAULT_MODEL_ID } from './models';
 import { StudioHeader } from './components/StudioHeader';
 import { ModelInspector } from './components/ModelInspector';
 import { StudioHelpModal } from './components/StudioHelpModal';
+import { ModelRigControls } from './components/ModelRigControls';
 import { exportToGLB } from './toolkit/GLTFExportHelper';
 
 export default function ModelsApp() {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<ModelStudioEngine | null>(null);
 
-  const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
+  const [selectedModelId, setSelectedModelId] = useState<string>(() => {
+    const requested = new URLSearchParams(window.location.search).get('model');
+    return AVAILABLE_MODELS.some(model => model.id === requested) ? requested! : DEFAULT_MODEL_ID;
+  });
   const [shadingMode, setShadingMode] = useState<ShadingMode>('material');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [showShadows, setShowShadows] = useState<boolean>(true);
@@ -34,7 +38,7 @@ export default function ModelsApp() {
       engineRef.current = engine;
 
       // Load initial model (Tree)
-      const initialModelDef = AVAILABLE_MODELS.find((m) => m.id === DEFAULT_MODEL_ID) || AVAILABLE_MODELS[0];
+      const initialModelDef = AVAILABLE_MODELS.find((m) => m.id === selectedModelId) || AVAILABLE_MODELS[0];
       const modelObj = initialModelDef.create();
       engine.setModel(modelObj, true);
     }
@@ -156,6 +160,9 @@ export default function ModelsApp() {
 
       {/* Bottom-Left Model Inspector */}
       <ModelInspector model={activeModel} stats={stats} />
+      {!!stats?.bones && <ModelRigControls key={selectedModelId} boneCount={stats.bones}
+        onAnimation={name => engineRef.current?.setAnimation(name)}
+        onSkeleton={visible => engineRef.current?.setSkeletonVisible(visible)} />}
 
       {/* Help Modal */}
       <StudioHelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />

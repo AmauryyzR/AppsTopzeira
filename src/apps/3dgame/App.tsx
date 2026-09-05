@@ -33,9 +33,12 @@ export default function App3DGame() {
   }, [input]);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#c7e4fa] select-none touch-none">
+    <div className="fixed inset-0 overflow-hidden bg-[#0b1320] select-none touch-none">
       {/* Global CSS for full-screen WebGL canvas and mobile controls */}
       <style>{`
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
         canvas {
           width: 100% !important;
           height: 100% !important;

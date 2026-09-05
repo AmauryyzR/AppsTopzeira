@@ -6,6 +6,8 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
  */
 export async function exportToGLB(object: THREE.Object3D, fileName = 'model.glb'): Promise<void> {
   const exporter = new GLTFExporter();
+  const animations: THREE.AnimationClip[] = [];
+  object.traverse(child => animations.push(...child.animations));
 
   return new Promise((resolve, reject) => {
     exporter.parse(
@@ -29,7 +31,7 @@ export async function exportToGLB(object: THREE.Object3D, fileName = 'model.glb'
         console.error('Error exporting GLTF:', error);
         reject(error);
       },
-      { binary: true }
+      { binary: true, animations }
     );
   });
 }

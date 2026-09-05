@@ -23,6 +23,10 @@ export class ModelStudioEngine {
   private clayMaterial: THREE.MeshStandardMaterial;
   private isDisposed = false;
   private animFrameId: number | null = null;
+  private mixer: THREE.AnimationMixer | null = null;
+  private animatedModel: THREE.Object3D | null = null;
+  private skeletonHelper: THREE.SkeletonHelper | null = null;
+  private previousTime = 0;
 
   public settings: ModelStudioSettings = {
     shadingMode: 'material',
@@ -171,6 +175,8 @@ export class ModelStudioEngine {
     this.clearModel();
 
     this.currentModelGroup.add(model);
+    this.animatedModel = model;
+    if (model.animations.length) this.mixer = new THREE.AnimationMixer(model);
 
     // Cache original materials and configure shadows
     this.originalMaterials.clear();
@@ -202,11 +208,42 @@ export class ModelStudioEngine {
   }
 
   public clearModel(): void {
+    this.mixer?.stopAllAction();
+    if (this.animatedModel) this.mixer?.uncacheRoot(this.animatedModel);
+    this.mixer = null;
+    this.animatedModel = null;
+    if (this.skeletonHelper) {
+      this.scene.remove(this.skeletonHelper);
+      this.skeletonHelper.dispose();
+      this.skeletonHelper = null;
+    }
     while (this.currentModelGroup.children.length > 0) {
       const child = this.currentModelGroup.children[0];
       this.currentModelGroup.remove(child);
     }
     this.originalMaterials.clear();
+  }
+
+  public setAnimation(name: string): void {
+    this.mixer?.stopAllAction();
+    this.animatedModel?.traverse(object => {
+      if ((object as THREE.SkinnedMesh).isSkinnedMesh) (object as THREE.SkinnedMesh).skeleton.pose();
+    });
+    const clip = this.animatedModel?.animations.find(animation => animation.name === name);
+    if (clip && this.mixer) this.mixer.clipAction(clip).reset().play();
+  }
+
+  public setSkeletonVisible(visible: boolean): void {
+    if (!this.skeletonHelper && this.animatedModel && visible) {
+      this.skeletonHelper = new THREE.SkeletonHelper(this.animatedModel);
+      const material = this.skeletonHelper.material as THREE.LineBasicMaterial;
+      material.depthTest = false;
+      material.transparent = true;
+      material.opacity = .85;
+      this.skeletonHelper.renderOrder = 10;
+      this.scene.add(this.skeletonHelper);
+    }
+    if (this.skeletonHelper) this.skeletonHelper.visible = visible;
   }
 
   /**
@@ -252,8 +289,10 @@ export class ModelStudioEngine {
     let vertices = 0;
     let triangles = 0;
     let meshCount = 0;
+    let bones = 0;
 
     object.traverse((child) => {
+      if ((child as THREE.Bone).isBone) bones++;
       if ((child as THREE.Mesh).isMesh) {
         meshCount++;
         const mesh = child as THREE.Mesh;
@@ -280,6 +319,7 @@ export class ModelStudioEngine {
       vertices,
       triangles: Math.round(triangles),
       meshCount,
+      bones,
       dimensions: {
         width: Number(size.x.toFixed(2)),
         height: Number(size.y.toFixed(2)),
@@ -369,6 +409,8 @@ export class ModelStudioEngine {
       if (this.isDisposed) return;
       this.animFrameId = requestAnimationFrame(loop);
       const elapsedTime = this.clock.getElapsedTime();
+      this.mixer?.update(Math.min(elapsedTime - this.previousTime, .05));
+      this.previousTime = elapsedTime;
 
       // Update uTime on materials supporting wind sway
       this.currentModelGroup.traverse((child) => {
@@ -400,6 +442,7 @@ export class ModelStudioEngine {
     }
     window.removeEventListener('resize', this.onResize);
     this.controls.dispose();
+    this.clearModel();
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement) {
       this.renderer.domElement.parentElement.removeChild(this.renderer.domElement);

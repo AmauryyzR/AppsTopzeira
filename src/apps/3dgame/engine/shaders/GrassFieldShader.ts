@@ -62,7 +62,7 @@ export class GrassField {
       uShadowColor: { value: new THREE.Color(options.shadowColor ?? 0x14422b) }, // Rich foliage shadow tone
       uSunColor: { value: new THREE.Color(options.sunColor ?? 0xfff6e6) },   // Warm sun light
       uSunDirection: { value: new THREE.Vector3(45, 65, 35).normalize() },
-      uSkyColor: { value: new THREE.Color(options.skyColor ?? 0xdbeafe) },   // Sky ambient reflection
+      uSkyColor: { value: new THREE.Color(options.skyColor ?? 0x93c5fd) },   // Sky ambient reflection
     };
 
     this.material = this.createShaderMaterial();
@@ -481,7 +481,9 @@ export class GrassField {
         }
 
         vec3 L = normalize(uSunDirection);
-        vec3 V = normalize(cameraPosition - vWorldPosition);
+        vec3 toCam = cameraPosition - vWorldPosition;
+        float camDist = length(toCam);
+        vec3 V = camDist > 0.001 ? (toCam / camDist) : vec3(0.0, 1.0, 0.0);
 
         // Half-lambert diffuse
         float NdotL = dot(N, L);
@@ -493,8 +495,8 @@ export class GrassField {
         // Discrete stepped anime lighting bands
         float celBands = smoothstep(0.32, 0.38, halfLambert) * 0.45 + smoothstep(0.60, 0.68, halfLambert) * 0.55;
 
-        // Sky ambient diffuse reflection on tips
-        float skyBounce = max(0.0, N.y) * 0.26;
+        // Sky ambient diffuse reflection on tips (softened to prevent excessive sky washout)
+        float skyBounce = max(0.0, N.y) * 0.16;
 
         // Compose final cel-shaded color with stylized shadow tint
         vec3 shadowTone = mix(col * uShadowColor, col * 0.72, 0.42);
@@ -508,10 +510,10 @@ export class GrassField {
         vec3 bladeSSSTint = mix(uTipColor, vec3(1.0, 0.96, 0.42), 0.55);
         finalColor += bladeSSSTint * (sssTranslucency * uSunColor * 1.6);
 
-        // 3. Anime Rim Light (Fresnel edge glow with solar boost)
-        float NdotV = max(0.0, dot(N, V));
-        float rim = pow(1.0 - NdotV, 3.2) * (0.35 + 0.65 * max(0.0, dot(L, -V)));
-        vec3 rimTone = vec3(0.96, 1.0, 0.80) * (0.50 * pow(vHeightFactor, 1.2));
+        // 3. Anime Rim Light (Fresnel edge glow with solar boost, guarded against NaN)
+        float NdotV = clamp(dot(N, V), 0.0, 1.0);
+        float rim = pow(max(0.0, 1.0 - NdotV), 3.2) * (0.35 + 0.65 * max(0.0, dot(L, -V)));
+        vec3 rimTone = vec3(0.96, 1.0, 0.80) * (0.50 * pow(max(0.0, vHeightFactor), 1.2));
         finalColor += rimTone * rim;
 
         // 4. Traveling Wind Specular Sheen & Sun Glint (Photon Shaders feature)
@@ -520,19 +522,19 @@ export class GrassField {
         finalColor += uSunColor * (bladeSpec * (0.35 + 0.45 * vWindIntensity));
 
         // Rolling wind gust crest shimmer across meadow
-        float windSheen = smoothstep(0.42, 0.90, vWindIntensity) * pow(vHeightFactor, 1.4);
+        float windSheen = smoothstep(0.42, 0.90, vWindIntensity) * pow(max(0.0, vHeightFactor), 1.4);
         vec3 sheenTone = mix(vec3(0.90, 1.0, 0.70), uSunColor, 0.45);
         finalColor += sheenTone * (windSheen * 0.28);
 
         // 5. GTAO-Inspired Contact Occlusion & Multi-Bounce Soil Anchoring (Photon Shaders GTAO)
-        float gtaoCurve = pow(vHeightFactor, 0.72);
+        float gtaoCurve = pow(max(0.0, vHeightFactor), 0.72);
         float rootOcclusion = smoothstep(0.01, 0.46, vHeightFactor) * gtaoCurve;
         // Damp humus/emerald contact tint in the crevices between blade roots
         vec3 rootSoilTint = vec3(0.07, 0.20, 0.10);
         finalColor = mix(rootSoilTint * (col * 0.9), finalColor, mix(0.35, 1.0, rootOcclusion));
 
-        // 6. Fine White Glow Rim on Grass Tips (Genshin Meadow Shimmer)
-        float fineGrassRim = smoothstep(0.75, 0.99, pow(1.0 - NdotV, 4.2)) * pow(vHeightFactor, 1.5);
+        // 6. Fine White Glow Rim on Grass Tips (Genshin Meadow Shimmer, guarded against NaN)
+        float fineGrassRim = smoothstep(0.75, 0.99, pow(max(0.0, 1.0 - NdotV), 4.2)) * pow(max(0.0, vHeightFactor), 1.5);
         finalColor += vec3(0.98, 1.0, 0.92) * (fineGrassRim * 0.35);
 
         gl_FragColor = vec4(finalColor, 1.0);

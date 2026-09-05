@@ -6,6 +6,7 @@ export interface ModelStats {
   vertices: number;
   triangles: number;
   meshCount: number;
+  bones: number;
   dimensions: {
     width: number;
     height: number;

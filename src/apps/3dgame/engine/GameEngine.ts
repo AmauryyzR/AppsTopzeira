@@ -41,6 +41,9 @@ export class GameEngine {
   private isDisposed = false;
   private wasGroundedLastFrame = true;
   private footstepTimer = 0;
+  private lastWidth = 0;
+  private lastHeight = 0;
+  private lastDpr = 0;
 
   constructor(container: HTMLElement, input: InputManager, onReady?: () => void) {
     this.container = container;
@@ -67,7 +70,7 @@ export class GameEngine {
       alpha: false,
     });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.98;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -152,14 +155,14 @@ export class GameEngine {
   }
 
   private setupLighting() {
-    // Hemispheric Ambient Light (Photon Shaders GI Bounce: Sky Cerulean + Foliage Emerald)
-    const hemiLight = new THREE.HemisphereLight(0xbfe6fe, 0x34d399, 0.72);
+    // Hemispheric Ambient Light (Softened sky cerulean + foliage emerald)
+    const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x166534, 0.52);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
     // Directional Sunlight with Soft PCF Shadows (Photon Shaders 5400K Blackbody Sun)
-    const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.38);
+    const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.32);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -176,8 +179,8 @@ export class GameEngine {
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
-    // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter)
-    const fillLight = new THREE.DirectionalLight(0xa5f3fc, 0.42);
+    // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter - softened)
+    const fillLight = new THREE.DirectionalLight(0x7dd3fc, 0.28);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
     this.fillLight = fillLight;
@@ -194,13 +197,27 @@ export class GameEngine {
     const h = this.container.clientHeight || 240;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+    // Debounce micro-jitter on mobile (e.g. dynamic address bar scrolling < 6px)
+    // Prevents destroying and recreating all 10 GPU render targets of EffectComposer on tiny scrolls
+    if (
+      Math.abs(w - this.lastWidth) < 6 &&
+      Math.abs(h - this.lastHeight) < 6 &&
+      Math.abs(dpr - this.lastDpr) < 0.01
+    ) {
+      return;
+    }
+
+    this.lastWidth = w;
+    this.lastHeight = h;
+    this.lastDpr = dpr;
+
     this.cameraRig.camera.aspect = w / h;
     this.cameraRig.camera.updateProjectionMatrix();
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, true);
     this.composer.setPixelRatio(dpr);
     this.composer.setSize(w, h);
-    this.bloomPass.resolution.set(w, h);
+    this.bloomPass.resolution.set(w * dpr, h * dpr);
   }
 
   private loop = () => {

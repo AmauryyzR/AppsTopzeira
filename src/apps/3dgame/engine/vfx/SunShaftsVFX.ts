@@ -33,9 +33,11 @@ void main() {
   float shimmer = 0.90 + 0.10 * sin(uTime * 1.5 + vUv.x * 6.28 + vWorldPosition.y * 0.4);
 
   // Henyey-Greenstein Forward Scattering Phase Function (Photon Shaders aerosol model)
-  vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+  vec3 toCam = cameraPosition - vWorldPosition;
+  float camDist = length(toCam);
+  vec3 viewDir = camDist > 0.001 ? (toCam / camDist) : vec3(0.0, 1.0, 0.0);
   vec3 sunDir = normalize(uSunDirection);
-  float cosTheta = dot(viewDir, sunDir);
+  float cosTheta = clamp(dot(viewDir, sunDir), -1.0, 1.0);
   float g = 0.74;
   float g2 = g * g;
   float hg = (1.0 - g2) / pow(max(0.001, 1.0 + g2 - 2.0 * g * cosTheta), 1.5);

@@ -186,7 +186,9 @@ export function createStylizedWaterMaterial(
 
     void main() {
       vec3 normal = normalize(vNormal);
-      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+      vec3 toCam = cameraPosition - vWorldPosition;
+      float camDist = length(toCam);
+      vec3 viewDir = camDist > 0.001 ? (toCam / camDist) : vec3(0.0, 1.0, 0.0);
       vec3 sunDir = normalize(uSunDirection);
 
       // 1. Exact Radial Shoreline Distance
@@ -360,7 +362,9 @@ export function createStylizedWaterfallMaterial(
 
     void main() {
       vec3 normal = normalize(vNormal);
-      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+      vec3 toCam = cameraPosition - vWorldPosition;
+      float camDist = length(toCam);
+      vec3 viewDir = camDist > 0.001 ? (toCam / camDist) : vec3(0.0, 1.0, 0.0);
       vec3 sunDir = normalize(uSunDirection);
 
       // 1. High-Speed Flowing UV Scrolling (Elongated Vertical Ribbons)

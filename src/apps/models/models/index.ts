@@ -5,8 +5,16 @@ import { createSingleLeafMesh, createLeafSprigMesh } from './lowpoly/LowPolyLeaf
 import { createModularBranchGroup } from './lowpoly/LowPolyBranch';
 import { createLowPolyTrunkMesh } from './lowpoly/LowPolyTrunk';
 import { createCompleteLowPolyTree } from './lowpoly/LowPolyTree';
+import { createDinoChibi } from './dino/DinoChibi';
 
 export const AVAILABLE_MODELS: ModelDefinition[] = [
+  {
+    id: 'dino-chibi',
+    name: '🦖 Chibi Dinossauro (Rigged)',
+    category: 'Personagens',
+    description: 'Personagem chibi com capuz de dinossauro, roupa detalhada, esqueleto articulado e animações Idle, Walk e Wave. Menos de 100.000 triângulos.',
+    create: createDinoChibi,
+  },
   {
     id: 'tree-lowpoly',
     name: '🌳 Árvore Low-Poly Genshin (Completa)',
@@ -73,4 +81,3 @@ export const AVAILABLE_MODELS: ModelDefinition[] = [
 ];
 
 export const DEFAULT_MODEL_ID = 'tree-lowpoly';
-
