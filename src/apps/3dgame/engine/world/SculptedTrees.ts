@@ -1,7 +1,16 @@
 import * as THREE from 'three';
 import { createToonMaterial, TOON_PRESETS } from '../shaders/ToonMaterial';
+import { createCompleteLowPolyTree } from '../../../models/models/lowpoly/LowPolyTree';
 
-export type SculptedTreeType = 'sakura' | 'oak' | 'pine';
+export type SculptedTreeType = 'sakura' | 'oak' | 'pine' | 'lowpoly';
+
+export interface ParkTreePlacement {
+  x: number;
+  z: number;
+  type: SculptedTreeType;
+  scale: number;
+  yaw: number;
+}
 
 export interface SculptedTreeDefinition {
   type: SculptedTreeType;
@@ -527,13 +536,126 @@ function createPineSkirtGeometry(
   return geo;
 }
 
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Ensures tree trunks never collide with pathways, stone plazas, bridges, water, or landmarks.
+ */
+export function isTreePositionExcluded(x: number, z: number): boolean {
+  const distCenter = Math.hypot(x, z);
+
+  // 1. Outside park boundary fence (radius 64m)
+  if (distCenter > 64.0) return true;
+
+  // 2. Central Stone Plaza & Fountain (radius 16.5m)
+  if (distCenter < 16.5) return true;
+
+  // 3. North-South Sandstone Walking Path & Stone Curbs (width 4.4m + margin)
+  if (Math.abs(x) < 3.2 && Math.abs(z) <= 65.0) return true;
+
+  // 4. East-West Sandstone Walking Path & Stone Curbs
+  if (Math.abs(z) < 3.2 && Math.abs(x) <= 65.0) return true;
+
+  // 5. Outer Circular Jogging Ring (radius 36.8m to 44.2m)
+  if (distCenter >= 36.8 && distCenter <= 44.2) return true;
+
+  // 6. Zen Rock Garden (Karesansui): X in [12.0, 32.0], Z in [13.0, 27.0]
+  if (x >= 12.0 && x <= 32.0 && z >= 13.0 && z <= 27.0) return true;
+
+  // 7. SW Wooden Walkway Bridge: X in [-27.5, -20.5], Z in [-33.0, -15.0]
+  if (x >= -27.5 && x <= -20.5 && z >= -33.0 && z <= -15.0) return true;
+
+  // 8. West Scenic Canal & Taiko Bashi Arched Bridge: X in [-40.0, -28.0], |Z| <= 18.0
+  if (x >= -40.0 && x <= -28.0 && Math.abs(z) <= 18.0) return true;
+
+  // 9. East Zen Pagoda Gazebo Platform (x = 36, z = 0, radius 6.5m)
+  if (Math.hypot(x - 36, z) < 6.5) return true;
+
+  // 10. South Torii Gate Apron (x = 0, z = 42, width 5.5m, depth 5.0m)
+  if (Math.abs(x) < 5.5 && Math.abs(z - 42) < 5.0) return true;
+
+  // 11. Street Lamps (8 positions)
+  const lampPositions = [
+    [8, 8], [-8, 8], [8, -8], [-8, -8],
+    [2.4, 28], [-2.4, -28], [26, 2.4], [-24, 2.4],
+  ];
+  for (let i = 0; i < lampPositions.length; i++) {
+    const [lx, lz] = lampPositions[i];
+    if (Math.hypot(x - lx, z - lz) < 2.2) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Generates an organic, randomized distribution of trees scattered across all 4 quadrants of the park,
+ * heavily featuring the Low Poly Genshin tree from /models alongside Sakura, Oak, and Pine.
+ */
+export function getParkTreePlacements(): ParkTreePlacement[] {
+  const prng = mulberry32(4242);
+  const placements: ParkTreePlacement[] = [];
+  const speciesList: SculptedTreeType[] = ['lowpoly', 'sakura', 'oak', 'pine', 'lowpoly', 'oak'];
+
+  // Scenic anchor trees (framing key vistas with low-poly and natural species)
+  const scenicAnchors: ParkTreePlacement[] = [
+    { x: 25, z: -8, type: 'lowpoly', scale: 1.18, yaw: 0.45 },
+    { x: -25, z: -8, type: 'lowpoly', scale: 1.15, yaw: 2.55 },
+    { x: -16, z: 18, type: 'lowpoly', scale: 1.05, yaw: 1.20 },
+    { x: 14, z: 32, type: 'lowpoly', scale: 1.12, yaw: 3.80 },
+    { x: -18, z: -18, type: 'lowpoly', scale: 1.08, yaw: 5.10 },
+    { x: 18, z: -16, type: 'sakura', scale: 1.10, yaw: 0.85 },
+    { x: -26, z: 14, type: 'oak', scale: 1.05, yaw: 2.15 },
+    { x: 28, z: 12, type: 'pine', scale: 1.12, yaw: 4.40 },
+  ];
+
+  for (const a of scenicAnchors) {
+    placements.push(a);
+  }
+
+  // Procedural random scattering across grass lawn
+  let attempts = 0;
+  while (placements.length < 52 && attempts < 50000) {
+    attempts++;
+    const angle = prng() * Math.PI * 2;
+    const r = 16.5 + prng() * (63.5 - 16.5);
+    const x = Math.round((Math.cos(angle) * r) * 10) / 10;
+    const z = Math.round((Math.sin(angle) * r) * 10) / 10;
+
+    if (isTreePositionExcluded(x, z)) continue;
+
+    let tooClose = false;
+    for (const p of placements) {
+      if (Math.hypot(x - p.x, z - p.z) < 6.0) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+
+    const type = speciesList[Math.floor(prng() * speciesList.length)];
+    const scale = Math.round((0.88 + prng() * 0.28) * 100) / 100;
+    const yaw = Math.round(prng() * Math.PI * 2 * 100) / 100;
+
+    placements.push({ x, z, type, scale, yaw });
+  }
+
+  return placements;
+}
+
 /**
  * AAA Sculpted Nature System (Ghibli / Zelda: Breath of the Wild / Genshin Impact style).
  * - Eliminates dodecahedra and hard cone artifacts.
  * - Organic sculpted trunks with root flares, subtle bends, and natural branch forks.
  * - Volumetric cloud foliage canopies with Spherical Normal Transfer for seamless cel-shading.
- * - 3 Master species: Sakura (Cherry Blossom), Summer Oak, and Alpine Pine.
- * - Master-shared geometry buffers & materials for ultra-efficient rendering across 28+ trees.
+ * - 4 Master species: Low-Poly Genshin Oak (/models), Sakura, Summer Oak, and Alpine Pine.
+ * - Master-shared geometry buffers & materials for ultra-efficient rendering across 50+ trees.
  * - Rigorous zero-leak disposal.
  */
 export class SculptedTreesManager {
@@ -786,39 +908,54 @@ export class SculptedTreesManager {
     for (const g of pineTiersB) g.dispose();
 
     // -------------------------------------------------------------
-    // 4. INSTANTIATE 28 TREES ACROSS PARK WITH PRECISE ROOT COLLISIONS
+    // 4. MASTER LOW-POLY GENSHIN TREE TEMPLATE (From /models)
     // -------------------------------------------------------------
-    const treePlacements: [number, number][] = [
-      // Quadrant 1 (North-East)
-      [16, 16], [28, 12], [22, 26], [34, 30], [12, 34],
-      // Quadrant 2 (North-West)
-      [-16, 18], [-26, 14], [-20, 28], [-32, 26], [-14, 36],
-      // Quadrant 3 (South-East)
-      [18, -16], [26, -22], [14, -30], [30, -32], [36, -14],
-      // Quadrant 4 (South-West)
-      [-18, -18], [-28, -20], [-16, -32], [-32, -30], [-34, -14],
-      // Outer perimeter groves
-      [48, 7], [-48, 7], [7, 48], [-7, -48],
-      [45, 45], [-45, 45], [45, -45], [-45, -45],
-    ];
+    const masterLowPolyTemplate = createCompleteLowPolyTree(true);
+    masterLowPolyTemplate.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        this.trackGeo(mesh.geometry);
+        this.trackMat(mesh.material as THREE.Material);
+        if (mesh.material && (mesh.material as any).userData?.enableWindSway) {
+          this.swayMaterials.push(mesh.material as THREE.MeshToonMaterial);
+        }
+      }
+    });
 
-    for (let i = 0; i < treePlacements.length; i++) {
-      const [x, z] = treePlacements[i];
-      // Harmonious scale variance (0.86 to 1.16)
-      const scale = 0.86 + (i % 6) * 0.06;
-      // Rotational yaw variation for natural asymmetry
-      const yaw = ((i * 137.5) * Math.PI) / 180; // Golden angle distribution
+    // -------------------------------------------------------------
+    // 5. INSTANTIATE SCATTERED TREES ACROSS THE PARK (Low-Poly + Nature Trio)
+    // -------------------------------------------------------------
+    const placements = getParkTreePlacements();
 
-      // Cycle species: 0 = Pine, 1 = Summer Oak, 2 = Sakura Cherry Blossom
-      const speciesIndex = i % 3;
+    for (let i = 0; i < placements.length; i++) {
+      const { x, z, type, scale, yaw } = placements[i];
 
-      const treeGroup = new THREE.Group();
-      treeGroup.position.set(x, 0, z);
-      treeGroup.rotation.y = yaw;
-      treeGroup.scale.set(scale, scale, scale);
+      if (type === 'lowpoly') {
+        // --- Low-Poly Genshin Oak (/models) ---
+        const treeGroup = masterLowPolyTemplate.clone(true);
+        treeGroup.position.set(x, 0, z);
+        treeGroup.rotation.y = yaw;
+        treeGroup.scale.set(scale, scale, scale);
 
-      if (speciesIndex === 0) {
+        treeGroup.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+        });
+
+        this.group.add(treeGroup);
+        const collW = 1.25 * scale;
+        const collH = 4.0 * scale;
+        this.addCollisionInternal(x, 0, z, collW, collH, collW, onAddCollision);
+      } else if (type === 'pine') {
         // --- Alpine Pine ---
+        const treeGroup = new THREE.Group();
+        treeGroup.position.set(x, 0, z);
+        treeGroup.rotation.y = yaw;
+        treeGroup.scale.set(scale, scale, scale);
+
         const trunkMesh = new THREE.Mesh(pineTrunkGeo, woodMat);
         trunkMesh.castShadow = true;
         trunkMesh.receiveShadow = true;
@@ -834,12 +971,17 @@ export class SculptedTreesManager {
         canopyBMesh.receiveShadow = true;
         treeGroup.add(canopyBMesh);
 
-        // Precise solid trunk collision at base only
+        this.group.add(treeGroup);
         const collW = 0.72 * scale;
         const collH = 3.6 * scale;
         this.addCollisionInternal(x, 0, z, collW, collH, collW, onAddCollision);
-      } else if (speciesIndex === 1) {
+      } else if (type === 'oak') {
         // --- Summer Oak ---
+        const treeGroup = new THREE.Group();
+        treeGroup.position.set(x, 0, z);
+        treeGroup.rotation.y = yaw;
+        treeGroup.scale.set(scale, scale, scale);
+
         const trunkMesh = new THREE.Mesh(oakTrunkGeo, woodMat);
         trunkMesh.castShadow = true;
         trunkMesh.receiveShadow = true;
@@ -855,12 +997,17 @@ export class SculptedTreesManager {
         canopyBMesh.receiveShadow = true;
         treeGroup.add(canopyBMesh);
 
-        // Solid trunk collision at base only
+        this.group.add(treeGroup);
         const collW = 0.88 * scale;
         const collH = 3.2 * scale;
         this.addCollisionInternal(x, 0, z, collW, collH, collW, onAddCollision);
       } else {
         // --- Sakura Cherry Blossom ---
+        const treeGroup = new THREE.Group();
+        treeGroup.position.set(x, 0, z);
+        treeGroup.rotation.y = yaw;
+        treeGroup.scale.set(scale, scale, scale);
+
         const trunkMesh = new THREE.Mesh(sakuraTrunkGeo, woodMat);
         trunkMesh.castShadow = true;
         trunkMesh.receiveShadow = true;
@@ -876,13 +1023,11 @@ export class SculptedTreesManager {
         canopyBMesh.receiveShadow = true;
         treeGroup.add(canopyBMesh);
 
-        // Solid trunk collision at base only
+        this.group.add(treeGroup);
         const collW = 0.78 * scale;
         const collH = 3.2 * scale;
         this.addCollisionInternal(x, 0, z, collW, collH, collW, onAddCollision);
       }
-
-      this.group.add(treeGroup);
     }
   }
 

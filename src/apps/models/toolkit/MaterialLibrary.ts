@@ -62,13 +62,53 @@ class MaterialLibraryClass {
 
   public getFoliageMaterial(): THREE.MeshStandardMaterial {
     if (!this.foliageMaterial) {
-      const tex = createProceduralFoliageTexture(512);
+      const loader = new THREE.TextureLoader();
+
+      // Load ChatGPT-generated Stylized Hand-Painted Game Foliage Texture (1254x1254)
+      const foliageDiffuse = loader.load(
+        '/textures/stylized_oak_leaves.png',
+        (tex) => {
+          tex.wrapS = THREE.RepeatWrapping;
+          tex.wrapT = THREE.RepeatWrapping;
+
+          // Subtle relief normal map for stylized leaf clusters
+          const img = tex.image as HTMLImageElement;
+          if (img && img.width > 0 && img.height > 0) {
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.min(img.width, 1024);
+            canvas.height = Math.min(img.height, 1024);
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const heightBuffer = new Float32Array(canvas.width * canvas.height);
+              for (let i = 0; i < heightBuffer.length; i++) {
+                const r = imgData.data[i * 4];
+                const g = imgData.data[i * 4 + 1];
+                const b = imgData.data[i * 4 + 2];
+                heightBuffer[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+              }
+              const normalTex = createNormalMapFromHeight(heightBuffer, canvas.width, canvas.height, 1.8);
+              normalTex.wrapS = THREE.RepeatWrapping;
+              normalTex.wrapT = THREE.RepeatWrapping;
+              if (this.foliageMaterial) {
+                this.foliageMaterial.normalMap = normalTex;
+                this.foliageMaterial.normalScale.set(0.6, 0.6);
+                this.foliageMaterial.needsUpdate = true;
+              }
+            }
+          }
+        }
+      );
+      foliageDiffuse.wrapS = THREE.RepeatWrapping;
+      foliageDiffuse.wrapT = THREE.RepeatWrapping;
+
       this.foliageMaterial = new THREE.MeshStandardMaterial({
-        map: tex,
-        roughness: 0.55,
+        map: foliageDiffuse,
+        roughness: 0.65,
         metalness: 0.0,
         vertexColors: true,
-        name: 'PBR_RealisticFoliage',
+        name: 'PBR_StylizedGameFoliage',
       });
     }
     return this.foliageMaterial;

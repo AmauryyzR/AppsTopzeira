@@ -26,4 +26,7 @@ output/
 .codex/
 .codex-remote-attachments/
 artifacts/
+scratch/
+manimations/
+baly_morango.png
 

@@ -421,7 +421,9 @@ export class GrassField {
           float vertDistY = abs(worldPos.y - uPlayerPosition.y);
           float heightAtten = 1.0 - smoothstep(0.4, 2.2, vertDistY);
           float finalPush = pushFactor * heightAtten;
-          vec2 pushDir = distToPlayer > 0.001 ? normalize(toBlade) : vec2(0.0, 1.0);
+          // Soft normalization within the player foot core (0.42m) eliminates opposite-direction vertex tearing,
+          // preventing blades underfoot from expanding into abnormally giant polygons while preserving full distortion outside.
+          vec2 pushDir = toBlade / max(distToPlayer, 0.42);
           playerDisplacement = vec3(pushDir.x * 0.88, -0.55, pushDir.y * 0.88) * (finalPush * bendWeight);
         }
 

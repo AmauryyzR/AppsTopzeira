@@ -142,12 +142,12 @@ function createFoliageShelf(
       nFinal.copy(nCluster).multiplyScalar(0.7).addScaledVector(nGlobal, 0.3).normalize();
       norm.setXYZ(i, nFinal.x, nFinal.y, nFinal.z);
 
-      // Vertex color lighting gradient:
-      // Sunlit top faces get warm golden-green, underside gets deep forest shadow
-      const sunFactor = Math.max(0, Math.min(1, (nFinal.y + 0.4) / 1.4));
-      const r = 0.15 + sunFactor * 0.28;
-      const g = 0.32 + sunFactor * 0.38;
-      const b = 0.12 + sunFactor * 0.12;
+      // Vertex color lighting gradient (multiplied by the stylized leaf texture):
+      // Sunlit top faces get full vibrant color with slight warm tint, undersides get forest ambient shadow
+      const sunFactor = Math.max(0, Math.min(1, (nFinal.y + 0.35) / 1.35));
+      const r = 0.65 + sunFactor * 0.38;
+      const g = 0.68 + sunFactor * 0.35;
+      const b = 0.58 + sunFactor * 0.42;
 
       colors[i * 3] = r;
       colors[i * 3 + 1] = g;
@@ -157,7 +157,17 @@ function createFoliageShelf(
   }
 
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  applyTriplanarUVs(geo, 0.3);
+
+  // Seamless spherical UV mapping for stylized leaf clusters:
+  // Eliminates planar cuts and wraps the hand-painted leaf texture smoothly around each cloud shelf
+  const uv = geo.getAttribute('uv');
+  if (uv) {
+    for (let i = 0; i < uv.count; i++) {
+      uv.setXY(i, uv.getX(i) * 3.0, uv.getY(i) * 2.2);
+    }
+    uv.needsUpdate = true;
+  }
+
   return geo;
 }
 

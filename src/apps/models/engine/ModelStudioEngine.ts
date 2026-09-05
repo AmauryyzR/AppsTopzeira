@@ -122,6 +122,7 @@ export class ModelStudioEngine {
     this.keyLight.shadow.camera.top = 10;
     this.keyLight.shadow.camera.bottom = -10;
     this.keyLight.shadow.bias = -0.0004;
+    this.keyLight.shadow.normalBias = 0.025;
     this.scene.add(this.keyLight);
 
     // Fill Light (Softens opposite side shadows with sky bounce)
@@ -225,14 +226,17 @@ export class ModelStudioEngine {
     box.getCenter(center);
     box.getSize(size);
 
-    const maxDim = Math.max(size.x, size.y, size.z, 2);
+    const maxDim = Math.max(size.x / Math.min(this.camera.aspect, 1), size.y, size.z, 2);
     const fov = this.camera.fov * (Math.PI / 180);
     let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
     cameraDistance *= 1.35; // margin
 
     this.controls.target.copy(center);
 
-    const dir = new THREE.Vector3(1, 0.7, 1.2).normalize();
+    const previewDirection = this.currentModelGroup.children[0]?.userData.previewDirection;
+    const dir = (Array.isArray(previewDirection)
+      ? new THREE.Vector3().fromArray(previewDirection)
+      : new THREE.Vector3(1, 0.7, 1.2)).normalize();
     this.camera.position.copy(center).addScaledVector(dir, cameraDistance);
     this.camera.near = Math.max(0.05, cameraDistance / 50);
     this.camera.far = Math.max(200, cameraDistance * 30);
@@ -358,10 +362,31 @@ export class ModelStudioEngine {
     this.renderer.setSize(width, height);
   };
 
+  private clock = new THREE.Clock();
+
   private startLoop(): void {
     const loop = () => {
       if (this.isDisposed) return;
       this.animFrameId = requestAnimationFrame(loop);
+      const elapsedTime = this.clock.getElapsedTime();
+
+      // Update uTime on materials supporting wind sway
+      this.currentModelGroup.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          const mat = mesh.material;
+          if (Array.isArray(mat)) {
+            mat.forEach((m) => {
+              if (m?.userData?.shader?.uniforms?.uTime) {
+                m.userData.shader.uniforms.uTime.value = elapsedTime;
+              }
+            });
+          } else if (mat && (mat as any).userData?.shader?.uniforms?.uTime) {
+            (mat as any).userData.shader.uniforms.uTime.value = elapsedTime;
+          }
+        }
+      });
+
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     };

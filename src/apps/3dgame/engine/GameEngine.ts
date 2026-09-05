@@ -13,7 +13,6 @@ import { SoundEffectsEngine } from './audio/SoundEffectsEngine';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export class GameEngine {
@@ -21,7 +20,6 @@ export class GameEngine {
   public readonly renderer: THREE.WebGLRenderer;
   public readonly composer: EffectComposer;
   public readonly bloomPass: UnrealBloomPass;
-  public readonly smaaPass: SMAAPass;
   public readonly cameraRig: CameraRig;
   public readonly parkWorld: ParkWorld;
   public readonly playerCharacter: PlayerCharacter;
@@ -91,12 +89,11 @@ export class GameEngine {
 
     container.appendChild(canvas);
 
-    // 4. Post-Processing Pipeline (Genshin Impact Bloom, SMAA Anti-Aliasing, ACES Tone Mapping)
-    const renderTarget = new THREE.WebGLRenderTarget(width * dpr, height * dpr, {
-      type: THREE.HalfFloatType,
-      samples: 4,
-    });
-    this.composer = new EffectComposer(this.renderer, renderTarget);
+    // 4. Post-Processing Pipeline (Genshin Impact Bloom, ACES Tone Mapping)
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.setPixelRatio(dpr);
+    this.composer.setSize(width, height);
+
     const renderPass = new RenderPass(this.scene, this.cameraRig.camera);
     this.composer.addPass(renderPass);
 
@@ -110,10 +107,6 @@ export class GameEngine {
       0.94  // bloom threshold
     );
     this.composer.addPass(this.bloomPass);
-
-    // SMAA Subpixel Morphological Anti-Aliasing for smooth, pristine anime edges
-    this.smaaPass = new SMAAPass();
-    this.composer.addPass(this.smaaPass);
 
     const outputPass = new OutputPass();
     this.composer.addPass(outputPass);
@@ -205,9 +198,9 @@ export class GameEngine {
     this.cameraRig.camera.updateProjectionMatrix();
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, true);
+    this.composer.setPixelRatio(dpr);
     this.composer.setSize(w, h);
     this.bloomPass.resolution.set(w, h);
-    this.smaaPass.setSize(w * dpr, h * dpr);
   }
 
   private loop = () => {
@@ -335,7 +328,6 @@ export class GameEngine {
     this.playerCharacter.dispose();
     disposeToonCache();
     this.bloomPass.dispose();
-    this.smaaPass.dispose();
     this.composer.dispose();
     this.renderer.dispose();
     if ((window as any).__engine === this) {
