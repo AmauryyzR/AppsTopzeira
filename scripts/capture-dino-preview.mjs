@@ -22,15 +22,11 @@ async function run() {
 
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 
-  // 1. Front Full-body Screenshot
-  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_front.png') });
-  console.log('Front screenshot saved.');
-
-  // 2. High-precision Face & Hood close-up using setCameraView
+  // 1. High-precision Head & Face close-up
   await page.evaluate(() => {
     const engine = window.__studioEngine;
     if (engine) {
-      engine.setCameraView({ x: 0.02, y: 0.38, z: 0.42 }, { x: 0, y: 0.37, z: 0.05 });
+      engine.setCameraView({ x: 0.0, y: 0.96, z: 0.65 }, { x: 0.0, y: 0.95, z: 0.12 });
     }
   });
   await page.waitForTimeout(500);
@@ -41,7 +37,11 @@ async function run() {
   await page.keyboard.press('f');
   await page.waitForTimeout(400);
 
-  // 3. Three-quarter Perspective View
+  // 2. Full-body front screenshot
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'gemnidino_front.png') });
+  console.log('Front screenshot saved.');
+
+  // 3. Perspective View
   await page.evaluate(() => {
     const engine = window.__studioEngine;
     if (engine) {
@@ -56,7 +56,7 @@ async function run() {
   await page.keyboard.press('f');
   await page.waitForTimeout(400);
 
-  // 4. Toggle skeleton
+  // 4. Toggle skeleton helper
   const checkbox = await page.$('input[type="checkbox"]');
   if (checkbox) {
     await checkbox.check();
@@ -67,7 +67,7 @@ async function run() {
     await page.waitForTimeout(300);
   }
 
-  // 5. Animation: Wave (cheerful greeting matching reference image)
+  // 5. Animation: Wave
   const animSelect = await page.$('#rig-animation');
   if (animSelect) {
     await animSelect.selectOption('Wave');

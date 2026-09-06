@@ -68,9 +68,10 @@ export class GameEngine {
       powerPreference: 'high-performance',
       antialias: true,
       alpha: false,
+      preserveDrawingBuffer: true,
     });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.98;
+    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -151,18 +152,28 @@ export class GameEngine {
 
     (window as any).__engine = this;
 
-    onReady?.();
+    let isReadyFired = false;
+    const fireReady = () => {
+      if (isReadyFired || this.isDisposed) return;
+      isReadyFired = true;
+      this.dashVFX.refreshGhostPool(this.playerCharacter);
+      onReady?.();
+    };
+
+    this.playerCharacter.ready.then(fireReady);
+    setTimeout(fireReady, 2500);
   }
 
   private setupLighting() {
-    // Hemispheric Ambient Light (Softened sky cerulean + foliage emerald)
-    const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x166534, 0.52);
+    // Hemispheric Ambient Light (Calibrated anime horizon: Sky cerulean + emerald grass bounce)
+    // Intensity raised to 0.74 so the underside of the shark hoodie and character face are vibrantly illuminated
+    const hemiLight = new THREE.HemisphereLight(0xbde0fe, 0x1e3a29, 0.74);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
-    // Directional Sunlight with Soft PCF Shadows (Photon Shaders 5400K Blackbody Sun)
-    const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.32);
+    // Directional Sunlight with Soft PCF Shadows (Photon Shaders 5400K Warm Key Sun)
+    const sunLight = new THREE.DirectionalLight(0xfff8e7, 1.45);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -179,14 +190,14 @@ export class GameEngine {
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
-    // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter - softened)
-    const fillLight = new THREE.DirectionalLight(0x7dd3fc, 0.28);
+    // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter)
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.42);
     fillLight.position.set(-35, 40, -35);
     this.scene.add(fillLight);
     this.fillLight = fillLight;
 
-    // Stylized Warm Rim / Backlight for character and geometry edge separation
-    const rimLight = new THREE.DirectionalLight(0xffedd5, 0.85);
+    // Stylized Warm Rim / Backlight for crisp character silhouette and dorsal fin separation
+    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.96);
     rimLight.position.set(-25, 45, -40);
     this.scene.add(rimLight);
   }

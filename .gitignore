@@ -29,4 +29,7 @@ artifacts/
 scratch/
 manimations/
 baly_morango.png
-
+baly_*.png
+garrafa_*.png
+teste_*.png
+.playwright-cli/

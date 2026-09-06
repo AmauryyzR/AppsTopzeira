@@ -382,10 +382,10 @@ export function createGemniDino(): THREE.Group {
       16
     );
 
-    // Rosy Pink Cheeks (Soft Chibi Blush) under each eye
+    // Rosy Pink Cheeks (Soft Chibi Blush) directly under each eye
     ball(
-      [sign * .310, 2.420, faceSurface(sign * .310, 2.420) + .005],
-      [.105, .048, .006],
+      [sign * .240, 2.440, faceSurface(sign * .240, 2.440) + .006],
+      [.075, .040, .005],
       blush,
       'Head',
       18,
@@ -399,24 +399,24 @@ export function createGemniDino(): THREE.Group {
   // Joyful Open Smile (:D) with dark oral cavity & cute pink tongue
   const mouthCenterY = 2.30;
   // Dark oral cavity
-  ball([0, mouthCenterY - .030, faceSurface(0, mouthCenterY - .030) + .003], [.090, .052, .016], mouthCavity, 'Jaw', 22, 14);
-  // Pink tongue nestled at bottom of mouth cavity
-  ball([0, mouthCenterY - .052, faceSurface(0, mouthCenterY - .052) + .007], [.066, .030, .015], tongue, 'Jaw', 18, 12);
+  ball([0, mouthCenterY - .030, faceSurface(0, mouthCenterY - .030) + .003], [.092, .052, .016], mouthCavity, 'Jaw', 22, 14);
+  // Pink tongue nestled in bottom half of mouth cavity
+  ball([0, mouthCenterY - .038, faceSurface(0, mouthCenterY - .038) + .008], [.072, .034, .015], tongue, 'Jaw', 20, 14);
   // Upper & lower smiling lip contours
   line(
     [[-.095, mouthCenterY + .018], [-.050, mouthCenterY + .002], [0, mouthCenterY], [.050, mouthCenterY + .002], [.095, mouthCenterY + .018]].map(([x, y]) => [
-      x, y, faceSurface(x, y) + .009
+      x, y, faceSurface(x, y) + .011
     ]),
-    .007,
+    .008,
     mouth,
     'Jaw',
     20
   );
   line(
     [[-.090, mouthCenterY + .016], [-.060, mouthCenterY - .065], [0, mouthCenterY - .080], [.060, mouthCenterY - .065], [.090, mouthCenterY + .016]].map(([x, y]) => [
-      x, y, faceSurface(x, y) + .009
+      x, y, faceSurface(x, y) + .011
     ]),
-    .006,
+    .007,
     mouth,
     'Jaw',
     20

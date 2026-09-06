@@ -1,24 +1,32 @@
-# Dino Chibi
+# GemniDINO (Rigged Character Model)
 
-Procedural character based on the supplied dinosaur-costume reference.
+Procedural 3D character based on the supplied dinosaur-costume reference.
 
-- Studio: `/models?model=dino-chibi`
-- Final budget: 87,712 triangles, 52,157 indexed vertices, 15 material meshes.
-- Rig: 30 joints, normalized weights, blended elbows, knees, torso and tail.
-- Coordinates: Y up, +Z forward. Root scale 0.35 converts the construction coordinates to a roughly 1.34 m character. Keep the imported root transform.
-- Rest pose: relaxed A-pose. Costume mittens use hand bones; there are no individual finger joints.
-- Preview/export clips: `Idle`, `Walk` (in place), `Wave`. These are starter animation clips; no IK, physics or collision controller is included.
-- Attachment bones: `GripSocket.L`, `GripSocket.R`, `HeadSocket`.
-- `userData.humanoid` / GLB root extras contain the humanoid bone mapping. The four tail joints remain an additional chain.
-- Eye and clothing components are weighted to the same skeleton. The closed smile follows `Jaw`; no facial blend shapes are included.
+- **Studio URLs**: `/models`, `/models?model=gemni-dino`, `/models?model=GemniDINO` (or legacy `/models?model=dino-chibi`)
+- **Triangle Budget**: **92,832 triangles** (strictly below 100,000 budget), 55,345 indexed vertices, 18 material meshes.
+- **Armature / Rig**: **30 game-ready joints**, normalized skin weights, blended elbows, knees, torso and articulated 4-segment dinosaur tail.
+- **Coordinates**: Y up, +Z forward. Root scale 0.35 converts the construction coordinates into game-ready scale (~1.34 m).
+- **Rest pose**: Relaxed A-pose.
+- **Humanoid Mapping**: `userData.humanoid` / GLB root extras contain standard humanoid bone mapping for Unity, Unreal Engine, Godot and Mixamo.
+- **Attachment Sockets**: `GripSocket.L`, `GripSocket.R` (for weapons / props), `HeadSocket` (for hats / accessories).
+- **Animation Clips**: `Idle` (breathing, subtle head tilt, tail wag), `Walk` (locomotion cycle with arm counter-swing and foot roll), `Wave` (cheerful greeting raising right paw).
+- **Aesthetic Details**:
+  - Joyful open smile (`:D`) with dark oral cavity and pink tongue.
+  - Soft pink chibi cheek blush under each anime eye.
+  - Layered hazel-green eyes with dark eyeliner and dual specular highlights.
+  - Voluminous chocolate brown anime bangs framing forehead.
+  - Prominent golden-amber hood crest spikes sweeping forward and down spine.
+  - 3 chunky duffle coat wooden toggles with rope loops and leather reinforcement patches.
+  - Dinosaur mitten paws with orange paw print pads on palms and white claws.
+  - Chunky platform sneakers with sole treads, orange straps and ribbed green socks.
 
 ## Files
 
-- `DinoChibi.ts`: character geometry, materials, costume details and assembly.
-- `DinoRig.ts`: bind pose, hierarchy, weights and animation clips.
-- `DinoGeometry.ts`: smooth geometry builders and material-batched skinned meshes.
+- `DinoChibi.ts`: `createGemniDino` (and `createDinoChibi` alias) character geometry, materials and assembly.
+- `DinoRig.ts`: 30-bone hierarchy, bind pose, distance-based chain skin weights and animation clips.
+- `DinoGeometry.ts`: Smooth geometry generators, extruded panels, spikes and material-batched skinned mesh builder.
 
-## Validation and export
+## Validation and Export
 
 Run from the project root:
 
@@ -27,6 +35,9 @@ node scripts/verify-dino-character.mjs
 npm run build
 ```
 
-The validator checks the triangle budget, finite attributes, normalized skin weights, required bones and animated vertex deformation. It exports `output/dino/dino-chibi.glb`, reloads it through GLTFLoader, and verifies the skeleton, triangle count and animated hand motion. A report is saved in `output/dino/validation.json`.
-
-The studio's GLB button also exports joints, weights and all three clips. Skeleton preview lines are excluded from the exported model. Importers may sanitize dots in bone names (for example, Three.js GLTFLoader converts `Hand.R` to `HandR`).
+The validator checks:
+1. Triangle budget `< 100.000` (actual: 92,832).
+2. Finite attributes and normalized weights (`sum == 1`).
+3. 30 bones and humanoid sockets.
+4. Animated vertex displacement for `Idle`, `Walk`, and `Wave`.
+5. GLB export and GLTFLoader round-trip integrity.

@@ -14,7 +14,7 @@ export class CameraRig {
 
   private readonly minPitch = -1.05; // ~ -60 degrees tilt up toward zenith and clouds
   private readonly maxPitch = 1.15; // ~65 degrees max elevation
-  private readonly minDistance = 2.8;
+  private readonly minDistance = 1.2;
   private readonly maxDistance = 16.0;
 
   // Smooth follow focus target

@@ -176,6 +176,12 @@ export class ModelStudioEngine {
 
     this.currentModelGroup.add(model);
     this.animatedModel = model;
+    // Small detailed assets can opt into a tighter shadow volume (millimetre features).
+    const shadowExtent = model.userData.studioShadowExtent ?? 10;
+    Object.assign(this.keyLight.shadow.camera, {left:-shadowExtent,right:shadowExtent,top:shadowExtent,bottom:-shadowExtent});
+    this.keyLight.shadow.normalBias = model.userData.studioShadowExtent ? .0015 : .025;
+    this.keyLight.shadow.bias = model.userData.studioShadowExtent ? -.00004 : -.0004;
+    this.keyLight.shadow.camera.updateProjectionMatrix();
     if (model.animations.length) this.mixer = new THREE.AnimationMixer(model);
 
     // Cache original materials and configure shadows

@@ -143,6 +143,14 @@ export class GenshinDashTrailVFX {
     }
   }
 
+  public refreshGhostPool(playerCharacter: PlayerCharacter) {
+    for (const ghost of this.ghosts) {
+      this.group.remove(ghost.root);
+    }
+    this.ghosts = [];
+    this.initGhostPool(playerCharacter);
+  }
+
   private copyNodeTransforms(source: THREE.Object3D, target: THREE.Object3D) {
     target.position.copy(source.position);
     target.quaternion.copy(source.quaternion);

@@ -6,8 +6,31 @@ import { createModularBranchGroup } from './lowpoly/LowPolyBranch';
 import { createLowPolyTrunkMesh } from './lowpoly/LowPolyTrunk';
 import { createCompleteLowPolyTree } from './lowpoly/LowPolyTree';
 import { createGemniDino, createDinoChibi } from './dino/DinoChibi';
+import { createSharkAnimestyle } from './shark/SharkAnimestyle';
+import { createSharkStreetwear } from './sharkStreetwear/Character';
 
 export const AVAILABLE_MODELS: ModelDefinition[] = [
+  {
+    id: 'shark-streetwear',
+    name: '🦈 Shark Streetwear · Novo',
+    category: 'Personagens',
+    description: 'Modelo independente com capuz ajustado, cabelo prateado, venda, roupa streetwear e rig articulado. Limite de 150.000 triângulos.',
+    create: createSharkStreetwear,
+  },
+  {
+    id: 'shark-animestyle',
+    name: '🦈 SharkAnimestyle (Rigged)',
+    category: 'Personagens',
+    description: 'Personagem anime streetwear com capuz de tubarão azul ardósia, barbatanas dorsais e traseiras, dentes afiados, cabelo prateado, venda preta, calça jogger, tênis chunky e esqueleto para jogos com 30 ossos.',
+    create: createSharkAnimestyle,
+  },
+  {
+    id: 'sharkanimestyle',
+    name: '🦈 SharkAnimestyle (Alias)',
+    category: 'Personagens',
+    description: 'Alias do modelo SharkAnimestyle.',
+    create: createSharkAnimestyle,
+  },
   {
     id: 'gemni-dino',
     name: '🦖 GemniDINO (Rigged)',

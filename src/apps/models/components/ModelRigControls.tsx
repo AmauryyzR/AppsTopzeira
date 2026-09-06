@@ -22,6 +22,7 @@ export function ModelRigControls({boneCount, onAnimation, onSkeleton}: Props) {
       <option value="Idle">Respiração</option>
       <option value="Walk">Caminhada</option>
       <option value="Wave">Aceno</option>
+      <option value="AnimePose">Anime Pose</option>
     </select>
     <p className="mt-2 leading-relaxed text-[10px] text-slate-400">Braços, pernas, cabeça e cauda. GLB com skinning, juntas e 3 animações.</p>
   </aside>;
