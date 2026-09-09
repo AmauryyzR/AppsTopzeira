@@ -33,3 +33,6 @@ baly_*.png
 garrafa_*.png
 teste_*.png
 .playwright-cli/
+scratch_*.mjs
+scratch_*.cjs
+shanimationreal.glb

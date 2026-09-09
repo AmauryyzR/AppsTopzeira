@@ -55,7 +55,7 @@ export class PlayerCharacter {
   public cordRBone!: THREE.Bone;
 
   // Rest reference transform
-  private restHipsY = 0.35;
+  private restHipsY = 0.36;
 
   // Async load readiness
   public isLoaded = false;
@@ -73,11 +73,11 @@ export class PlayerCharacter {
   // Smooth aerial, stride and landing kinematics
   private currentArmRot = {
     leftX: 0,
-    leftZ: 0.12,
+    leftZ: -1.35,
     rightX: 0,
-    rightZ: -0.12,
-    forearmLX: 0.25,
-    forearmRX: 0.25,
+    rightZ: 1.35,
+    forearmLX: 0.22,
+    forearmRX: 0.22,
   };
   private currentLegRot = {
     leftX: 0,
@@ -95,7 +95,7 @@ export class PlayerCharacter {
   private currentTorsoRotY = 0;
   private currentScaleY = 1.0;
   private currentScaleXZ = 1.0;
-  private currentHipsY = 0.35;
+  private currentHipsY = 0.36;
 
   // Secondary physics states
   private currentTailRotX = 0;
@@ -301,135 +301,254 @@ export class PlayerCharacter {
   }
 
   private setupSkinnedSharkMesh(scene: THREE.Group, skinnedMesh: THREE.SkinnedMesh) {
-    // 1. World positions derived from vertex-weight centroids for all 41 bones
-    const WORLD_POS: Record<string, [number, number, number]> = {
-      Root: [0, 0, 0],
-      Armature: [0, 0, 0],
-      Hip: [0, 0.35, 0.07],
-      Pelvis: [0, 0.35, 0.07],
-      Waist: [-0.01, 0.37, 0.07],
-      Spine01: [-0.01, 0.44, 0.05],
-      Spine02: [-0.01, 0.53, 0.11],
-      NeckTwist01: [-0.019, 0.618, 0.101],
-      NeckTwist02: [-0.008, 0.630, 0.044],
-      Head: [-0.033, 0.720, 0.088],
+    // 1. Prepare Geometry: clear old degenerate joint weights from Tripo
+    const geom = skinnedMesh.geometry;
+    geom.deleteAttribute('skinIndex');
+    geom.deleteAttribute('skinWeight');
 
-      L_Clavicle: [0.050, 0.621, 0.083],
-      L_Upperarm: [0.085, 0.534, 0.090],
-      L_UpperarmTwist01: [0.070, 0.582, 0.082],
-      L_UpperarmTwist02: [0.098, 0.486, 0.098],
-      L_Forearm: [0.116, 0.426, 0.130],
-      L_ForearmTwist01: [0.116, 0.444, 0.113],
-      L_ForearmTwist02: [0.117, 0.408, 0.148],
-      L_Hand: [0.107, 0.323, 0.171],
+    const pos = geom.attributes.position;
+    const count = pos.count;
 
-      R_Clavicle: [-0.077, 0.610, 0.080],
-      R_Upperarm: [-0.121, 0.556, 0.055],
-      R_UpperarmTwist01: [-0.115, 0.611, 0.055],
-      R_UpperarmTwist02: [-0.127, 0.501, 0.054],
-      R_Forearm: [-0.158, 0.438, 0.077],
-      R_ForearmTwist01: [-0.150, 0.462, 0.061],
-      R_ForearmTwist02: [-0.167, 0.415, 0.093],
-      R_Hand: [-0.162, 0.335, 0.124],
+    // 2. Define Clean Bone Hierarchy and Rest Positions in Model Space (Height = 1.0m, T-Pose)
+    const BONE_SPECS = [
+      { name: 'Root', parent: null, pos: [0, 0, 0] },
+      { name: 'Hips', parent: 'Root', pos: [0, 0.36, 0.10] },
+      { name: 'Spine', parent: 'Hips', pos: [0, 0.44, 0.11] },
+      { name: 'Chest', parent: 'Spine', pos: [0, 0.53, 0.11] },
+      { name: 'Neck', parent: 'Chest', pos: [0, 0.60, 0.10] },
+      { name: 'Head', parent: 'Neck', pos: [0, 0.76, 0.11] },
+      { name: 'Tail', parent: 'Hips', pos: [0, 0.44, -0.11] },
 
-      L_Thigh: [0.055, 0.330, 0.080],
-      L_ThighTwist01: [0.043, 0.347, 0.070],
-      L_ThighTwist02: [0.070, 0.226, 0.119],
-      L_Calf: [0.098, 0.155, 0.124],
-      L_CalfTwist01: [0.098, 0.155, 0.124],
-      L_CalfTwist02: [0.117, 0.086, 0.127],
-      L_Foot: [0.143, 0.043, 0.145],
-      L_ToeBase: [0.167, 0.035, 0.196],
+      // Left Arm (T-pose extending +X)
+      { name: 'Clavicle.L', parent: 'Chest', pos: [0.06, 0.58, 0.10] },
+      { name: 'UpperArm.L', parent: 'Clavicle.L', pos: [0.13, 0.62, 0.09] },
+      { name: 'Forearm.L', parent: 'UpperArm.L', pos: [0.22, 0.62, 0.10] },
+      { name: 'Hand.L', parent: 'Forearm.L', pos: [0.31, 0.62, 0.11] },
 
-      R_Thigh: [-0.080, 0.330, 0.080],
-      R_ThighTwist01: [-0.091, 0.357, 0.109],
-      R_ThighTwist02: [-0.085, 0.227, 0.077],
-      R_Calf: [-0.094, 0.155, 0.068],
-      R_CalfTwist01: [-0.094, 0.145, 0.068],
-      R_CalfTwist02: [-0.078, 0.082, 0.056],
-      R_Foot: [-0.094, 0.045, 0.067],
-      R_ToeBase: [-0.107, 0.037, 0.122],
-    };
+      // Right Arm (T-pose extending -X)
+      { name: 'Clavicle.R', parent: 'Chest', pos: [-0.06, 0.58, 0.10] },
+      { name: 'UpperArm.R', parent: 'Clavicle.R', pos: [-0.13, 0.62, 0.09] },
+      { name: 'Forearm.R', parent: 'UpperArm.R', pos: [-0.22, 0.62, 0.10] },
+      { name: 'Hand.R', parent: 'Forearm.R', pos: [-0.31, 0.62, 0.11] },
 
-    // 2. Recursively set local positions from rest centroids
-    const setBoneLocalPositions = (bone: THREE.Object3D) => {
-      const wp = WORLD_POS[bone.name] || [0, 0, 0];
-      let parentWp: [number, number, number] = [0, 0, 0];
-      if (bone.parent && WORLD_POS[bone.parent.name]) {
-        parentWp = WORLD_POS[bone.parent.name];
+      // Left Leg
+      { name: 'Thigh.L', parent: 'Hips', pos: [0.08, 0.34, 0.10] },
+      { name: 'Shin.L', parent: 'Thigh.L', pos: [0.09, 0.22, 0.10] },
+      { name: 'Foot.L', parent: 'Shin.L', pos: [0.11, 0.09, 0.12] },
+      { name: 'Toe.L', parent: 'Foot.L', pos: [0.12, 0.03, 0.18] },
+
+      // Right Leg
+      { name: 'Thigh.R', parent: 'Hips', pos: [-0.08, 0.34, 0.10] },
+      { name: 'Shin.R', parent: 'Thigh.R', pos: [-0.09, 0.22, 0.10] },
+      { name: 'Foot.R', parent: 'Shin.R', pos: [-0.11, 0.09, 0.12] },
+      { name: 'Toe.R', parent: 'Foot.R', pos: [-0.12, 0.03, 0.18] },
+
+      // Hoodie Cords
+      { name: 'Cord.L', parent: 'Chest', pos: [0.03, 0.52, 0.19] },
+      { name: 'Cord.R', parent: 'Chest', pos: [-0.03, 0.52, 0.19] },
+    ];
+
+    const boneMap = new Map<string, THREE.Bone>();
+    const bones: THREE.Bone[] = [];
+    const boneWorldPos = new Map<string, THREE.Vector3>();
+    const boneIndices = new Map<string, number>();
+
+    BONE_SPECS.forEach((spec, idx) => {
+      const bone = new THREE.Bone();
+      bone.name = spec.name;
+      boneMap.set(spec.name, bone);
+      bones.push(bone);
+      boneIndices.set(spec.name, idx);
+      boneWorldPos.set(spec.name, new THREE.Vector3(spec.pos[0], spec.pos[1], spec.pos[2]));
+    });
+
+    BONE_SPECS.forEach((spec) => {
+      const bone = boneMap.get(spec.name)!;
+      if (!spec.parent) {
+        bone.position.set(spec.pos[0], spec.pos[1], spec.pos[2]);
+      } else {
+        const parentBone = boneMap.get(spec.parent)!;
+        parentBone.add(bone);
+        const pPos = boneWorldPos.get(spec.parent)!;
+        bone.position.set(spec.pos[0] - pPos.x, spec.pos[1] - pPos.y, spec.pos[2] - pPos.z);
       }
-      bone.position.set(wp[0] - parentWp[0], wp[1] - parentWp[1], wp[2] - parentWp[2]);
-      bone.rotation.set(0, 0, 0);
-      bone.scale.set(1, 1, 1);
-      bone.children.forEach((c) => {
-        if ((c as THREE.Bone).isBone) setBoneLocalPositions(c);
-      });
+    });
+
+    const rootBone = boneMap.get('Root')!;
+    rootBone.updateWorldMatrix(true, true);
+
+    const skeleton = new THREE.Skeleton(bones);
+    skeleton.calculateInverses();
+
+    // 3. Anatomical Skin Weights
+    const P = Object.fromEntries(boneWorldPos.entries()) as Record<string, THREE.Vector3>;
+    P.HandTipL = new THREE.Vector3(0.39, 0.62, 0.11);
+    P.HandTipR = new THREE.Vector3(-0.39, 0.62, 0.11);
+
+    const distToSeg = (pt: THREE.Vector3, A: THREE.Vector3, B: THREE.Vector3) => {
+      const v = new THREE.Vector3().subVectors(B, A);
+      const lenSq = v.lengthSq();
+      if (lenSq < 1e-6) return pt.distanceTo(A);
+      const toPt = new THREE.Vector3().subVectors(pt, A);
+      const t = THREE.MathUtils.clamp(toPt.dot(v) / lenSq, 0, 1);
+      const proj = new THREE.Vector3().copy(A).addScaledVector(v, t);
+      return pt.distanceTo(proj);
     };
 
-    const rootBone = scene.getObjectByName('Root') as THREE.Bone;
-    if (rootBone) setBoneLocalPositions(rootBone);
+    const skinIndices = new Uint16Array(count * 4);
+    const skinWeights = new Float32Array(count * 4);
 
-    // 3. Bind runtime animated bone pointers to the armature joints
-    const getBone = (name: string): THREE.Bone => {
-      const found = scene.getObjectByName(name);
-      return (found as THREE.Bone) || this.hipsBone;
-    };
+    for (let i = 0; i < count; i++) {
+      const pt = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+      const rawWeights = new Map<string, number>();
 
-    if (rootBone) this.rootBone = rootBone;
-    const hip = scene.getObjectByName('Hip') as THREE.Bone;
-    if (hip) {
-      this.hipsBone = hip;
-      this.restHipsY = hip.position.y;
-      this.currentHipsY = this.restHipsY;
+      // A. Head & Neck
+      if (pt.y > 0.56) {
+        if (pt.y > 0.64) {
+          const dHead = pt.distanceTo(P.Head);
+          rawWeights.set('Head', 1.0 / (dHead * dHead + 0.008));
+        } else {
+          const t = (pt.y - 0.56) / (0.64 - 0.56);
+          rawWeights.set('Head', t * 2.0);
+          rawWeights.set('Neck', (1 - t) * 2.0);
+        }
+      }
+
+      // B. Tail Fin Fluke (Rear lower back)
+      if (pt.z < -0.05 && pt.y >= 0.32 && pt.y <= 0.54) {
+        const dTail = pt.distanceTo(P.Tail);
+        rawWeights.set('Tail', 1.5 / (dTail * dTail + 0.004));
+      }
+
+      // C. Hoodie Cords (Front chest drawstrings)
+      if (pt.z > 0.17 && pt.y >= 0.42 && pt.y <= 0.58 && Math.abs(pt.x) < 0.08) {
+        if (pt.x > 0.01) rawWeights.set('Cord.L', 3.0);
+        else if (pt.x < -0.01) rawWeights.set('Cord.R', 3.0);
+      }
+
+      // D. Left Arm
+      if (pt.x > 0.11 && pt.y >= 0.46 && pt.y <= 0.74 && pt.z > -0.05) {
+        const dClav = distToSeg(pt, P['Clavicle.L'], P['UpperArm.L']);
+        const dUA = distToSeg(pt, P['UpperArm.L'], P['Forearm.L']);
+        const dFA = distToSeg(pt, P['Forearm.L'], P['Hand.L']);
+        const dH = distToSeg(pt, P['Hand.L'], P.HandTipL);
+        if (pt.x < 0.14) rawWeights.set('Clavicle.L', 1.0 / (dClav * dClav + 0.003));
+        rawWeights.set('UpperArm.L', 1.0 / (dUA * dUA + 0.002));
+        rawWeights.set('Forearm.L', 1.0 / (dFA * dFA + 0.002));
+        rawWeights.set('Hand.L', 1.0 / (dH * dH + 0.002));
+      }
+
+      // E. Right Arm
+      if (pt.x < -0.11 && pt.y >= 0.46 && pt.y <= 0.74 && pt.z > -0.05) {
+        const dClav = distToSeg(pt, P['Clavicle.R'], P['UpperArm.R']);
+        const dUA = distToSeg(pt, P['UpperArm.R'], P['Forearm.R']);
+        const dFA = distToSeg(pt, P['Forearm.R'], P['Hand.R']);
+        const dH = distToSeg(pt, P['Hand.R'], P.HandTipR);
+        if (pt.x > -0.14) rawWeights.set('Clavicle.R', 1.0 / (dClav * dClav + 0.003));
+        rawWeights.set('UpperArm.R', 1.0 / (dUA * dUA + 0.002));
+        rawWeights.set('Forearm.R', 1.0 / (dFA * dFA + 0.002));
+        rawWeights.set('Hand.R', 1.0 / (dH * dH + 0.002));
+      }
+
+      // F. Left Leg
+      if (pt.x > 0.01 && pt.y < 0.35) {
+        const dTh = distToSeg(pt, P['Thigh.L'], P['Shin.L']);
+        const dSh = distToSeg(pt, P['Shin.L'], P['Foot.L']);
+        const dFt = distToSeg(pt, P['Foot.L'], P['Toe.L']);
+        rawWeights.set('Thigh.L', 1.0 / (dTh * dTh + 0.004));
+        rawWeights.set('Shin.L', 1.0 / (dSh * dSh + 0.004));
+        rawWeights.set('Foot.L', 1.0 / (dFt * dFt + 0.003));
+        if (pt.y < 0.05 && pt.z > 0.14) {
+          rawWeights.set('Toe.L', 1.0 / (pt.distanceTo(P['Toe.L']) * pt.distanceTo(P['Toe.L']) + 0.002));
+        }
+      }
+
+      // G. Right Leg
+      if (pt.x < -0.01 && pt.y < 0.35) {
+        const dTh = distToSeg(pt, P['Thigh.R'], P['Shin.R']);
+        const dSh = distToSeg(pt, P['Shin.R'], P['Foot.R']);
+        const dFt = distToSeg(pt, P['Foot.R'], P['Toe.R']);
+        rawWeights.set('Thigh.R', 1.0 / (dTh * dTh + 0.004));
+        rawWeights.set('Shin.R', 1.0 / (dSh * dSh + 0.004));
+        rawWeights.set('Foot.R', 1.0 / (dFt * dFt + 0.003));
+        if (pt.y < 0.05 && pt.z > 0.14) {
+          rawWeights.set('Toe.R', 1.0 / (pt.distanceTo(P['Toe.R']) * pt.distanceTo(P['Toe.R']) + 0.002));
+        }
+      }
+
+      // H. Torso
+      if (pt.y >= 0.30 && pt.y <= 0.62 && Math.abs(pt.x) < 0.18 && pt.z >= -0.05) {
+        const dHips = distToSeg(pt, P.Hips, P.Spine);
+        const dSpine = distToSeg(pt, P.Spine, P.Chest);
+        const dChest = distToSeg(pt, P.Chest, P.Neck);
+        rawWeights.set('Hips', 1.0 / (dHips * dHips + 0.008));
+        rawWeights.set('Spine', 1.0 / (dSpine * dSpine + 0.008));
+        rawWeights.set('Chest', 1.0 / (dChest * dChest + 0.008));
+      }
+
+      // Safety fallback
+      if (rawWeights.size === 0) {
+        if (pt.y > 0.60) rawWeights.set('Head', 1.0);
+        else if (pt.y < 0.35) rawWeights.set(pt.x > 0 ? 'Foot.L' : 'Foot.R', 1.0);
+        else rawWeights.set('Chest', 1.0);
+      }
+
+      // Normalize top 4 weights
+      const sorted = Array.from(rawWeights.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
+      let sum = sorted.reduce((acc, curr) => acc + curr[1], 0);
+      if (sum === 0) sum = 1;
+
+      for (let k = 0; k < 4; k++) {
+        if (k < sorted.length) {
+          const bName = sorted[k][0];
+          const bIdx = boneIndices.get(bName)!;
+          skinIndices[i * 4 + k] = bIdx;
+          skinWeights[i * 4 + k] = sorted[k][1] / sum;
+        } else {
+          skinIndices[i * 4 + k] = 0;
+          skinWeights[i * 4 + k] = 0;
+        }
+      }
     }
 
-    const spine1 = scene.getObjectByName('Spine01') as THREE.Bone;
-    if (spine1) this.spineBone = spine1;
+    geom.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+    geom.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
 
-    const spine2 = scene.getObjectByName('Spine02') as THREE.Bone;
-    if (spine2) this.chestBone = spine2;
+    // 4. Bind SkinnedMesh to Skeleton
+    skinnedMesh.bind(skeleton);
 
-    const neck = (scene.getObjectByName('NeckTwist02') || scene.getObjectByName('NeckTwist01')) as THREE.Bone;
-    if (neck) this.neckBone = neck;
+    // 5. Connect runtime animated bone pointers
+    this.rootBone = rootBone;
+    this.hipsBone = boneMap.get('Hips')!;
+    this.spineBone = boneMap.get('Spine')!;
+    this.chestBone = boneMap.get('Chest')!;
+    this.neckBone = boneMap.get('Neck')!;
+    this.headBone = boneMap.get('Head')!;
+    this.tailBone = boneMap.get('Tail')!;
 
-    const head = scene.getObjectByName('Head') as THREE.Bone;
-    if (head) this.headBone = head;
+    this.upperArmL = boneMap.get('UpperArm.L')!;
+    this.forearmL = boneMap.get('Forearm.L')!;
+    this.handL = boneMap.get('Hand.L')!;
 
-    // Arms
-    const uArmL = scene.getObjectByName('L_Upperarm') as THREE.Bone;
-    if (uArmL) this.upperArmL = uArmL;
-    const fArmL = scene.getObjectByName('L_Forearm') as THREE.Bone;
-    if (fArmL) this.forearmL = fArmL;
-    const handL = scene.getObjectByName('L_Hand') as THREE.Bone;
-    if (handL) this.handL = handL;
+    this.upperArmR = boneMap.get('UpperArm.R')!;
+    this.forearmR = boneMap.get('Forearm.R')!;
+    this.handR = boneMap.get('Hand.R')!;
 
-    const uArmR = scene.getObjectByName('R_Upperarm') as THREE.Bone;
-    if (uArmR) this.upperArmR = uArmR;
-    const fArmR = scene.getObjectByName('R_Forearm') as THREE.Bone;
-    if (fArmR) this.forearmR = fArmR;
-    const handR = scene.getObjectByName('R_Hand') as THREE.Bone;
-    if (handR) this.handR = handR;
+    this.thighL = boneMap.get('Thigh.L')!;
+    this.shinL = boneMap.get('Shin.L')!;
+    this.footL = boneMap.get('Foot.L')!;
 
-    // Legs
-    const thighL = scene.getObjectByName('L_Thigh') as THREE.Bone;
-    if (thighL) this.thighL = thighL;
-    const calfL = scene.getObjectByName('L_Calf') as THREE.Bone;
-    if (calfL) this.shinL = calfL;
-    const footL = scene.getObjectByName('L_Foot') as THREE.Bone;
-    if (footL) this.footL = footL;
+    this.thighR = boneMap.get('Thigh.R')!;
+    this.shinR = boneMap.get('Shin.R')!;
+    this.footR = boneMap.get('Foot.R')!;
 
-    const thighR = scene.getObjectByName('R_Thigh') as THREE.Bone;
-    if (thighR) this.thighR = thighR;
-    const calfR = scene.getObjectByName('R_Calf') as THREE.Bone;
-    if (calfR) this.shinR = calfR;
-    const footR = scene.getObjectByName('R_Foot') as THREE.Bone;
-    if (footR) this.footR = footR;
+    this.cordLBone = boneMap.get('Cord.L')!;
+    this.cordRBone = boneMap.get('Cord.R')!;
 
-    // 4. Update matrices and calculate exact inverse bind matrices
-    scene.updateMatrixWorld(true);
-    skinnedMesh.skeleton.calculateInverses();
+    this.restHipsY = this.hipsBone.position.y;
+    this.currentHipsY = this.restHipsY;
 
-    // 5. Calibrate material colors, roughness and shadows specifically for shark chibi
+    // 6. Calibrate material colors, roughness and shadows for shanimationreal
     skinnedMesh.castShadow = true;
     skinnedMesh.receiveShadow = true;
     skinnedMesh.frustumCulled = false;
@@ -439,17 +558,22 @@ export class PlayerCharacter {
       mats.forEach((m) => {
         if ((m as THREE.MeshStandardMaterial).isMeshStandardMaterial) {
           const stdMat = m as THREE.MeshStandardMaterial;
-          // Compensate for 0.80 baseColorFactor to make colors vibrant and clean
-          stdMat.color.setRGB(1.08, 1.08, 1.08);
-          stdMat.roughness = 0.46;
+          stdMat.color.setRGB(1.0, 1.0, 1.0);
+          stdMat.roughness = 0.48;
           stdMat.metalness = 0.0;
+          stdMat.side = THREE.DoubleSide;
           stdMat.shadowSide = THREE.DoubleSide;
+          if (stdMat.map) {
+            stdMat.map.colorSpace = THREE.SRGBColorSpace;
+            stdMat.map.needsUpdate = true;
+          }
         }
       });
     }
 
-    // 6. Add loaded scene directly to modelRoot
-    this.modelRoot.add(scene);
+    // 7. Add root bone and skinned mesh to modelRoot
+    this.modelRoot.add(rootBone);
+    this.modelRoot.add(skinnedMesh);
   }
 
   private attachSegmentedParts(scene: THREE.Group) {
@@ -579,12 +703,15 @@ export class PlayerCharacter {
     this.modelRoot.rotation.x = this.currentForwardLean;
 
     // Kinematics Target Registers
+    const ARM_REST_Z_L = -1.35;
+    const ARM_REST_Z_R = 1.35;
+
     let targetLeftArmX = 0;
-    let targetLeftArmZ = 0.12;
+    let targetLeftArmZ = ARM_REST_Z_L;
     let targetRightArmX = 0;
-    let targetRightArmZ = -0.12;
-    let targetForearmLX = 0.25;
-    let targetForearmRX = 0.25;
+    let targetRightArmZ = ARM_REST_Z_R;
+    let targetForearmLX = 0.22;
+    let targetForearmRX = 0.22;
 
     let targetLeftLegX = 0;
     let targetLeftLegZ = 0;
@@ -617,9 +744,9 @@ export class PlayerCharacter {
 
       if (verticalVelocity >= 0) {
         // --- ASCENT / TRIUMPHANT ATHLETIC BRAWLER LEAP ---
-        // Arms: Celebratory victory leap raised high
-        targetLeftArmZ = 2.65 * riseFactor + 0.35 * (1 - riseFactor);
-        targetRightArmZ = -2.65 * riseFactor - 0.35 * (1 - riseFactor);
+        // Arms: Raised upward from sides
+        targetLeftArmZ = ARM_REST_Z_L + 1.25 * riseFactor;
+        targetRightArmZ = ARM_REST_Z_R - 1.25 * riseFactor;
         targetLeftArmX = -0.22 * riseFactor;
         targetRightArmX = -0.22 * riseFactor;
         targetForearmLX = 0.45 * riseFactor;
@@ -649,8 +776,8 @@ export class PlayerCharacter {
       } else {
         // --- DESCENT / FAST AERODYNAMIC GLIDE ---
         // Arms: Spread wide like glider fins for aerodynamic stabilization
-        targetLeftArmZ = 0.95 * fallFactor + 0.50 * (1 - fallFactor);
-        targetRightArmZ = -0.95 * fallFactor - 0.50 * (1 - fallFactor);
+        targetLeftArmZ = ARM_REST_Z_L + 0.65 * fallFactor;
+        targetRightArmZ = ARM_REST_Z_R - 0.65 * fallFactor;
         targetLeftArmX = 0.24 * fallFactor;
         targetRightArmX = 0.24 * fallFactor;
         targetForearmLX = 0.32 * fallFactor;
@@ -698,8 +825,8 @@ export class PlayerCharacter {
         // Arms drop to sides
         targetLeftArmX = squashFactor * 0.55;
         targetRightArmX = squashFactor * 0.55;
-        targetLeftArmZ = 0.24 + squashFactor * 0.35;
-        targetRightArmZ = -0.24 - squashFactor * 0.35;
+        targetLeftArmZ = ARM_REST_Z_L - squashFactor * 0.25;
+        targetRightArmZ = ARM_REST_Z_R + squashFactor * 0.25;
         targetForearmLX = 0.25 + squashFactor * 0.40;
         targetForearmRX = 0.25 + squashFactor * 0.40;
 
@@ -729,10 +856,10 @@ export class PlayerCharacter {
         // Arms: Punchy counter-pump
         targetLeftArmX = -sinStride * 0.88;
         targetRightArmX = sinStride * 0.88;
-        targetLeftArmZ = 0.18 + Math.abs(cosStride) * 0.10;
-        targetRightArmZ = -0.18 - Math.abs(cosStride) * 0.10;
-        targetForearmLX = 0.35 + Math.max(0, sinStride) * 0.48;
-        targetForearmRX = 0.35 + Math.max(0, -sinStride) * 0.48;
+        targetLeftArmZ = ARM_REST_Z_L - Math.abs(cosStride) * 0.08;
+        targetRightArmZ = ARM_REST_Z_R + Math.abs(cosStride) * 0.08;
+        targetForearmLX = 0.32 + Math.max(0, sinStride) * 0.45;
+        targetForearmRX = 0.32 + Math.max(0, -sinStride) * 0.45;
 
         const bounce = Math.abs(cosStride) * 0.035;
         targetHipsY = this.restHipsY + bounce;
@@ -753,13 +880,13 @@ export class PlayerCharacter {
         const breathe = Math.sin(this.idleTime * 2.8) * 0.012;
         targetHipsY = this.restHipsY + breathe * 1.2;
 
-        targetLeftArmZ = 0.12 - breathe * 0.4;
-        targetRightArmZ = -0.12 + breathe * 0.4;
+        targetLeftArmZ = ARM_REST_Z_L - breathe * 0.3;
+        targetRightArmZ = ARM_REST_Z_R + breathe * 0.3;
 
         targetTorsoRotX = breathe * 0.8;
         targetHeadRotX = -breathe * 0.5;
-        targetForearmLX = 0.25;
-        targetForearmRX = 0.25;
+        targetForearmLX = 0.22;
+        targetForearmRX = 0.22;
 
         // Gentle hydrodynamic tail sway
         tailYawTarget = Math.sin(this.idleTime * 2.5) * 0.12;

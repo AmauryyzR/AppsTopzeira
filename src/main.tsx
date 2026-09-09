@@ -6,15 +6,21 @@ import './index.css';
 const JogoTopApp = lazy(() => import('./apps/jogotop/App'));
 const Game3DApp = lazy(() => import('./apps/3dgame/App'));
 const ModelsApp = lazy(() => import('./apps/models/App'));
+const EnemApp = lazy(() => import('./apps/enem/App'));
 
 const route = window.location.pathname.replace(/\/+$/, '').toLowerCase();
 const isJogoTop = route === '/jogotop';
 const is3DGame = route === '/3dgame';
 const isModels = route === '/models';
+const isEnem = route === '/enem';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {isModels ? (
+    {isEnem ? (
+      <Suspense fallback={null}>
+        <EnemApp />
+      </Suspense>
+    ) : isModels ? (
       <Suspense fallback={null}>
         <ModelsApp />
       </Suspense>

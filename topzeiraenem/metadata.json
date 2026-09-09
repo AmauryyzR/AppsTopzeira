@@ -1,0 +1,6 @@
+{
+  "name": "TopzeiraEnem",
+  "description": "Plataforma minimalista de conteúdos e tópicos do ENEM com estrutura hierárquica e renderização LaTeX.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

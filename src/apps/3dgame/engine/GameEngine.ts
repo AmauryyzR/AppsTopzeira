@@ -166,14 +166,14 @@ export class GameEngine {
 
   private setupLighting() {
     // Hemispheric Ambient Light (Calibrated anime horizon: Sky cerulean + emerald grass bounce)
-    // Intensity raised to 0.74 so the underside of the shark hoodie and character face are vibrantly illuminated
-    const hemiLight = new THREE.HemisphereLight(0xbde0fe, 0x1e3a29, 0.74);
+    // Intensity raised to 0.88 so the underside of the shark hoodie and character face are vibrantly illuminated
+    const hemiLight = new THREE.HemisphereLight(0xdceeff, 0x1c3a28, 0.88);
     hemiLight.position.set(0, 50, 0);
     this.scene.add(hemiLight);
     this.hemiLight = hemiLight;
 
     // Directional Sunlight with Soft PCF Shadows (Photon Shaders 5400K Warm Key Sun)
-    const sunLight = new THREE.DirectionalLight(0xfff8e7, 1.45);
+    const sunLight = new THREE.DirectionalLight(0xfffbf0, 1.55);
     sunLight.position.set(45, 65, 35);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -185,21 +185,26 @@ export class GameEngine {
     sunLight.shadow.camera.top = 50;
     sunLight.shadow.camera.bottom = -50;
     sunLight.shadow.bias = -0.00005;
-    sunLight.shadow.normalBias = 0.035;
+    sunLight.shadow.normalBias = 0.022;
     sunLight.shadow.radius = 2.6; // Soft variable penumbra filter
     this.scene.add(sunLight);
     this.sunLight = sunLight;
 
     // Soft Sky Fill Light from opposite angle (Mie atmospheric diffuse scatter)
-    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.42);
-    fillLight.position.set(-35, 40, -35);
+    const fillLight = new THREE.DirectionalLight(0xa5d8ff, 0.58);
+    fillLight.position.set(-35, 35, 25);
     this.scene.add(fillLight);
     this.fillLight = fillLight;
 
     // Stylized Warm Rim / Backlight for crisp character silhouette and dorsal fin separation
-    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.96);
-    rimLight.position.set(-25, 45, -40);
+    const rimLight = new THREE.DirectionalLight(0xffedd5, 1.20);
+    rimLight.position.set(-22, 48, -42);
     this.scene.add(rimLight);
+
+    // Front low bounce light to ensure hoodie face & teeth are never occluded in dark shadow
+    const faceBounce = new THREE.DirectionalLight(0xfff3e8, 0.40);
+    faceBounce.position.set(0, 15, 35);
+    this.scene.add(faceBounce);
   }
 
   private handleResize() {

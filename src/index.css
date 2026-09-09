@@ -6,6 +6,7 @@
     --font-outfit: 'Outfit', sans-serif;
     --font-jakarta: 'Plus Jakarta Sans', sans-serif;
     --font-space: 'Space Grotesk', monospace;
+    --font-serif: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
   }
   
   body {
@@ -27,6 +28,10 @@
 
 .font-space {
   font-family: var(--font-space);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
 }
 
 /* Hide Scrollbars completely */
