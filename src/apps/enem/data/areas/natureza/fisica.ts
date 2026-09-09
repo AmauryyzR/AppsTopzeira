@@ -177,6 +177,37 @@ export const fisica: Discipline = {
           ]
         },
         {
+          id: 'dilatacao-termica-comportamento-agua',
+          title: 'Dilatação Térmica dos Sólidos e Líquidos e Comportamento Anômalo da Água',
+          enemWeight: 'Alta',
+          summary: 'A variação dimensional de corpos sob aquecimento, dilatação aparente versus real de fluidos e a anomalia hidrológica essencial à vida.',
+          keyConcepts: [
+            '**Origem Microscópica da Dilatação**: O aumento de temperatura eleva a energia cinética média e a amplitude de oscilação dos átomos na rede cristalina; como a curva de energia potencial interatômica é assimétrica, a distância média entre os núcleos atômicos cresce, provocando a expansão macroscópica do material.',
+            '**Dilatação Térmica dos Sólidos**: 1) **Linear** (predomínio de uma dimensão, como trilhos, fios e barras): $\\Delta L = L_0 \\cdot \\alpha \\cdot \\Delta T$; 2) **Superficial** (placas, chapas): $\\Delta A = A_0 \\cdot \\beta \\cdot \\Delta T$, com $\\beta = 2\\alpha$; 3) **Volumétrica** (blocos sólidos): $\\Delta V = V_0 \\cdot \\gamma \\cdot \\Delta T$, com $\\gamma = 3\\alpha$. Dilatação de orifícios/buracos: uma chapa perfurada comporta-se como se o orifício fosse feito do próprio material (o buraco aumenta exatamente na mesma proporção em que a chapa se dilata).',
+            '**Aplicações Práticas de Engenharia**: 1) **Juntas de Dilatação**: espaçamentos intencionais deixados entre vãos de viadutos, pontes de concreto e trilhos de trens para evitar empenamento e colapso por tensões térmicas no verão; 2) **Lâminas Bimetálicas**: duas tiras de metais com coeficientes de dilatação linear diferentes ($\alpha_A > \alpha_B$) soldadas lado a lado; ao serem aquecidas, a lâmina curva-se em direção ao metal de menor coeficiente, abrindo ou fechando contatos elétricos em termostatos de ferros de passar e disjuntores.',
+            '**Dilatação Térmica dos Líquidos**: Líquidos não possuem forma própria e requerem recipientes sólidos. Como o frasco de vidro também se dilata ao ser aquecido, o líquido extravasado corresponde apenas à **Dilatação Aparente**. A dilatação real do líquido é a soma vetorial escalar da dilatação aparente com a dilatação volumétrica do recipiente: $\\Delta V_{\\text{real}} = \\Delta V_{\\text{aparente}} + \\Delta V_{\\text{frasco}}$.',
+            '**Comportamento Anômalo da Água (0 °C a 4 °C)**: A imensa maioria das substâncias dilata-se continuamente com o aquecimento. A água líquida apresenta um comportamento anômalo exclusivo entre $0^\circ\\text{C}$ e $4^\circ\\text{C}$: ao ser aquecida nessa faixa, suas pontes de hidrogênio colapsam em arranjos mais compactos e o seu volume DIMINUI (contração volumétrica), atingindo sua **DENSIDADE MÁXIMA a $4^\circ\\text{C}$** ($1{,}000\\text{ g/cm}^3$). Acima de $4^\circ\\text{C}$, ela passa a dilatar-se normalmente.',
+            '**Importância Biológica da Anomalia da Água**: Em invernos rigorosos em lagos temperados e polares, a água da superfície resfria-se até $4^\circ\\text{C}$, tornando-se mais densa e afundando (correntes de convecção). Quando toda a coluna atinge $4^\circ\\text{C}$, a água superficial resfria até $0^\circ\\text{C}$ e congela. Como o gelo é menos denso ($0{,}92\\text{ g/cm}^3$), ele flutua na superfície, atuando como um formidável **isolante térmico** que impede que o calor do fundo escape. Com isso, o fundo do lago permanece líquido a $4^\circ\\text{C}$, preservando a sobrevivência de peixes, algas e ecossistemas aquáticos submersos.'
+          ],
+          formulas: [
+            {
+              id: 'dilatacao-linear-formula',
+              name: 'Equações da Dilatação Térmica (Linear e Volumétrica)',
+              latex: '\\Delta L = L_0 \\cdot \\alpha \\cdot \\Delta T, \\quad \\Delta V_{\\text{real}} = \\Delta V_{\\text{aparente}} + \\Delta V_{\\text{frasco}}',
+              description: 'Onde alpha é o coeficiente de dilatação linear (°C^-1) e gamma é o volumétrico (gamma = 3 alpha).',
+              variables: [
+                { symbol: '\\Delta L', meaning: 'Variação no comprimento', unit: 'm' },
+                { symbol: 'L_0', meaning: 'Comprimento inicial', unit: 'm' },
+                { symbol: '\\alpha', meaning: 'Coeficiente de dilatação térmica linear', unit: '°C⁻¹ ou K⁻¹' },
+                { symbol: '\\Delta T', meaning: 'Variação de temperatura', unit: '°C ou K' }
+              ]
+            }
+          ],
+          tips: [
+            'Pegadinha recorrente no ENEM: Se uma arruela de metal com um furo central for aquecida no fogo, o furo central FICA MAIOR e não menor! O furo expande-se exatamente como se fosse um disco sólido de metal sofrendo dilatação térmica.'
+          ]
+        },
+        {
           id: 'ondulatoria-fenomenos-doppler',
           title: 'Ondulatória: Fenômenos Ondulatórios, Espectro Eletromagnético e Efeito Doppler',
           enemWeight: 'Muito Alta',
@@ -314,6 +345,37 @@ export const fisica: Discipline = {
           ],
           tips: [
             'Cálculo do chuveiro no ENEM: Um chuveiro de $5500\\text{ W}$ ($5,5\\text{ kW}$) utilizado por 4 pessoas em banhos de 15 minutos diários cada (total de 1 hora/dia) consome $5,5\\text{ kW} \\times 1\\text{ h} = 5,5\\text{ kWh}$ por dia. Em um mês de 30 dias: $5,5 \\times 30 = 165\\text{ kWh}$!'
+          ]
+        },
+        {
+          id: 'leis-kirchhoff-instrumentos-medicao',
+          title: 'Leis de Kirchhoff, Ponte de Wheatstone e Instrumentos de Medição (Voltímetro e Amperímetro)',
+          enemWeight: 'Alta',
+          summary: 'Conservação da carga e da energia em malhas elétricas complexas, circuitos em ponte de Wheatstone e a conexão correta de aparelhos de medição ideais e dispositivos de segurança.',
+          keyConcepts: [
+            '**Primeira Lei de Kirchhoff (Lei dos Nós)**: Em qualquer ponto de ramificação (nó) de um circuito elétrico, a soma das intensidades das correntes elétricas que chegam é RIGOROSAMENTE IGUAL à soma das que saem: $\\sum I_{\\text{chega}} = \\sum I_{\\text{sai}}$. Essa lei é consequência direta do Princípio da Conservação da Carga Elétrica (a carga não se acumula nem é destruída no nó).',
+            '**Segunda Lei de Kirchhoff (Lei das Malhas)**: Ao percorrer qualquer malha fechada de um circuito em um sentido pré-determinado, a soma algébrica de todas as diferenças de potencial elétrico (quedas de tensão resistivas e forças eletromotrizes de geradores e receptores) é NULA: $\\sum \\Delta V = 0$. Essa lei expressa o Princípio da Conservação da Energia mecânica e elétrica ao longo de um percurso fechado conservativo.',
+            '**Ponte de Wheatstone em Equilíbrio**: Circuito formado por quatro resistores dispostos em losango interligados por um galvanômetro sensível central. Quando o produto das resistências dos braços opostos é igual ($R_1 \\cdot R_4 = R_2 \\cdot R_3$), a diferença de potencial entre os terminais centrais anula-se ($V_C - V_D = 0$), e a corrente no galvanômetro é NULA ($I_G = 0$). Aplicação tecnológica: medição de resistências desconhecidas com altíssima precisão e sensores industriais de deformação mecânica (*strain gauges*) em balanças digitais.',
+            '**Voltímetro Ideal**: Instrumento destinado a medir a diferença de potencial (tensão/ddp) entre dois pontos de um circuito. Deve ser conectado SEMPRE em PARALELO com o componente a ser medido. Um voltímetro IDEAL possui **resistência interna infinitamente grande ($R_v \\to \\infty$)**, de modo a não desviar corrente elétrica do circuito original.',
+            '**Amperímetro Ideal**: Instrumento destinado a medir a intensidade da corrente elétrica que atravessa um condutor. Deve ser inserido SEMPRE em SÉRIE com o ramo analisado (a corrente precisa passar por dentro dele). Um amperímetro IDEAL possui **resistência interna rigorosamente nula ($R_a \\to 0$)**, para não introduzir nenhuma resistência adicional nem provocar queda de tensão no circuito.',
+            '**Curto-Circuito, Fusíveis e Disjuntores**: Um curto-circuito ocorre quando dois pontos de potenciais elétricos distintos são unidos por um condutor de resistência praticamente nula ($R \\to 0$). Pela 1ª Lei de Ohm ($I = U/R$), a corrente elétrica dispara para valores gigantescos ($I \\to \\infty$), provocando intenso superaquecimento por Efeito Joule e risco de incêndio. Para proteger as instalações, utilizam-se **Fusíveis** (fio calibrado com baixo ponto de fusão que se funde e quebra o circuito) e **Disjuntores Termomagnéticos** (chaves automáticas rearmáveis que desarmam por dilatação térmica de lâmina bimetálica ou por indução eletromagnética imediata).'
+          ],
+          formulas: [
+            {
+              id: 'leis-kirchhoff-formula',
+              name: 'Leis de Kirchhoff dos Nós e das Malhas',
+              latex: '\\sum I_{\\text{chega}} = \\sum I_{\\text{sai}}, \\quad \\sum \\mathcal{E} - \\sum (R \\cdot I) = 0',
+              description: 'Conservação da carga em cada nó e conservação da energia em malhas fechadas.'
+            },
+            {
+              id: 'ponte-wheatstone-formula',
+              name: 'Condição de Equilíbrio da Ponte de Wheatstone',
+              latex: 'R_1 \\cdot R_4 = R_2 \\cdot R_3 \\iff I_{\\text{galvanômetro}} = 0',
+              description: 'O produto cruzado das resistências opostas é igual quando não há corrente no ramo intermediário.'
+            }
+          ],
+          tips: [
+            'Erros clássicos no laboratório e no ENEM: Se você ligar um AMPERÍMETRO em paralelo com uma lâmpada, como a resistência dele é quase zero ($R_a \\to 0$), ele criará um CURTO-CIRCUITO na lâmpada, apagando-a e podendo queimar o fusível do aparelho! Já se você ligar um VOLTÍMETRO em série por engano, como sua resistência é gigantesca ($R_v \\to \\infty$), ele praticamente interromperá a corrente do circuito, fazendo a lâmpada apagar.'
           ]
         },
         {

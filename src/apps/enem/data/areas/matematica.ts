@@ -124,6 +124,44 @@ export const matematica: KnowledgeArea = {
               ]
             },
             {
+              id: 'matematica-financeira-amortizacao',
+              title: 'Matemática Financeira: Sistemas de Amortização (SAC e Price) e Inflação',
+              enemWeight: 'Alta',
+              summary: 'A composição das parcelas em empréstimos bancários, comparação dinâmica entre as tabelas SAC e Price, e cálculo da taxa real de juros descontada a inflação.',
+              keyConcepts: [
+                '**Estrutura Básica da Prestação de Financiamento**: Em qualquer sistema de amortização, cada prestação periódica ($P$) é composta pela soma de duas parcelas fundamentais: a **Amortização** ($A$, restituição efetiva do capital principal emprestado que reduz o saldo devedor) e os **Juros** ($J$, remuneração do banco calculada sobre o saldo devedor remanescente do período anterior): $P_k = A_k + J_k$.',
+                '**Sistema de Amortização Constante (SAC)**: O valor da amortização do principal é RIGOROSAMENTE IDÊNTICO em todas as $n$ parcelas: $A = \\frac{C}{n}$. Como a cada mês o saldo devedor diminui em uma quantia fixa, os juros incidentes sobre o saldo diminuem mês a mês. Consequência: as **prestações são estritamente DECRESCENTES** ao longo do tempo (a primeira parcela é a mais alta e a última é a mais barata). É o sistema padrão utilizado em financiamentos imobiliários habitacionais de longo prazo no Brasil.',
+                '**Sistema Francês de Amortização (Tabela Price)**: Caracterizado por **prestações periódicas RIGOROSAMENTE IGUAIS e constantes** ($P_1 = P_2 = \\dots = P_n$). Na primeira parcela, o saldo devedor é máximo, logo a maior parte do valor pago é consumida por juros e a cota de amortização do principal é minúscula. Ao longo dos meses, os juros decrescem e a amortização cresce exponencialmente. Muito utilizado no comércio, crediários de lojas e financiamento de veículos automotores.',
+                '**Inflação, Valor Nominal e Poder de Compra**: A inflação é o aumento generalizado e contínuo no nível de preços de uma economia, provocando a perda do poder aquisitivo da moeda. O **Valor Nominal** expressa o valor de face numérico em reais; o **Valor Real** expressa a quantidade concreta de bens e serviços que esse dinheiro compra, descontada a inflação acumulada.',
+                '**Taxa Real de Juros (Equação de Fisher)**: Se uma aplicação rende taxa aparente nominal $i_{\\text{aparente}}$ e a inflação do período foi $I_{\\text{inflação}}$, o rendimento real ganho $i_{\\text{real}}$ NÃO é a simples subtração $(i_{\\text{aparente}} - I_{\\text{inflação}})$, mas sim a relação exata: $(1 + i_{\\text{aparente}}) = (1 + i_{\\text{real}}) \\cdot (1 + I_{\\text{inflação}})$.'
+              ],
+              formulas: [
+                {
+                  id: 'sac-prestacao-formula',
+                  name: 'Amortização e Prestação no Sistema SAC',
+                  latex: 'A = \\frac{C}{n}, \\quad J_k = i \\cdot S_{k-1}, \\quad P_k = A + J_k',
+                  description: 'No SAC a amortização é fixa e a prestação Pk diminui linearmente a cada mês k.',
+                  variables: [
+                    { symbol: 'A', meaning: 'Cota de amortização fixa mensal', unit: 'R$' },
+                    { symbol: 'C', meaning: 'Capital inicial financiado', unit: 'R$' },
+                    { symbol: 'n', meaning: 'Número total de meses/parcelas', unit: '-' },
+                    { symbol: 'J_k', meaning: 'Juros cobrados na parcela k', unit: 'R$' },
+                    { symbol: 'S_{k-1}', meaning: 'Saldo devedor do mês imediatamente anterior', unit: 'R$' },
+                    { symbol: 'P_k', meaning: 'Valor total da prestação k', unit: 'R$' }
+                  ]
+                },
+                {
+                  id: 'fisher-taxa-real',
+                  name: 'Equação de Fisher para Taxa Real de Juros',
+                  latex: '1 + i_{\\text{real}} = \\frac{1 + i_{\\text{aparente}}}{1 + I_{\\text{inflação}}}',
+                  description: 'Cálculo do ganho de poder de compra real descontando a inflação.'
+                }
+              ],
+              tips: [
+                'Comparação clássica no ENEM: Em um mesmo prazo e taxa de juros, o SAC tem parcelas iniciais mais pesadas, mas amortiza a dívida mais depressa, resultando em um MONTANTE TOTAL DE JUROS MENOR pago ao final do contrato em comparação com a Tabela Price.'
+              ]
+            },
+            {
               id: 'escalas-conversao',
               title: 'Escalas Cartográficas e Conversão de Unidades Métricas',
               enemWeight: 'Muito Alta',

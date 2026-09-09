@@ -141,6 +141,23 @@ export const quimica: Discipline = {
           tips: [
             'O teste do bafômetro clássico utiliza a reação redox em que o etanol expirado pelo motorista oxida a ácido acético enquanto os íons dicromato alaranjados ($Cr_2O_7^{2-}$, cromo +6) reduzem a íons sulfato de cromo esverdeados ($Cr^{3+}$, cromo +3), mudando a cor do tubo.'
           ]
+        },
+        {
+          id: 'bioquimica-polimeros-microplasticos',
+          title: 'Bioquímica, Polímeros Sintéticos, Bioplásticos e Microplásticos',
+          enemWeight: 'Muito Alta',
+          summary: 'A estrutura química de biomoléculas (carboidratos, lipídios e proteínas), as reações de polimerização por adição e condensação, e o impacto ambiental dos microplásticos.',
+          keyConcepts: [
+            '**Biomoléculas e Ligações Peptídicas**: 1) **Carboidratos**: poli-hidroxialdeídos ou poli-hidroxicetonas; monossacarídeos como glicose e frutose ($C_6H_{12}O_6$) polimerizam-se por ligações glicosídicas formando polissacarídeos de reserva energética (**Amido** em vegetais e **Glicogênio** em animais) e estruturais (**Celulose** com ligações $\\beta-1,4$ insolúveis não digeridas por humanos); 2) **Proteínas**: polímeros lineares de L-aminoácidos unidos por **Ligações Peptídicas** (ligação amídica $-CO-NH-$ formada pela reação de condensação entre o grupo carboxila de um aminoácido e o grupo amina do seguinte, com liberação de uma molécula de água); 3) **Desnaturação Proteica**: rompimento das interações secundárias, terciárias e quaternárias (pontes de hidrogênio e dissulfeto) por calor excessivo ou variação extrema de pH, inativando a função biológica da proteína sem romper a sequência primária de aminoácidos.',
+            '**Polímeros Sintéticos de Adição**: Formados pela quebra sucessiva da ligação dupla ($\pi$) de monômeros vinílicos sem eliminação de subprodutos: 1) **Polietileno (PE)**: monômero etileno/eteno ($CH_2=CH_2$), originando PEBD (baixa densidade, flexível, sacolas plásticas) e PEAD (alta densidade, rígido, frascos de xampu); 2) **Polipropileno (PP)**: monômero propeno (tampas de garrafa, seringas); 3) **Policloreto de Vinila (PVC)**: canos de esgoto e tubulações prediais; 4) **Politetrafluoretileno (PTFE / Teflon)**: monômero tetrafluoroeteno ($CF_2=CF_2$, resistente a calor e ácidos, antiaderente de panelas).',
+            '**Polímeros de Condensação / Eliminação**: Formados pela reação entre monômeros bifuncionais distintos com eliminação concomitante de uma molécula pequena (geralmente água $H_2O$): 1) **Poliésteres (PET - Politereftalato de Etileno)**: reação entre ácido tereftálico e etilenoglicol gerando ligações éster; usado em garrafas de refrigerante e fibras têxteis; 2) **Poliamidas (Nylon 6,6)**: reação entre diamina e diácido carboxílico gerando ligações amida idênticas às peptídicas; 3) **Baquelite**: polímero termorrígido reticulado de fenol e formaldeído.',
+            '**Termoplásticos versus Termofixos (Termorrígidos)**: Termoplásticos possuem cadeias lineares ou ramificadas mantidas por forças intermoleculares, amolecendo ao calor e podendo ser fundidos e moldados repetidas vezes (100% recicláveis mecanicamente: PET, PE, PP, PVC, PS); Termofixos possuem ligações cruzadas covalentes tridimensionais rígidas que não se fundem com o aquecimento, sofrendo degradação térmica irreversível e impossibilitando a reciclagem mecânica convencional (baquelite, epóxi, borracha vulcanizada de pneus).',
+            '**Bioplásticos e a Crise dos Microplásticos**: Plásticos convencionais derivados do petróleo levam centenas de anos para degradar. Os **Bioplásticos Biodegradáveis** (como o PLA - Ácido Polilático, obtido da fermentação bacteriana do amido de milho ou cana) são degradados por micro-organismos em semanas sob compostagem industrial gerando $H_2O$ e $CO_2$. A fragmentação física e fotoquímica de plásticos descartados gera **Microplásticos** ($< 5\\text{ mm}$) e nanoplásticos, que adsorvem poluentes orgânicos persistentes (POPs) e pesticidas na água, são ingeridos por animais filtrantes e zooplâncton, sofrendo biomagnificação trófica até a alimentação humana.',
+            '**Reciclagem Mecânica versus Química**: A reciclagem mecânica consiste em triagem, lavagem, moagem e reextrusão térmica dos termoplásticos; a reciclagem química despolimeriza o polímero de volta aos seus monômeros originais por hidrólise, pirólise ou gaseificação, permitindo o reaproveitamento com qualidade idêntica à da matéria-prima virgem.'
+          ],
+          tips: [
+            'Diferença crucial no ENEM: Um plástico ser "de origem vegetal" (como o polietileno verde feito de etanol de cana-de-açúcar) NÃO significa que ele seja biodegradável! O PE verde tem estrutura química idêntica ao PE fóssil do petróleo e persiste no meio ambiente pelos mesmos séculos se descartado incorretamente. Já o PLA é verdadeiramente biodegradável.'
+          ]
         }
       ]
     },
@@ -306,6 +323,38 @@ export const quimica: Discipline = {
           ],
           tips: [
             'O acidente de 1987 em Goiânia envolveu o Césio-137 ($^{137}_{55}Cs$), um emissor beta e gama com meia-vida de 30 anos contido em um aparelho abandonado de radioterapia. Por ser cloreto de césio solúvel em água, contaminou solo, água e pessoas com radiação ionizante.'
+          ]
+        },
+        {
+          id: 'propriedades-coligativas',
+          title: 'Propriedades Coligativas: Tonoscopia, Ebulioscopia, Crioscopia e Osmometria',
+          enemWeight: 'Alta',
+          summary: 'As alterações nas propriedades físicas de um solvente provocadas pela adição de um soluto não-volátil, dependentes unicamente da quantidade de partículas dissolvidas.',
+          keyConcepts: [
+            '**Natureza das Propriedades Coligativas**: São propriedades das soluções que dependem EXCLUSIVAMENTE do número total de partículas de soluto dispersas por unidade de volume, sendo completamente independentes da natureza química ou da massa individual dessas partículas.',
+            '**Tonoscopia (Abaixamento da Pressão de Vapor)**: A adição de um soluto não-volátil dificulta o escape das moléculas de solvente para a fase gasosa na superfície do líquido, diminuindo a pressão máxima de vapor da solução em relação ao solvente puro ($p_{\\text{solução}} < p_{\\text{solvente}}$) a uma dada temperatura.',
+            '**Ebulioscopia (Elevação da Temperatura de Ebulição)**: Como a pressão de vapor foi rebaixada, é necessário fornecer mais calor para que a pressão de vapor da solução iguale-se à pressão atmosférica externa. Logo, a solução ferve a uma temperatura SUPERIOR à do solvente puro (adicionar sal à água pura faz com que ela ferva a mais de 100 °C a 1 atm).',
+            '**Crioscopia (Abaixamento da Temperatura de Congelamento)**: A presença das partículas de soluto desorganiza e dificulta o empacotamento das moléculas de solvente na rede cristalina sólida. Portanto, a solução congela a uma temperatura INFERIOR à do solvente puro. Aplicações no ENEM: 1) Mistura de sal grosso e álcool no gelo para resfriar bebidas rapidamente em caixas térmicas (o gelo derrete a temperaturas bem abaixo de 0 °C, resfriando as latas por contato líquido direto); 2) Espalhamento de sais ($NaCl$ ou $CaCl_2$) sobre rodovias cobertas de neve em países frios para derreter o gelo.',
+            '**Osmometria e Pressão Osmótica**: Passagem espontânea do solvente puro através de uma membrana semipermeável em direção à solução mais concentrada (hipertônica) até atingir o equilíbrio de potenciais químicos. A **Pressão Osmótica** ($\\pi$) é a contrapressão mecânica mínima necessária para impedir esse influxo espontâneo. Aplicação histórica na conservação de carnes pela salga (charque e bacalhau) e frutas em calda de açúcar hiperconcentrada: os micro-organismos decompositores perdem água por osmose, desidratam-se e morrem.',
+            '**Fator de Correção de van \'t Hoff ($i$)**: Solutos moleculares (glicose, sacarose, ureia) não se dissociam nem ionizam em água ($i = 1$). Já os solutos eletrolíticos iônicos ($NaCl \\rightarrow Na^+ + Cl^-$: $i \\approx 2$; $CaCl_2 \\rightarrow Ca^{2+} + 2Cl^-$: $i \\approx 3$; $Al_2(SO_4)_3$: $i \\approx 5$) dissociam-se em múltiplos íons livres por fórmula, gerando um efeito coligativo 2, 3 ou 5 vezes mais intenso para a mesma concentração molar!'
+          ],
+          formulas: [
+            {
+              id: 'pressao-osmotica-formula',
+              name: 'Equação de van \'t Hoff para Pressão Osmótica',
+              latex: '\\pi = M \\cdot R \\cdot T \\cdot i',
+              description: 'Onde M é a concentração em mol/L, R é a constante dos gases (0,082 atm L/mol K), T é a temperatura absoluta em Kelvin e i é o fator de van \'t Hoff.',
+              variables: [
+                { symbol: '\\pi', meaning: 'Pressão osmótica', unit: 'atm' },
+                { symbol: 'M', meaning: 'Molaridade da solução', unit: 'mol/L' },
+                { symbol: 'R', meaning: 'Constante universal dos gases perfeitos', unit: 'atm·L/(mol·K)' },
+                { symbol: 'T', meaning: 'Temperatura absoluta', unit: 'K' },
+                { symbol: 'i', meaning: 'Fator de correção de van \'t Hoff', unit: '-' }
+              ]
+            }
+          ],
+          tips: [
+            'Comparação campeã em provas: Se você comparar soluções aquosas de mesma concentração $0,1\\text{ mol/L}$ de Glicose ($i=1$), $NaCl$ ($i=2$) e $CaCl_2$ ($i=3$), a solução de $CaCl_2$ apresentará a menor temperatura de congelamento (maior efeito crioscópico), a maior temperatura de ebulição (maior efeito ebulioscópico) e a maior pressão osmótica, porque gera três vezes mais partículas livres em solução!'
           ]
         }
       ]
