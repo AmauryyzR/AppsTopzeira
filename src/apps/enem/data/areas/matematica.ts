@@ -477,31 +477,66 @@ export const matematica: KnowledgeArea = {
             },
             {
               id: 'geometria-espacial-solidos',
-              title: 'Geometria Espacial: Prismas, Cilindros, Pirâmides e Cones',
+              title: 'Geometria Espacial: Prismas, Cilindros, Pirâmides, Cones, Troncos e Esferas',
               enemWeight: 'Muito Alta',
-              summary: 'Cálculo de capacidade volumétrica de reservatórios, caixas d\'água, silos e latas cilíndricas.',
+              summary: 'Cálculo de capacidade volumétrica e áreas superficiais de sólidos geométricos, troncos de cone e pirâmide, copos, reservatórios cônicos e corpos esféricos.',
               keyConcepts: [
-                '**Prismas e Cilindros** (Sólidos de seções paralelas congruentes): O volume é sempre igual ao produto da área da base pela altura: $V = A_{\\text{base}} \\cdot h$. Para o cilindro reto de raio $r$: $V = \\pi \\cdot r^2 \\cdot h$.',
-                '**Pirâmides e Cones** (Sólidos pontiagudos com vértice único): O volume é sempre igual a um terço do produto da área da base pela altura perpendicular: $V = \\frac{1}{3} A_{\\text{base}} \\cdot h$. Para o cone reto: $V = \\frac{1}{3} \\pi \\cdot r^2 \\cdot h$.',
-                '**Esfera**: Volume $V = \\frac{4}{3} \\pi \\cdot r^3$ e Área superficial $A = 4 \\pi \\cdot r^2$.',
-                '**Área da Superfície Lateral do Cilindro**: Planificada em um retângulo de base $2\\pi r$ e altura $h$: $A_L = 2 \\cdot \\pi \\cdot r \\cdot h$.'
+                '**Prismas e Cilindros (Sólidos com Seções Transversais Congruentes)**: O volume de qualquer prisma reto ou oblíquo e de qualquer cilindro é dado pelo produto da área da base pela altura: $V = A_{\\text{base}} \\cdot h$. No cilindro circular reto de raio da base $r$ e altura $h$: volume $V = \\pi \\cdot r^2 \\cdot h$, área lateral planificada retangular $A_L = 2\\pi \\cdot r \\cdot h$ e área total $A_T = 2\\pi r (h + r)$. Relações de conversão obrigatórias no ENEM: $1\\text{ m}^3 = 1.000\\text{ litros}$, $1\\text{ dm}^3 = 1\\text{ litro}$ e $1\\text{ cm}^3 = 1\\text{ mL}$.',
+                '**Pirâmides e Cones Retos (Sólidos Pontiagudos de Vértice Único)**: O volume corresponde a exatamente um terço do prisma ou cilindro de mesma base e altura: $V = \\frac{1}{3} A_{\\text{base}} \\cdot h$. No cone circular reto: $V = \\frac{1}{3} \\pi \\cdot r^2 \\cdot h$. A geratriz ($g$), o raio da base ($r$) e a altura perpendicular ($h$) formam um triângulo retângulo e obedecem a relação pitagórica: $g^2 = h^2 + r^2$. A planificação da superfície lateral do cone é um **setor circular** de raio $g$ e comprimento de arco $2\\pi r$, cujo ângulo central é $\\theta = 360^\\circ \\cdot \\frac{r}{g}$.',
+                '**Tronco de Cone e Tronco de Pirâmide (Copos, Baldes, Vasos e Silos)**: Obtidos ao seccionar o sólido original por um plano paralelo à base e descartar o cone/pirâmide superior menor: 1) **Tronco de Cone Reto**: com raio da base maior $R$, raio da base menor $r$ e altura do tronco $h$, possui volume expresso por $V_{\\text{tronco}} = \\frac{\\pi \\cdot h}{3} (R^2 + R \\cdot r + r^2)$; 2) **Tronco de Pirâmide Regular**: de altura $h$ entre a área da base maior $A_B$ e menor $A_b$, possui volume $V_{\\text{tronco}} = \\frac{h}{3} (A_B + \\sqrt{A_B \\cdot A_b} + A_b)$; 3) **Método por Semelhança de Triângulos**: pode-se também subtrair o volume do sólido superior retirado do total ($V_{\\text{tronco}} = V_{\\text{total}} - V_{\\text{topo}}$), sabendo que a razão de volumes é o cubo da razão de alturas $\\frac{V_{\\text{topo}}}{V_{\\text{total}}} = \\left(\\frac{h_{\\text{topo}}}{H_{\\text{total}}}\\right)^3 = k^3$.',
+                '**Esfera e Corpos Esféricos**: Sólido de revolução perfeitamente simétrico de raio $R$. O volume da esfera é $V = \\frac{4}{3} \\pi \\cdot R^3$ e a área da superfície esférica é $A = 4 \\pi \\cdot R^2$. Em uma esfera inscrita em um cubo de aresta $a$, o raio da esfera é $R = a/2$; se a esfera estiver circunscrita ao cubo, o diâmetro da esfera é igual à diagonal principal do cubo ($2R = a\\sqrt{3}$).'
               ],
               formulas: [
                 {
-                  id: 'volume-cilindro-formula',
-                  name: 'Volume do Cilindro e Prisma',
+                  id: 'volume-cilindro-prisma',
+                  name: 'Volume de Cilindros e Prismas Retos',
                   latex: 'V_{\\text{cilindro}} = \\pi \\cdot r^2 \\cdot h, \\quad V_{\\text{prisma}} = A_{\\text{base}} \\cdot h',
-                  description: 'Capacidade volumétrica de corpos com seções transversais uniformes ao longo da altura.'
+                  description: 'Capacidade volumétrica de sólidos de seção transversal uniforme ao longo da altura.',
+                  variables: [
+                    { symbol: 'V', meaning: 'Volume do sólido geométrico', unit: 'm³ ou L' },
+                    { symbol: 'r', meaning: 'Raio circular da base do cilindro', unit: 'm' },
+                    { symbol: 'h', meaning: 'Altura perpendicular do sólido', unit: 'm' },
+                    { symbol: 'A_{\\text{base}}', meaning: 'Área da superfície da base poligonal', unit: 'm²' }
+                  ]
                 },
                 {
-                  id: 'volume-cone-esfera',
-                  name: 'Volume do Cone e da Esfera',
-                  latex: 'V_{\\text{cone}} = \\frac{1}{3} \\pi \\cdot r^2 \\cdot h, \\quad V_{\\text{esfera}} = \\frac{4}{3} \\pi \\cdot r^3',
-                  description: 'Fórmulas para sólidos com conicidade e corpos de revolução esféricos.'
+                  id: 'volume-cone-piramide',
+                  name: 'Volume do Cone e Relação Pitagórica da Geratriz',
+                  latex: 'V = \\frac{1}{3} \\pi \\cdot r^2 \\cdot h, \\quad g^2 = h^2 + r^2',
+                  description: 'Fórmula de volume e triângulo retângulo gerador do cone circular reto.',
+                  variables: [
+                    { symbol: 'V', meaning: 'Volume do cone reto', unit: 'm³ ou L' },
+                    { symbol: 'r', meaning: 'Raio da base circular', unit: 'm' },
+                    { symbol: 'h', meaning: 'Altura perpendicular do vértice à base', unit: 'm' },
+                    { symbol: 'g', meaning: 'Geratriz do cone (hipotenusa)', unit: 'm' }
+                  ]
+                },
+                {
+                  id: 'volume-tronco-cone',
+                  name: 'Volume do Tronco de Cone Reto de Bases Paralelas',
+                  latex: 'V_{\\text{tronco}} = \\frac{\\pi \\cdot h}{3} \\left( R^2 + R \\cdot r + r^2 \\right)',
+                  description: 'Cálculo direto da capacidade volumétrica de copos, baldes e vasos de plantas troncocônicos.',
+                  variables: [
+                    { symbol: 'V_{\\text{tronco}}', meaning: 'Volume do tronco de cone', unit: 'm³ ou L' },
+                    { symbol: 'h', meaning: 'Altura perpendicular do tronco', unit: 'm' },
+                    { symbol: 'R', meaning: 'Raio da base circular maior', unit: 'm' },
+                    { symbol: 'r', meaning: 'Raio da base circular menor', unit: 'm' }
+                  ]
+                },
+                {
+                  id: 'volume-esfera-superficie',
+                  name: 'Volume e Área da Superfície da Esfera',
+                  latex: 'V_{\\text{esfera}} = \\frac{4}{3} \\pi \\cdot R^3, \\quad A_{\\text{superfície}} = 4 \\pi \\cdot R^2',
+                  description: 'Volume e área superficial total de corpos esféricos em função de seu raio.',
+                  variables: [
+                    { symbol: 'V_{\\text{esfera}}', meaning: 'Volume da esfera tridimensional', unit: 'm³' },
+                    { symbol: 'A_{\\text{superfície}}', meaning: 'Área da casca esférica', unit: 'm²' },
+                    { symbol: 'R', meaning: 'Raio da esfera', unit: 'm' }
+                  ]
                 }
               ],
               tips: [
-                'Atenção com a diferença entre Raio e Diâmetro! O enunciado costuma informar o diâmetro da caixa d\'água (ex.: $4 \\text{ m}$), mas as fórmulas de volume usam o raio ($r = d/2 = 2 \\text{ m}$). Esse é um dos maiores distratores do ENEM.'
+                'Atenção com a diferença entre Raio e Diâmetro! O enunciado costuma informar o diâmetro da caixa d\'água ou do poço (ex.: $4 \\text{ m}$), mas as fórmulas de volume usam o raio ($r = d/2 = 2 \\text{ m}$). Lembre-se também da conversão universal: $1\\text{ m}^3 = 1.000\\text{ litros}$ e $1\\text{ cm}^3 = 1\\text{ mL}$.'
               ]
             },
             {

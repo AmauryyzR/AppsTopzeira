@@ -278,6 +278,44 @@ export const biologia: Discipline = {
           ]
         },
         {
+          id: 'linkage-interacao-genica-heranca-quantitativa',
+          title: 'Genética Pós-Mendeliana: Linkage, Crossing-Over, Epistasia e Herança Quantitativa',
+          enemWeight: 'Alta',
+          summary: 'Ligação gênica (linkage), taxa de recombinação e mapa genético em morganídeos, arranjos cis e trans, epistasia dominante e recessiva, e herança quantitativa (poligenia com curva de Gauss).',
+          keyConcepts: [
+            '**Ligação Gênica (Linkage) versus Segunda Lei de Mendel**: Quando dois ou mais pares de alelos localizam-se no MESMO par de cromossomos homólogos, eles não sofrem segregação independente, tendendo a ser herdados juntos para o mesmo gameta. Essa exceção à 2ª Lei de Mendel divide-se em: 1) **Ligação Completa**: a distância entre os locos gênicos é tão íntima que nunca ocorre permutação, produzindo apenas dois tipos de gametas parentais ($50\\%$ e $50\\%$); 2) **Ligação Incompleta (Parcial)**: durante a prófase I da meiose (paquíteno), ocorre **crossing-over** (permutação) entre cromátides não-irmãs, gerando gametas recombinantes em frequência menor do que os parentais.',
+            '**Configurações Cis e Trans no Duplo Heterozigoto ($AaBb$)**: 1) **Configuração Cis ($AB/ab$)**: os dois alelos dominantes estão situados no mesmo cromossomo e os dois recessivos no homólogo; os gametas parentais mais abundantes são $AB$ e $ab$, e os recombinantes mais raros são $Ab$ e $aB$; 2) **Configuração Trans ($Ab/aB$)**: um alelo dominante e um recessivo situam-se no mesmo cromossomo; os gametas parentais mais abundantes são $Ab$ e $aB$, enquanto os recombinantes são $AB$ e $ab$.',
+            '**Taxa de Recombinação e Mapa Genético (Morganídeos / cM)**: A **Taxa de Recombinação (TR)** é a proporção percentual de gametas recombinantes formados: $\\text{TR} = (\\text{Gametas Recombinantes} / \\text{Total de Gametas}) \\times 100\\%$. Como a frequência de quebra mecânica entre dois locos é diretamente proporcional à distância física linear que os separa, $1\\%$ de taxa de recombinação equivale convencionalmente a **1 unidade de recombinação (UR)** ou **1 centimorgan (cM)**. A partir dessas distâncias aditivas, constroem-se os mapas genéticos lineares dos cromossomos. A taxa máxima teórica de recombinação observável entre dois locos gênicos é de $50\\%$.',
+            '**Interação Gênica e Epistasia (Dominante vs. Recessiva)**: Ocorre quando dois ou mais pares de alelos independentes cooperam na expressão de uma única característica morfológica ou bioquímica. A **Epistasia** ocorre quando um alelo em um loco inibe a manifestação de alelos em outro loco independente: 1) **Epistasia Dominante** (proporção $12 : 3 : 1$ no di-hibridismo): basta um alelo dominante no loco epistático ($E\\_$) para suprimir a cor; 2) **Epistasia Recessiva** (proporção $9 : 3 : 4$, clássica na cor da pelagem de cães labradores): o alelo recessivo homozigoto $ee$ bloqueia a deposição de melanina nos pelos, gerando labradores amarelos/dourados independentemente dos alelos preto ($B\\_$) ou chocolate ($bb$).',
+            '**Herança Quantitativa (Poligenia e Distribuição Gaussiana)**: Múltiplos pares de genes atuam em sinergia com efeito cumulativo aditivo na determinação de um fenótipo contínuo (como altura, peso corporal e tonalidade da cor da pele humana). Cada **alelo aditivo** (maiúsculo) adiciona uma dose incremental da substância ou tamanho. O cruzamento entre polímeros polihíbridos produz uma distribuição de frequências que assume a forma matemática de uma **Curva Normal de Gauss** (poucos indivíduos nos extremos recessivo e dominante, com concentração máxima no fenótipo intermediário mediano).'
+          ],
+          formulas: [
+            {
+              id: 'taxa-recombinacao-linkage',
+              name: 'Taxa de Recombinação e Distância Gênica (Morganídeos)',
+              latex: '\\text{TR} = \\frac{\\sum \\text{Recombinantes}}{\\text{Total de Descendentes}} \\times 100\\% \\iff 1\\% = 1\\text{ UR} = 1\\text{ cM}',
+              description: 'Mede a distância física entre locos no mesmo cromossomo em centimorgans (cM).',
+              variables: [
+                { symbol: '\\text{TR}', meaning: 'Taxa de recombinação meiótica (frequência de permutação)', unit: '%' },
+                { symbol: '\\text{UR / cM}', meaning: 'Unidade de Recombinação ou Centimorgan', unit: 'cM' }
+              ]
+            },
+            {
+              id: 'heranca-quantitativa-classes',
+              name: 'Número de Classes Fenotípicas na Herança Quantitativa',
+              latex: '\\text{Nº de Fenótipos} = 2n + 1',
+              description: 'Onde n é o número de pares de genes poligiênicos envolvidos na característica contínua.',
+              variables: [
+                { symbol: 'n', meaning: 'Número de pares de alelos aditivos envolvidos na característica', unit: 'adimensional' },
+                { symbol: '2n + 1', meaning: 'Total de variações fenotípicas observadas na população', unit: 'adimensional' }
+              ]
+            }
+          ],
+          tips: [
+            'Dica de ouro no ENEM: Para diferenciar Segregação Independente de Linkage em cruzamento-teste ($AaBb \\times aabb$): se a prole apresentar 4 classes com frequências IDÊNTICAS ($25\\%$ cada), os genes estão em cromossomos diferentes (2ª Lei de Mendel). Se apresentar duas classes com frequências altas ($>25\\%$, parentais) e duas classes com frequências baixas ($<25\\%$, recombinantes), trata-se de LINKAGE!'
+          ]
+        },
+        {
           id: 'divisao-celular-genetica-populacoes',
           title: 'Mitose, Meiose, Aneuploidias e Teorema de Hardy-Weinberg',
           enemWeight: 'Média',

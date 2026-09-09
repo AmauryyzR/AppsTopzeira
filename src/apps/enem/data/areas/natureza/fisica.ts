@@ -332,31 +332,62 @@ export const fisica: Discipline = {
         },
         {
           id: 'optica-geometrica-olho-humano',
-          title: 'Óptica Geométrica: Reflexão, Refração, Espelhos, Lentes e Visão Humana',
+          title: 'Óptica Geométrica: Espelhos, Lentes, Defeitos da Visão (Ametropias) e Instrumentos Ópticos',
           enemWeight: 'Alta',
-          summary: 'Formação de imagens em espelhos e lentes esféricas e a correção óptica de miopia e hipermetropia.',
+          summary: 'Propagação da luz, formação de imagens em espelhos e lentes, correção óptica de miopia, hipermetropia, astigmatismo e presbiopia, e instrumentos ópticos de ampliação.',
           keyConcepts: [
-            '**Lei de Snell da Refração**: $n_1 \\cdot \\sin\\theta_1 = n_2 \\cdot \\sin\\theta_2$. Ao passar de um meio menos refringente para um mais refringente ($n_2 > n_1$), a velocidade da luz diminui e o raio aproxima-se da normal ($\\theta_2 < \\theta_1$).',
-            '**Reflexão Total**: Ocorre quando a luz tenta passar de um meio MAIS refringente para um MENOS refringente em ângulo de incidência maior que o ângulo limite ($\\sin\\theta_{\\text{limite}} = n_{\\text{menor}} / n_{\\text{maior}}$). Princípio operacional das FIBRAS ÓPTICAS de telecomunicações.',
-            '**Lentes Delgadas**: Lentes Convergentes (bordas delgadas em ar; formam imagens reais, invertidas e projetáveis em telas ou sensores de câmeras; ou imagem virtual, direita e ampliada quando o objeto está entre o foco e a lente, funcionando como lupa) vs. Lentes Divergentes (bordas espessas em ar; formam SEMPRE imagens virtuais, direitas e menores que o objeto).',
-            '**Defeitos da Visão Humana**: 1) Miopia (o globo ocular é excessivamente longo ou a córnea muito curva; a imagem focaliza ANTES da retina; a pessoa não enxerga bem de longe; correção com LENTES DIVERGENTES de vergência negativa); 2) Hipermetropia (globo ocular curto; a imagem focaliza DEPOIS da retina; dificuldade para enxergar de perto; correção com LENTES CONVERGENTES de vergência positiva); 3) Presbiopia ("vista cansada", perda de elasticidade do cristalino e dos músculos ciliares pelo envelhecimento, corrigida também por lentes convergentes).'
+            '**Princípios da Óptica Geométrica e Espelhos**: 1) Propagação retilínea, independência e reversibilidade dos raios luminosos; 2) **Espelhos Planos**: formam imagens virtuais, direitas, de mesmo tamanho que o objeto e simétricas em relação ao plano do espelho (enantiomorfas / reversão lateral); 3) **Espelhos Côncavos**: convergem os raios e formam imagens reais (projetáveis) ou virtual/ampliada quando o objeto está entre o foco e o vértice (espelhos de maquiagem/dentista); 4) **Espelhos Convexos**: divergem os raios e formam SEMPRE imagens virtuais, direitas e menores, proporcionando maior campo visual (usados em retrovisores laterais e espelhos de segurança em ônibus e esquinas).',
+            '**Lei de Snell-Descartes e Reflexão Interna Total**: Ao passar de um meio 1 para um meio 2 com índices de refração diferentes: $n_1 \\cdot \\sin\\theta_1 = n_2 \\cdot \\sin\\theta_2$. Se a luz passa para um meio mais refringente ($n_2 > n_1$), a velocidade diminui e o raio aproxima-se da reta normal. A **Reflexão Total** ocorre exclusivamente quando a luz parte de um meio MAIS refringente para um MENOS refringente em ângulo de incidência maior que o ângulo limite: $\\sin\\theta_{\\text{limite}} = n_{\\text{menor}} / n_{\\text{maior}}$. Esse é o princípio físico soberano das **fibras ópticas**, da endoscopia médica e do fenômeno das miragens em asfaltos quentes.',
+            '**Lentes Esféricas Delgadas**: 1) **Lentes Convergentes** (bordas delgadas no ar, distância focal $f > 0$): concentram raios paralelos no foco principal imagem real; geram imagens reais e invertidas (para objetos além do foco, como no olho humano ou câmera fotográfica) ou imagem virtual, direita e maior (quando o objeto está entre o foco e a lente, atuando como lupa); 2) **Lentes Divergentes** (bordas espessas no ar, distância focal $f < 0$): espalham os raios incidentes; formam SEMPRE imagens virtuais, direitas e menores que o objeto.',
+            '**Defeitos da Visão Humana (Ametropias) e Correção Óptica**: 1) **Miopia**: o bulbo ocular é excessivamente alongado ou a córnea/cristalino possui convergência excessiva; os raios paralelos convergem e focalizam ANTES da retina; o míope não enxerga nitidamente objetos distantes (seu Ponto Remoto é finito, $P_r < \\infty$); correção com **LENTES DIVERGENTES** de vergência negativa ($V < 0$) para afastar o foco em direção à retina ($f = -d_{\\text{máx}}$); 2) **Hipermetropia**: o bulbo ocular é excessivamente curto ou o sistema óptico pouco convergente; o foco forma-se TEORICAMENTE ATRÁS da retina; dificuldade acentuada para focar objetos próximos (Ponto Próximo recuado, $P_p > 25\\text{ cm}$); correção com **LENTES CONVERGENTES** de vergência positiva ($V > 0$); 3) **Astigmatismo**: assimetria ou irregularidade na curvatura da córnea, que apresenta raios desiguais em meridianos distintos; os raios de luz focalizam-se em planos diferentes, provocando deformação e visão borrada para perto e longe; correção com **LENTES CILÍNDRICAS**; 4) **Presbiopia ("Vista Cansada")**: perda fisiológica gradual da elasticidade do cristalino e fadiga progressiva dos músculos ciliares decorrente do envelhecimento (geralmente após os 40 anos); redução da amplitude de acomodação visual para leitura próxima; correção com lentes convergentes, bifocais ou multifocais.',
+            '**Instrumentos Ópticos de Ampliação**: 1) **Lupa (Microscópio Simples)**: lente convergente simples de pequena distância focal; o objeto é posicionado entre o foco e o centro óptico ($0 < p < f$), produzindo imagem virtual, direita e ampliada; 2) **Microscópio Óptico Composto**: constituído por duas lentes convergentes associadas: a **Objetiva** (voltada para o espécime minúsculo, de distância focal milimétrica, produzindo imagem intermediária real, invertida e muito ampliada) e a **Ocular** (voltada para o olho do observador, que funciona como lupa captando a imagem da objetiva e formando uma imagem final virtual, invertida e com aumento angular extraordinário: $A_{\\text{total}} = A_{\\text{obj}} \\cdot A_{\\text{oc}}$); 3) **Luneta Astronômica**: utiliza uma objetiva de grande distância focal para capturar raios de astros no infinito e uma ocular para ampliação.'
           ],
           formulas: [
             {
               id: 'equacao-gauss-lentes',
               name: 'Equação de Gauss dos Pontos Conjugados',
               latex: '\\frac{1}{f} = \\frac{1}{p} + \\frac{1}{p\'}',
-              description: 'Onde f é a distância focal, p é a posição do objeto e p\' é a posição da imagem.'
+              description: 'Relaciona a distância focal da lente com as posições do objeto e da imagem.',
+              variables: [
+                { symbol: 'f', meaning: 'Distância focal da lente (positiva para convergente, negativa para divergente)', unit: 'm' },
+                { symbol: 'p', meaning: 'Posição / distância do objeto ao centro óptico da lente', unit: 'm' },
+                { symbol: 'p\'', meaning: 'Posição / distância da imagem ao centro óptico (positiva = real, negativa = virtual)', unit: 'm' }
+              ]
             },
             {
               id: 'vergencia-grau',
-              name: 'Vergência da Lente (Grau Óptico)',
+              name: 'Vergência da Lente (Poder de Convergência / Grau Óptico)',
               latex: 'V = \\frac{1}{f}',
-              description: 'A distância focal f deve estar em metros para que a vergência V resulte em dioptrias (di ou graus).'
+              description: 'Inverso da distância focal em metros. Vergência positiva para lentes convergentes e negativa para divergentes.',
+              variables: [
+                { symbol: 'V', meaning: 'Vergência óptica ("grau" da lente)', unit: 'di (dioptrias)' },
+                { symbol: 'f', meaning: 'Distância focal da lente no Sistema Internacional', unit: 'm' }
+              ]
+            },
+            {
+              id: 'aumento-linear-transversal',
+              name: 'Aumento Linear Transversal (Ampliação)',
+              latex: 'A = \\frac{i}{o} = -\\frac{p\'}{p} = \\frac{f}{f - p}',
+              description: 'Razão entre o tamanho da imagem e o tamanho do objeto; o sinal indica se a imagem é direita (A > 0) ou invertida (A < 0).',
+              variables: [
+                { symbol: 'A', meaning: 'Aumento linear transversal', unit: 'adimensional' },
+                { symbol: 'i', meaning: 'Altura da imagem', unit: 'm' },
+                { symbol: 'o', meaning: 'Altura do objeto', unit: 'm' }
+              ]
+            },
+            {
+              id: 'associacao-lentes-justapostas',
+              name: 'Associação de Lentes Delgadas Justapostas',
+              latex: 'V_{\\text{eq}} = V_1 + V_2 \\iff \\frac{1}{f_{\\text{eq}}} = \\frac{1}{f_1} + \\frac{1}{f_2}',
+              description: 'A vergência equivalente de lentes justapostas finas é a soma algébrica das vergências individuais.',
+              variables: [
+                { symbol: 'V_{\\text{eq}}', meaning: 'Vergência do sistema óptico equivalente', unit: 'di' },
+                { symbol: 'V_1, V_2', meaning: 'Vergências ópticas das lentes individuais acopladas', unit: 'di' }
+              ]
             }
           ],
           tips: [
-            'Mnemônico da Miopia no ENEM: O míope tem a imagem formada antes da retina e precisa afastar o foco; afastar requer uma lente que DIVERGE os raios de luz (lente divergente, com grau negativo).'
+            'Mnemônico infalível para o ENEM: Na **MIOPIA**, a imagem cai antes da retina (foco adiantado); você precisa DIVERGIR os raios para mandá-los mais longe (lente divergente, sinal de grau negativo "-"). Na **HIPERMETROPIA**, a imagem quer se formar atrás da retina (falta convergência); você precisa CONVERGIR os raios mais rápido (lente convergente, grau positivo "+"). No **ASTIGMATISMO**, a córnea parece uma bola de futebol americano em vez de uma bola de futebol; a correção exige LENTES CILÍNDRICAS.'
           ]
         }
       ]
@@ -398,20 +429,64 @@ export const fisica: Discipline = {
         },
         {
           id: 'circuitos-eletricos-potencia-consumo',
-          title: 'Circuitos Elétricos, Associação de Resistores e Consumo em kWh',
+          title: 'Circuitos Elétricos, Associação de Resistores, Geradores Reais e Consumo em kWh',
           enemWeight: 'Muito Alta',
-          summary: 'A matéria de maior incidência física do ENEM: Leis de Ohm, circuitos residenciais em paralelo e economia de energia.',
+          summary: 'A matéria de maior incidência física do ENEM: Leis de Ohm, circuitos residenciais em paralelo, equação do gerador real, Lei de Pouillet e economia de energia elétrica.',
           keyConcepts: [
-            '**Primeira e Segunda Leis de Ohm**: 1ª Lei ($U = R \\cdot I$); 2ª Lei ($R = \\rho \\cdot L / A$: a resistência de um fio é diretamente proporcional ao seu comprimento $L$ e resistividade $\\rho$, e inversamente proporcional à área de sua seção transversal $A$; fios mais grossos e curtos oferecem menor resistência).',
-            '**Associação em Série vs. Paralelo**: Em série, a corrente elétrica é idêntica para todos os elementos ($I_{\\text{total}} = I_1 = I_2$) e a resistência equivalente é a soma ($R_{\\text{eq}} = R_1 + R_2$); se uma lâmpada queimar, todo o circuito apaga. Em PARALELO (instalações elétricas residenciais), a tensão elétrica é a mesma para todas as tomadas e aparelhos ($U = 127\\text{ V}$ ou $220\\text{ V}$ constante), cada ramo opera independentemente, e $1/R_{\\text{eq}} = 1/R_1 + 1/R_2$ (a resistência equivalente total DIMINUI à medida que ligamos mais aparelhos, aumentando a corrente total na fiação e justificando o uso de disjuntores de proteção térmica).',
-            '**Potência Elétrica e Efeito Joule**: $P = U \\cdot I = R \\cdot I^2 = U^2 / R$. Em um chuveiro elétrico ligado a uma ddp fixa ($127\\text{ V}$ ou $220\\text{ V}$), na posição "Inverno" (mais quente), a potência deve ser maior; para aumentar a potência $P = U^2 / R$, a chave seletora REDUZ o comprimento da resistência interna ($R$ menor).'
+            '**Primeira e Segunda Leis de Ohm**: 1ª Lei ($U = R \\cdot I$); 2ª Lei ($R = \\rho \\cdot L / A$: a resistência de um condutor é diretamente proporcional ao seu comprimento $L$ e à sua resistividade elétrica $\\rho$, e inversamente proporcional à área de sua seção transversal $A$; fios mais grossos e mais curtos oferecem menor resistência elétrica, aquecendo menos e reduzindo perdas na rede de transmissão).',
+            '**Associação em Série versus Paralelo**: Em SÉRIE, a corrente elétrica é idêntica para todos os elementos ($I_{\\text{total}} = I_1 = I_2 = \\dots$) e a resistência equivalente é a soma direta ($R_{\\text{eq}} = R_1 + R_2$); a tensão divide-se proporcionalmente e a queima de um dispositivo interrompe o fluxo no circuito inteiro. Em PARALELO (padrão universal das instalações elétricas residenciais), a tensão elétrica é a mesma para todas as tomadas e aparelhos ($U = 127\\text{ V}$ ou $220\\text{ V}$ constante), cada ramo opera de modo totalmente independente e a resistência equivalente diminui à medida que mais aparelhos são ligados ($1/R_{\\text{eq}} = \\sum 1/R_i$), elevando a corrente total na fiação principal e exigindo dimensionamento rigoroso dos condutores e disjuntores.',
+            '**Potência Elétrica e Efeito Joule**: $P = U \\cdot I = R \\cdot I^2 = U^2 / R$. Em um chuveiro elétrico ligado a uma ddp fixa da rede domiciliar ($U$ constante), na posição "Inverno" (banho mais quente), a potência térmica precisa ser maior; pela relação $P = U^2 / R$, para aumentar a potência dissipada, a chave seletora diminui o comprimento do resistor interno ($R$ menor).',
+            '**Geradores Elétricos Reais e Curva Característica**: Um gerador real (pilha, bateria química, alternador) converte energia química/mecânica em energia elétrica, possuindo uma força eletromotriz (fem $\\mathcal{E}$) e uma resistência interna dissipativa ($r$). A tensão útil $U$ entregue aos terminais externos é regida pela **Equação do Gerador**: $U = \\mathcal{E} - r \\cdot i$. Em circuito aberto ($i = 0$), não há corrente e a tensão útil é máxima, igual à fem ($U = \\mathcal{E}$). Em situação de curto-circuito ($U = 0$), a corrente atinge seu pico destrutivo: $i_{cc} = \\mathcal{E} / r$. A curva característica no gráfico $U \\times i$ é uma reta decrescente de coeficiente angular $-r$. O rendimento elétrico do gerador é $\\eta = U / \\mathcal{E} = P_{\\text{útil}} / P_{\\text{total}}$, atingindo potência útil máxima transferida à carga externa quando $R_{\\text{ext}} = r$ (Teorema da Máxima Transferência de Potência).',
+            '**Receptores Elétricos Reais e a Lei de Pouillet**: Dispositivos que convertem energia elétrica em energia mecânica ou química (como motores elétricos e baterias durante o processo de recarga) possuem força contraeletromotriz (fcem $\\mathcal{E}\'$) e resistência interna $r\'$. A **Equação do Receptor** é $U\' = \\mathcal{E}\' + r\' \\cdot i$, com curva característica crescente no gráfico $U \\times i$. Em um circuito de malha fechada única contendo geradores, receptores e resistores ôhmicos externos, a intensidade da corrente elétrica é calculada diretamente pela **Lei de Pouillet**: $i = \\frac{\\sum \\mathcal{E} - \\sum \\mathcal{E}\'}{\\sum R + \\sum r + \\sum r\'}$.'
           ],
           formulas: [
             {
               id: 'energia-eletrica-kwh',
               name: 'Consumo de Energia Elétrica Residencial',
               latex: 'E_{\\text{consumida}} = P \\cdot \\Delta t = \\frac{P_{\\text{(Watts)}} \\cdot \\Delta t_{\\text{(horas)}}}{1000} \\quad [\\text{em kWh}]',
-              description: 'Cálculo do valor na conta de luz: multiplica-se a energia em kWh pela tarifa da concessionária.'
+              description: 'Cálculo do valor monetário na conta de luz: multiplica-se a energia consumida em kWh pela tarifa cobrada pela distribuidora.',
+              variables: [
+                { symbol: 'E_{\\text{consumida}}', meaning: 'Energia elétrica consumida', unit: 'kWh' },
+                { symbol: 'P', meaning: 'Potência nominal do aparelho elétrico', unit: 'W ou kW' },
+                { symbol: '\\Delta t', meaning: 'Intervalo de tempo total de funcionamento', unit: 'h' }
+              ]
+            },
+            {
+              id: 'potencia-eletrica-geral',
+              name: 'Expressões da Potência Elétrica Dissipada e Útil',
+              latex: 'P = U \\cdot I = R \\cdot I^2 = \\frac{U^2}{R}',
+              description: 'Cálculo da taxa temporal de transformação de energia elétrica em calor, luz ou trabalho mecânico.',
+              variables: [
+                { symbol: 'P', meaning: 'Potência elétrica', unit: 'W (Watts)' },
+                { symbol: 'U', meaning: 'Diferença de potencial elétrico (tensão/ddp)', unit: 'V (Volts)' },
+                { symbol: 'I', meaning: 'Intensidade da corrente elétrica', unit: 'A (Ampères)' },
+                { symbol: 'R', meaning: 'Resistência elétrica do condutor', unit: '\\Omega (Ohms)' }
+              ]
+            },
+            {
+              id: 'equacao-gerador-real',
+              name: 'Equação do Gerador Elétrico Real',
+              latex: 'U = \\mathcal{E} - r \\cdot i \\quad \\text{com} \\quad i_{cc} = \\frac{\\mathcal{E}}{r}',
+              description: 'Determina a tensão útil fornecida por uma pilha ou bateria real em função da corrente drenada.',
+              variables: [
+                { symbol: 'U', meaning: 'Tensão elétrica útil disponível nos terminais externos', unit: 'V' },
+                { symbol: '\\mathcal{E}', meaning: 'Força eletromotriz total gerada (fem)', unit: 'V' },
+                { symbol: 'r', meaning: 'Resistência elétrica interna dissipativa do gerador', unit: '\\Omega' },
+                { symbol: 'i', meaning: 'Corrente elétrica total fornecida pelo gerador', unit: 'A' },
+                { symbol: 'i_{cc}', meaning: 'Corrente máxima de curto-circuito', unit: 'A' }
+              ]
+            },
+            {
+              id: 'lei-pouillet',
+              name: 'Lei de Pouillet para Circuito Simples',
+              latex: 'i = \\frac{\\sum \\mathcal{E} - \\sum \\mathcal{E}\'}{\\sum R_{\\text{ext}} + \\sum r_{\\text{ger}} + \\sum r\'_{\\text{rec}}}',
+              description: 'Permite calcular a corrente em circuitos de malha única com geradores, receptores e resistores.',
+              variables: [
+                { symbol: 'i', meaning: 'Corrente elétrica que percorre a malha única', unit: 'A' },
+                { symbol: '\\sum \\mathcal{E}', meaning: 'Soma das forças eletromotrizes dos geradores', unit: 'V' },
+                { symbol: '\\sum \\mathcal{E}\'', meaning: 'Soma das forças contraeletromotrizes dos receptores', unit: 'V' },
+                { symbol: '\\sum R_{\\text{total}}', meaning: 'Soma de todas as resistências do circuito (internas e externas)', unit: '\\Omega' }
+              ]
             }
           ],
           tips: [
