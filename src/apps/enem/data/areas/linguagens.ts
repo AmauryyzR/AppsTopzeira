@@ -261,6 +261,22 @@ export const linguagens: KnowledgeArea = {
               tips: [
                 'No ENEM, questões sobre letramento digital nunca focam em aspectos operacionais (como "como abrir um navegador"), mas sim nas consequências SOCIAIS e COGNITIVAS do uso das redes: polarização, vigilância de dados e democratização do saber.'
               ]
+            },
+            {
+              id: 'intertextualidade-semantica-estrategias-argumentativas',
+              title: 'Intertextualidade, Semântica Pragmática e Estratégias Argumentativas',
+              enemWeight: 'Muito Alta',
+              summary: 'O diálogo entre textos na paródia e paráfrase, sentidos conotativos e denotativos, pressupostos e subentendidos, e os recursos argumentativos da dissertação.',
+              keyConcepts: [
+                '**Relações Intertextuais no ENEM**: Todo texto dialoga com a tradição cultural. Divide-se em: 1) **Paródia**: apropriação de um texto consagrado com tom crítico, humorístico, satírico ou subversivo, invertendo a intenção ou ideologia da obra original (como nos poemas modernistas de Oswald de Andrade parodiando a *Canção do Exílio* de Gonçalves Dias); 2) **Paráfrase**: reafirmação dos sentidos e ideias de outro texto utilizando outras palavras, mantendo o sentido ideológico original (resumos, citações indiretas); 3) **Alusão / Referência**: menção sutil a fatos históricos, mitologias ou obras artísticas; 4) **Epígrafe**: citação preliminar colocada na abertura do texto para sintetizar o tom reflexivo da obra.',
+                '**Semântica e Pragmática: Conotação versus Denotação**: **Denotação** é o sentido literal, referencial, objetivo e dicionarizado da palavra (uso comum em textos informativos e científicos); **Conotação** é o sentido figurado, plurissignificativo, metafórico e poético atribuído à palavra pelo contexto sociocultural.',
+                '**Polissemia versus Ambiguidade**: **Polissemia** é a multiplicidade de sentidos legítimos que uma mesma palavra assume em diferentes contextos sem causar confusão (ex: o termo *linha* em costura, pesca, metrô ou raciocínio); **Ambiguidade** (duplo sentido) ocorre quando uma formulação sintática defeituosa gera dúvida interpretativa sobre qual é o sentido real desejado pelo autor (gerada frequentemente por má colocação de pronomes possessivos ou orações reduzidas).',
+                '**Implícitos Textuais: Pressupostos versus Subentendidos**: 1) **Pressupostos**: informações não declaradas explicitamente, mas que decorrem logicamente de marcadores gramaticais presentes na frase (ex: advérbios como *ainda*, *já*, verbos como *parar*, *continuar* — em *"Ele parou de fumar"*, o pressuposto incontestável é de que ele fumava antes); 2) **Subentendidos**: insinuações contextuais que dependem da interpretação do leitor e do conhecimento de mundo compartilhado, permitindo que o locutor negue a intenção caso seja confrontado.',
+                '**Estratégias e Tipos de Argumentação no Texto de Opinião**: 1) **Argumento de Autoridade**: sustentação da tese pela citação de especialistas reconhecidos, cientistas ou filósofos; 2) **Argumento por Comprovação / Dados Empíricos**: apresentação de estatísticas oficiais (IBGE, IPEA, OMS) e evidências históricas verificáveis; 3) **Argumento por Causa e Efeito (Nexo Causal)**: demonstração lógica de que determinado problema decorre de raízes estruturais específicas; 4) **Argumento por Exemplificação**: ilustração com casos concretos do cotidiano para dar materialidade à discussão; 5) **Contra-argumentação e Refutação**: antecipação de teses opostas seguida do desmonte de suas fragilidades lógicas.'
+              ],
+              tips: [
+                'Diferença fatal entre paródia e paráfrase no ENEM: Na **paródia**, o autor CRITICA, SUBVERTE ou IRONIZA o texto-fonte, gerando um choque humorístico ou reflexivo. Na **paráfrase**, o autor CONCORDA com o texto-fonte e apenas o reescreve com suas próprias palavras para explicar melhor ou reforçar o argumento!'
+              ]
             }
           ]
         }

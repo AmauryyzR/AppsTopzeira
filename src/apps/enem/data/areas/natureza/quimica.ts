@@ -394,6 +394,21 @@ export const quimica: Discipline = {
           tips: [
             'Tema campeão do ENEM: O carvão ativado utilizado nos filtros domésticos e na ETA atua pelo fenômeno físico de ADSORÇÃO de superfície em seus microporos, retendo impurezas orgânicas por forças de van der Waals sem reagir quimicamente.'
           ]
+        },
+        {
+          id: 'funcoes-inorganicas-chuva-acida-calagem',
+          title: 'Química Inorgânica: Óxidos, Ácidos, Bases e Aplicações Ambientais (Chuva Ácida e Calagem)',
+          enemWeight: 'Muito Alta',
+          summary: 'A classificação das quatro funções inorgânicas fundamentais, comportamento dos óxidos, reações de neutralização, hidrólise salina e química da calagem agrícola.',
+          keyConcepts: [
+            '**Classificação Clássica de Arrhenius**: 1) **Ácidos**: substâncias que em solução aquosa sofrem ionização liberando como único cátion o hidrogênio ($H^+$ ou hidrônio $H_3O^+$); 2) **Bases (Hidróxidos)**: substâncias que em solução sofrem dissociação liberando como único ânion a hidroxila ($OH^-$); 3) **Sais**: compostos iônicos formados por cátion diferente de $H^+$ e ânion diferente de $OH^-$, produtos da neutralização ácido-base; 4) **Óxidos**: compostos binários onde o oxigênio é o elemento mais eletronegativo (excluem-se os fluoretos de oxigênio).',
+            '**Classificação Estratégica dos Óxidos no ENEM**: 1) **Óxidos Ácidos (Anidridos)**: formados por ametais com elevado número de oxidação ($SO_2, SO_3, CO_2, NO_2$). Reagem com água formando ácidos ($SO_3 + H_2O \\rightarrow H_2SO_4$) e reagem com bases formando sal e água; 2) **Óxidos Básicos**: formados por metais alcalinos e alcalino-terrosos com baixo nox ($CaO, Na_2O, BaO$). Reagem com água formando bases fortes ($CaO + H_2O \\rightarrow Ca(OH)_2$) e neutralizam ácidos; 3) **Óxidos Neutros (Indiferentes)**: ametais com baixo nox que NÃO reagem com água, ácidos nem bases ($CO$, $NO$, $N_2O$); 4) **Óxidos Anfóteros**: comportam-se como ácidos perante bases fortes e como bases perante ácidos fortes ($Al_2O_3, ZnO$).',
+            '**Reações de Neutralização e Hidrólise Salina**: A neutralização total ocorre quando mols de $H^+$ igualam mols de $OH^-$: $\\text{Ácido} + \\text{Base} \\rightarrow \\text{Sal} + H_2O$. No entanto, o pH final da solução salina depende da força relativa dos precursores: sal de ácido forte com base fraca sofre hidrólise do cátion gerando **pH ácido** (ex: $NH_4Cl$); sal de ácido fraco com base forte sofre hidrólise do ânion gerando **pH básico** (ex: bicarbonato de sódio $NaHCO_3$, carbonato de sódio $Na_2CO_3$ e acetato de sódio); sal de ácido forte com base forte **não sofre hidrólise apreciável**, mantendo pH neutro ($NaCl$).',
+            '**Química da Calagem Agrícola e Correção de Solos**: O cerrado brasileiro possui solos naturalmente muito ácidos ($pH < 5$) e com elevada toxidade por íons alumínio ($Al^{3+}$), que inibem o desenvolvimento radicular das plantas. A **Calagem** consiste na adição de calcário agrícola moído ($CaCO_3$ e $MgCO_3$) ou cal virgem ($CaO$): $CaCO_3 \\rightarrow Ca^{2+} + CO_3^{2-}$; os ânions carbonato reagem com a água e com a acidez do solo ($CO_3^{2-} + 2H^+ \\rightarrow H_2O + CO_2$), neutralizando os prótons livres, elevando o pH e precipitando o alumínio tóxico na forma de hidróxido de alumínio insolúvel e inofensivo: $Al^{3+} + 3OH^- \\rightarrow Al(OH)_3 \\downarrow$.'
+          ],
+          tips: [
+            'Dica clássica de prova: O monóxido de carbono ($CO$) é um óxido neutro e gás asfixiante tóxico (liga-se à hemoglobina formando carboxiemoglobina irreversível), mas NÃO provoca chuva ácida, pois não reage com a água das nuvens. Quem provoca a chuva ácida são os óxidos ácidos $SO_2$, $SO_3$ e $NO_x$!'
+          ]
         }
       ]
     }

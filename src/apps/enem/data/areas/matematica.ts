@@ -47,6 +47,42 @@ export const matematica: KnowledgeArea = {
               ]
             },
             {
+              id: 'teoria-dos-conjuntos-diagramas-venn',
+              title: 'Teoria dos Conjuntos, Operações e Diagramas de Venn em Pesquisas de Mercado',
+              enemWeight: 'Alta',
+              summary: 'As operações de união, interseção, diferença, complementar e o princípio da inclusão-exclusão aplicados à resolução de pesquisas amostrais.',
+              keyConcepts: [
+                '**Conjuntos e Relações Fundamentais**: Relação de pertinência liga elemento a conjunto ($x \\in A$); relação de inclusão liga subconjunto a conjunto ($A \\subset B$). O conjunto das partes $\\mathcal{P}(A)$ de um conjunto com $n$ elementos possui exatamente $2^n$ subconjuntos.',
+                '**Operações Fundamentais com Conjuntos**: 1) **União ($A \\cup B$)**: reúne os elementos que pertencem a $A$ OU a $B$ (conectivo lógico disjuntivo); 2) **Interseção ($A \\cap B$)**: elementos que pertencem simultaneamente a $A$ E a $B$ (conectivo lógico conjuntivo); conjuntos sem elementos comuns ($A \\cap B = \\emptyset$) são chamados de **disjuntos**; 3) **Diferença ($A - B$)**: elementos que pertencem EXCLUSIVAMENTE a $A$ e não pertencem a $B$; 4) **Conjunto Complementar ($A^c$ ou $\\complement_U A$)**: elementos do universo pesquisado $U$ que não pertencem ao conjunto $A$ ($U - A$).',
+                '**Princípio da Inclusão-Exclusão para Dois Conjuntos**: Ao calcular o número total de elementos na união de dois grupos, somam-se os totais de cada grupo e desconta-se a interseção contada duas vezes: $n(A \\cup B) = n(A) + n(B) - n(A \\cap B)$.',
+                '**Princípio da Inclusão-Exclusão para Três Conjuntos**: $n(A \\cup B \\cup C) = n(A) + n(B) + n(C) - [n(A \\cap B) + n(A \\cap C) + n(B \\cap C)] + n(A \\cap B \\cap C)$.',
+                '**Método do Preenchimento de Dentro para Fora no Diagrama de Venn**: Para resolver sem erros questões de pesquisas de audiência ou preferências de consumo: **1º Passo**: preencha sempre a região central da interseção tripla ($A \\cap B \\cap C$); **2º Passo**: preencha as regiões de duas opções subtraindo a tripla central já anotada; **3º Passo**: preencha as regiões de preferência exclusiva subtraindo todas as interseções correspondentes; **4º Passo**: lembre-se de contabilizar os entrevistados que não escolheram nenhuma opção fora dos círculos.'
+              ],
+              formulas: [
+                {
+                  id: 'inclusao-exclusao-dois-formula',
+                  name: 'Princípio da Inclusão-Exclusão para Dois Conjuntos',
+                  latex: 'n(A \\cup B) = n(A) + n(B) - n(A \\cap B)',
+                  description: 'Evita a contagem duplicada da interseção de elementos que pertencem a ambos os grupos.',
+                  variables: [
+                    { symbol: 'n(A \\cup B)', meaning: 'Número de elementos na união', unit: '-' },
+                    { symbol: 'n(A)', meaning: 'Total de elementos no conjunto A', unit: '-' },
+                    { symbol: 'n(B)', meaning: 'Total de elementos no conjunto B', unit: '-' },
+                    { symbol: 'n(A \\cap B)', meaning: 'Total de elementos simultâneos em A e B', unit: '-' }
+                  ]
+                },
+                {
+                  id: 'inclusao-exclusao-tres-formula',
+                  name: 'Princípio da Inclusão-Exclusão para Três Conjuntos',
+                  latex: 'n(A \\cup B \\cup C) = n(A) + n(B) + n(C) - [n(A \\cap B) + n(B \\cap C) + n(A \\cap C)] + n(A \\cap B \\cap C)',
+                  description: 'Fórmula completa para contagem em pesquisas com três opções simultâneas.'
+                }
+              ],
+              tips: [
+                'Cuidado com as pegadinhas semânticas do ENEM: Há uma diferença colossal entre "120 pessoas leem o jornal A" e "120 pessoas leem APENAS o jornal A". No primeiro caso, os 120 englobam quem lê outros jornais juntos; no segundo caso, trata-se de um valor exclusivo que não sofre subtração das interseções!'
+              ]
+            },
+            {
               id: 'razoes-proporcoes-regra-tres',
               title: 'Razão, Proporção e Regra de Três Simples e Composta',
               enemWeight: 'Muito Alta',

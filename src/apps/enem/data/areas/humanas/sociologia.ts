@@ -171,6 +171,21 @@ export const sociologia: Discipline = {
           tips: [
             'Conceito coringa para redações nota 1000 no ENEM: A **Violência Simbólica** de Bourdieu é exercida sem coerção física direta, operando com a cumplicidade involuntária do próprio dominado, que internalizou as regras e juízos dos grupos dominantes como se fossem a ordem "natural" das coisas.'
           ]
+        },
+        {
+          id: 'sociedade-em-rede-cultura-digital-genero',
+          title: 'Sociedade em Rede (Manuel Castells), Capitalismo de Vigilância e Relações de Gênero',
+          enemWeight: 'Alta',
+          summary: 'A morfologia da sociedade conectada, o sequestro comportamental por algoritmos nas redes e a análise sociológica da divisão sexual do trabalho e do patriarcado.',
+          keyConcepts: [
+            '**Manuel Castells e a Sociedade em Rede**: Castells teoriza a emergência da Era da Informação, estruturada a partir da revolução das tecnologias microeletrônicas e da internet. A sociedade contemporânea organiza-se em **Redes Globais Descentralizadas**, onde os fluxos de informação, capital financeiro, tecnologia e imagens sobrepõem-se ao tradicional "espaço dos lugares", redefinindo identidades, relações de trabalho e formas de mobilização social e política.',
+            '**Capitalismo de Vigilância, Bolhas de Filtro e Viés Algorítmico**: Teoria de Shoshana Zuboff sobre a nova ordem econômica digital que reivindica a experiência humana privada como matéria-prima gratuita para tradução em dados comportamentais preditivos. Os algoritmos das plataformas digitais são arquitetados para maximizar o engajamento e o tempo de tela do usuário, confinando-o em **Bolhas de Filtro** (Eli Pariser) e câmaras de eco que alimentam a polarização afetiva, o discurso de ódio e a circulação algorítmica de desinformação (*fake news*).',
+            '**Sociologia de Gênero e Desconstrução do Patriarcado**: Distinção crucial entre **sexo biológico** (características anatômicas cromossômicas) e **gênero** (construção social, histórica e performática dos papéis atribuídos ao masculino e feminino). A teórica Judith Butler conceitua o gênero como uma performance corporal e discursiva reiterada ao longo da vida sob a coerção de normas regulatórias socioculturais.',
+            '**Heleieth Saffioti e a Divisão Sexual do Trabalho no Brasil**: Pioneira da sociologia feminista marxista no Brasil, Saffioti formulou a articulação indissociável entre **capitalismo, patriarcado e racismo**. A divisão sexual do trabalho historicamente confina a mulher ao trabalho reprodutivo e de cuidado não remunerado (*care economy*), submetendo-a à **dupla jornada de trabalho**, à disparidade salarial e ao **teto de vidro** (*glass ceiling* — barreira invisível que limita a ascensão profissional feminina a postos de comando).'
+          ],
+          tips: [
+            'Conexão histórica com o ENEM: O tema da Redação do ENEM 2023 ("Desafios para o enfrentamento da invisibilidade do trabalho de cuidado realizado pela mulher no Brasil") é a perfeita materialização da teoria sociológica de Heleieth Saffioti sobre a naturalização compulsória do cuidado materno e doméstico como mecanismo estrutural de sustentação econômica do sistema produtivo.'
+          ]
         }
       ]
     }

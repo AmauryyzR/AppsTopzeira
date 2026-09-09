@@ -183,6 +183,21 @@ export const filosofia: Discipline = {
           tips: [
             'Conexão de ouro para Redação e Humanas no ENEM: A teoria da **Indústria Cultural** de Adorno é a ferramenta conceitual perfeita para analisar a influência dos algoritmos das redes sociais e a manipulação do comportamento do consumidor contemporâneo pela publicidade predatória.'
           ]
+        },
+        {
+          id: 'etica-contemporanea-justica-rawls-jonas',
+          title: 'Ética Contemporânea: Justiça como Equidade (John Rawls), Princípio da Responsabilidade (Hans Jonas) e Bioética',
+          enemWeight: 'Alta',
+          summary: 'A refundação do contrato social sob o véu da ignorância, a responsabilidade ecológica para com as futuras gerações e os dilemas morais da bioética.',
+          keyConcepts: [
+            '**John Rawls e a Teoria da Justiça como Equidade**: Rawls resgata a tradição contratualista para estabelecer critérios racionais e imparciais de justiça social distributiva. Propõe o experimento mental da **Posição Original** sob o **"Véu da Ignorância"**: legisladores hipotéticos devem conceber as regras básicas da sociedade sem saber previamente qual será sua própria posição social, classe, gênero, raça, talentos inatos ou religião. Nessa condição de incerteza ontológica, qualquer pessoa racional optará pela garantia das melhores condições para os mais vulneráveis (estratégia *maximin*).',
+            '**Os Dois Princípios da Justiça de Rawls**: 1) **Princípio da Igualdade de Liberdades Básicas**: cada indivíduo deve ter direito igual ao sistema mais amplo de liberdades civis fundamentais (expressão, voto, locomoção e consciência) compatível com liberdade idêntica para todos; 2) **Princípio da Diferença e da Igualdade Equitativa de Oportunidades**: as desigualdades socioeconômicas só são eticamente justas e legítimas se satisfizerem duas condições: vincularem-se a cargos e posições acessíveis a todos em igualdade real de oportunidades e **gerarem o maior benefício possível para os membros menos favorecidos da sociedade** (justificando políticas públicas afirmativas e transferências de renda redistributivas).',
+            '**Hans Jonas e o Princípio da Responsabilidade**: O filósofo alemão alerta que o formidável poder tecno-científico moderno (energia nuclear, desequilíbrio climático, engenharia genética) tem a capacidade inédita de destruir a integridade da biosfera e aniquilar a humanidade futura. A ética tradicional regulava apenas o presente imediato e as relações interpessoais. Jonas postula um imperativo ético ecológico: *"Age de tal modo que os efeitos de tua ação sejam compatíveis com a permanência de uma vida humana autêntica na Terra"*, defendendo o dever moral imperativo de proteger as **gerações futuras** e a natureza não humana.',
+            '**A Heurística do Medo e a Bioética Principialista**: Diante do perigo de catástrofe irreversível, Jonas propõe a **Heurística do Medo** (na dúvida, o princípio da precaução deve prevalecer sobre o otimismo tecnológico desenfreado). Na **Bioética**, consolidaram-se os quatro princípios fundamentais (Beauchamp e Childress): 1) **Autonomia** (respeito à vontade consciente e ao consentimento livre e esclarecido do paciente); 2) **Não Maleficência** (dever de não causar dano intencional — *primum non nocere*); 3) **Beneficência** (dever de maximizar os benefícios em favor do outro); 4) **Justiça** (distribuição equânime de custos, riscos e recursos médicos escassos na saúde pública).'
+          ],
+          tips: [
+            'Conexão impecável para temas de redação do ENEM sobre inteligência artificial, meio ambiente ou ações afirmativas: O Princípio da Responsabilidade de Hans Jonas fundamenta qualquer debate sobre sustentabilidade ecológica para gerações futuras; já o Princípio da Diferença de John Rawls é a justificativa filosófica basilar para cotas socioeconômicas e raciais em vestibulares e concursos públicos!'
+          ]
         }
       ]
     }

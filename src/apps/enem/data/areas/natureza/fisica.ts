@@ -139,6 +139,77 @@ export const fisica: Discipline = {
           tips: [
             'Se a distância entre dois planetas for duplicada ($2d$), a força gravitacional entre eles é reduzida para a QUARTA PARTE ($F/4$), pois a dependência com a distância é quadrática inversa ($1/d^2$).'
           ]
+        },
+        {
+          id: 'impulso-quantidade-movimento-colisoes',
+          title: 'Impulso, Quantidade de Movimento e Colisões na Segurança Automotiva',
+          enemWeight: 'Alta',
+          summary: 'O teorema do impulso, a conservação do momento linear em sistemas isolados e os mecanismos de segurança veicular como airbags e zonas de deformação programada.',
+          keyConcepts: [
+            '**Quantidade de Movimento (Momento Linear $\\vec{Q}$)**: Grandeza vetorial que mensura a inércia de um corpo em movimento, dada pelo produto de sua massa escalar pela velocidade vetorial: $\\vec{Q} = m \\cdot \\vec{v}$, expressa em $\\text{kg}\\cdot\\text{m/s}$ ou $\\text{N}\\cdot\\text{s}$. Tem sempre a mesma direção e o mesmo sentido do vetor velocidade.',
+            '**Teorema do Impulso ($\\vec{I} = \\Delta \\vec{Q}$)**: O impulso produzido por uma força resultante constante que atua durante um intervalo de tempo $\\Delta t$ é dado por $\\vec{I} = \\vec{F}_{\\text{méd}} \\cdot \\Delta t$. O Teorema do Impulso estabelece que o impulso da força resultante é rigorosamente igual à variação da quantidade de movimento do corpo: $\\vec{I} = \\Delta \\vec{Q} = m\\vec{v} - m\\vec{v}_0$. Em gráficos de Força versus Tempo [$F(t)$], a área sob a curva representa numericamente o impulso total.',
+            '**Física da Segurança no Trânsito (Airbag e Zonas de Deformação)**: Em uma frenagem brusca ou colisão, a variação da quantidade de movimento do passageiro (de sua velocidade de cruzeiro até o repouso absoluto) é fixa ($\\Delta Q = \\text{constante}$). Como $F_{\\text{méd}} = \\Delta Q / \\Delta t$, para minimizar a força média de impacto destruidora sobre os ossos e órgãos vitais do motorista, a engenharia automotiva projeta recursos que **maximizam o tempo de desaceleração ($\\Delta t$)**: 1) O **Airbag** infla rapidamente e esvazia de forma controlada ao ser comprimido pelo corpo; 2) As **Zonas de Deformação Programada** amassam plasticamente a lataria dianteira; 3) O **Cinto de Segurança** possui elasticidade calibrada. Quanto maior $\\Delta t$, menor a força de impacto média $F_{\\text{méd}}$!',
+            '**Conservação da Quantidade de Movimento em Sistemas Mecanicamente Isolados**: Quando a resultante das forças externas atuando sobre um sistema de corpos é nula ($\\Sigma \\vec{F}_{\\text{ext}} = \\vec{0}$), a quantidade de movimento vetorial total do sistema permanece rigorosamente constante: $\\Sigma \\vec{Q}_{\\text{antes}} = \\Sigma \\vec{Q}_{\\text{depois}}$. Aplica-se ao recuo de armas de fogo, propulsão de foguetes pelo escape de gases em alta velocidade e em todas as colisões mecânicas.',
+            '**Classificação das Colisões Mecânicas**: 1) **Perfeitamente Elástica**: conserva tanto a quantidade de movimento quanto a energia cinética total do sistema ($E_{c,\\text{antes}} = E_{c,\\text{depois}}$, coeficiente de restituição $e=1$); 2) **Inelástica (Totalmente Inelástica)**: ocorre a perda MÁXIMA possível de energia cinética (dissipada em deformação plástica, calor térmico e som de impacto), sendo que os corpos colidem e passam a se mover **juntos com a mesma velocidade final** ($v_1\' = v_2\'$, $e=0$); 3) **Parcialmente Elástica**: os corpos se separam, mas há perda parcial de energia cinética ($0 < e < 1$).'
+          ],
+          formulas: [
+            {
+              id: 'teorema-impulso-formula',
+              name: 'Teorema do Impulso e Quantidade de Movimento',
+              latex: '\\vec{I} = \\vec{F}_{\\text{méd}} \\cdot \\Delta t = \\Delta \\vec{Q} = m\\vec{v} - m\\vec{v}_0',
+              description: 'O impulso da força resultante é igual à variação da quantidade de movimento.',
+              variables: [
+                { symbol: '\\vec{I}', meaning: 'Impulso vetorial', unit: 'N·s ou kg·m/s' },
+                { symbol: '\\vec{F}_{\\text{méd}}', meaning: 'Força média aplicada', unit: 'N (Newtons)' },
+                { symbol: '\\Delta t', meaning: 'Intervalo de tempo do contato', unit: 's' },
+                { symbol: '\\Delta \\vec{Q}', meaning: 'Variação do momento linear', unit: 'kg·m/s' }
+              ]
+            },
+            {
+              id: 'conservacao-momento-formula',
+              name: 'Conservação da Quantidade de Movimento em Sistema Isolado',
+              latex: 'm_1 \\vec{v}_1 + m_2 \\vec{v}_2 = m_1 \\vec{v}_1\' + m_2 \\vec{v}_2\'',
+              description: 'A quantidade de movimento total inicial é igual à quantidade de movimento total final.'
+            }
+          ],
+          tips: [
+            'Pegadinha clássica do ENEM: Em QUALQUER colisão mecânica (seja ela perfeitamente elástica, inelástica ou parcialmente elástica), a quantidade de movimento total SEMPRE se conserva se o sistema for isolado de forças externas. O que se dissipa na colisão inelástica é unicamente a ENERGIA CINÉTICA, convertida em calor, deformação plástica e ondas sonoras!'
+          ]
+        },
+        {
+          id: 'estatica-torque-alavancas',
+          title: 'Estática do Ponto Material e do Corpo Rígido: Torque e Equilíbrio de Alavancas',
+          enemWeight: 'Alta',
+          summary: 'As condições de equilíbrio translacional e rotacional, o cálculo do momento de uma força (torque) e a vantagem mecânica dos três tipos de alavancas no cotidiano.',
+          keyConcepts: [
+            '**Condições Fundamentais de Equilíbrio**: 1) **Equilíbrio Translacional (do Ponto Material)**: para que um corpo não acelere linearmente, a resultante de todas as forças vetoriais aplicadas deve ser nula: $\\Sigma \\vec{F} = \\vec{0}$ (implica aceleração linear $a = 0$, permanecendo em repouso estático ou em Movimento Retilíneo Uniforme); 2) **Equilíbrio Rotacional (do Corpo Rígido Extenso)**: para que um corpo extenso não gire ou altere sua velocidade angular, a soma algébrica de todos os momentos de força (torques) em relação a qualquer polo arbitrário deve ser nula: $\\Sigma \\vec{\\tau} = \\vec{0}$.',
+            '**Momento de uma Força (Torque $\\tau$)**: Mede a tendência de uma força fazer um corpo girar em torno de um eixo ou ponto de apoio. É calculado pelo produto da intensidade da força pelo seu braço de alavanca (distância perpendicular da linha de ação da força até o polo de giro): $\\tau = F \\cdot d \\cdot \\sin\\theta$, medido em $\\text{N}\\cdot\\text{m}$. Quanto mais distante do ponto de apoio a força for aplicada (maior o braço $d$), menor será a força muscular necessária para produzir o mesmo efeito rotacional (ex: maçanetas na extremidade oposta às dobradiças da porta, chaves de boca com cabos longos para desapertar parafusos emperrados).',
+            '**Princípio das Alavancas de Arquimedes**: Uma máquina simples que multiplica forças baseando-se na igualdade de momentos: $F_{\\text{potente}} \\cdot d_{\\text{potente}} = F_{\\text{resistente}} \\cdot d_{\\text{resistente}}$. A **Vantagem Mecânica** ($VM = F_R / F_P = d_P / d_R$) é maior que 1 sempre que o braço potente for mais longo que o braço resistente.',
+            '**Classificação dos Três Tipos de Alavancas no Cotidiano**: 1) **Interfixa**: o Ponto de Apoio (Fixo) situa-se entre a Força Potente e a Força Resistente (ex: gangorra infantil, tesoura, alicate e a articulação da cabeça com a primeira vértebra cervical); 2) **Inter-resistente**: a Força Resistente situa-se entre o ponto fixo e a força potente; como o braço potente é sempre maior que o braço resistente ($d_P > d_R$), SEMPRE proporciona vantagem mecânica multiplicando a força humana (ex: carrinho de mão, quebra-nozes, abridor de garrafas e o movimento da panturrilha elevando o peso do corpo sobre a ponta dos pés); 3) **Interpotente**: a Força Potente situa-se entre o ponto fixo e a carga resistente; o braço potente é menor ($d_P < d_R$), exigindo mais força muscular, porém ampliando a velocidade e a amplitude angular do movimento (ex: pinça cirúrgica, cortador de unhas, vara de pesca e o músculo bíceps braquial flexionando o antebraço).'
+          ],
+          formulas: [
+            {
+              id: 'torque-momento-formula',
+              name: 'Momento de uma Força (Torque)',
+              latex: '\\tau = F \\cdot d \\cdot \\sin\\theta',
+              description: 'Mede a tendência rotacional gerada pela força F em relação ao polo a uma distância d.',
+              variables: [
+                { symbol: '\\tau', meaning: 'Torque ou momento da força', unit: 'N·m' },
+                { symbol: 'F', meaning: 'Intensidade da força', unit: 'N' },
+                { symbol: 'd', meaning: 'Distância do ponto de aplicação ao eixo (braço)', unit: 'm' },
+                { symbol: '\\theta', meaning: 'Ângulo entre a força e a linha do braço', unit: 'graus ou rad' }
+              ]
+            },
+            {
+              id: 'equilibrio-alavancas-formula',
+              name: 'Equilíbrio de Alavancas de Arquimedes',
+              latex: 'F_P \\cdot d_P = F_R \\cdot d_R',
+              description: 'Igualdade dos momentos potente e resistente para o equilíbrio estático da alavanca.'
+            }
+          ],
+          tips: [
+            'Aplicação biomédica recorrente no ENEM: O antebraço humano funciona como uma alavanca INTERPOTENTE com o cotovelo como ponto fixo e a inserção do tendão do bíceps próxima à articulação. Como o braço potente é minúsculo comparado ao comprimento do antebraço até a mão, o bíceps precisa fazer uma força muscular MUITO MAIOR do que o peso do objeto segurado na mão, compensando esse esforço com enorme ganho de amplitude motora!'
+          ]
         }
       ]
     },

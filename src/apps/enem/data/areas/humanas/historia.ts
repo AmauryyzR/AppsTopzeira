@@ -26,6 +26,22 @@ export const historia: Discipline = {
           ]
         },
         {
+          id: 'historia-da-africa-cultura-afrobrasileira',
+          title: 'História da África, Tráfico Atlântico e Resistência Afro-Brasileira (Lei 10.639/03)',
+          enemWeight: 'Muito Alta',
+          summary: 'Os grandes reinos e impérios africanos pré-coloniais, as rotas transaarianas, a diáspora forçada no tráfico atlântico e o legado civilizatório da resistência negra no Brasil.',
+          keyConcepts: [
+            '**A África Pré-Colonial e a Pluralidade de Civilizações**: Rompendo com a visão eurocêntrica racista que retratava o continente africano como homogêneo, estático ou tribal antes da chegada dos colonizadores, a história e a arqueologia revelam sociedades complexas, urbanizadas e ricas: 1) **Império do Mali** (séculos XIII–XVI): dominou as rotas comerciais transaarianas de ouro e sal; seu imperador **Mansa Musa** (século XIV) realizou a famosa peregrinação a Meca e consolidou **Timbuktu** como polo universitário e cultural de referência do mundo islâmico; 2) **Império Songhai** e **Reino de Gana**: centros mercantis e acadêmicos cosmopolitas com avançada metalurgia e arquitetura; 3) **Reino do Congo** e **Reinos Iorubás (Benin e Ifé)**: dominavam a fundição de bronze e ferro, com refinada tradição escultórica e sistemas de sucessão política articulados.',
+            '**A Diáspora Atlântica e o Tráfico de Seres Humanos**: A escravidão transatlântica mercantilizou corpos humanos em escala sem precedentes históricos. Milhões de africanos foram sequestrados, desterrados e transportados através do Oceano Atlântico nos navios negreiros (**tumbeiros**), submetidos a condições subumanas de insalubridade, fome, sede e maus-tratos, onde mais de 15% morriam durante a travessia.',
+            '**A Diversidade Étnico-Linguística dos Povos Trazidos ao Brasil**: O tráfico sequestrou povos de matrizes culturais distintas: 1) **Grupo Banto** (angolanos, congoleses, moçambicanos), trazidos massivamente para o Nordeste açucareiro, Minas Gerais e Rio de Janeiro, legando profunda influência no português brasileiro (vocábulos como *samba, caçula, moleque, marimbondo, fubá, dengo, cachaça*); 2) **Grupo Sudaneses / Iorubás / Jejes** (nagôs, hauçás), concentrados sobretudo na Bahia, fundamentais para a culinária do azeite de dendê, o acarajé e as religiões de matriz africana.',
+            '**Resistência, Quilombismo e Insurreições Negras**: A resistência ao cativeiro assumiu múltiplas frentes: 1) **Quilombos**: comunidades autônomas de refúgio e reorganização sociocultural livre de escravizados fugidos, indígenas e brancos marginalizados; destaque para o **Quilombo dos Palmares** (na Serra da Barriga, AL), liderado por **Ganga Zumba**, **Dandara** e **Zumbi dos Palmares**, que resistiu por quase um século até sua destruição em 1695; 2) **Irmandades Religiosas Negras** (como a de Nossa Senhora do Rosário dos Homens Pretos), que articulavam solidariedade comunitária, compra de cartas de alforria e preservação velada de cultos sincréticos; 3) **Insurreições Urbanas Armadas**: como a **Revolta dos Malês** (Salvador, 1835), articulada por escravizados muçulmanos alfabetizados em árabe que planejaram a tomada do poder provincial.',
+            '**Lei nº 10.639/2003 e a Superação do Epistemicídio**: Marco legal brasileiro que tornou obrigatório o ensino da História e Cultura Afro-Brasileira e Africana nas escolas. Visa desconstruir o racismo estrutural e o **epistemicídio** (invisibilização ou destruição deliberada das contribuições intelectuais e científicas dos povos negros), reconhecendo os africanos e seus descendentes não apenas como "mão de obra escrava", mas como sujeitos históricos e construtores primordiais da identidade nacional brasileira.'
+          ],
+          tips: [
+            'Obrigatório no ENEM: Questões sobre matriz africana nunca abordam os povos negros como vítimas passivas do sistema escravocrata, mas sim como SUJEITOS HISTÓRICOS ATIVOS que desenvolveram estratégias sofisticadas de resistência armada, cultural, jurídica, linguística e religiosa para resistir e moldar o Brasil.'
+          ]
+        },
+        {
           id: 'primeiro-reinado-periodo-regencial',
           title: 'Primeiro Reinado e Período Regencial: Instabilidade e Revoltas Provinciais',
           enemWeight: 'Média',
