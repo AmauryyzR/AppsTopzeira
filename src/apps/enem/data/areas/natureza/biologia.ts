@@ -313,6 +313,26 @@ export const biologia: Discipline = {
           ],
           tips: [
             'Dica de ouro no ENEM: Para diferenciar Segregação Independente de Linkage em cruzamento-teste ($AaBb \\times aabb$): se a prole apresentar 4 classes com frequências IDÊNTICAS ($25\\%$ cada), os genes estão em cromossomos diferentes (2ª Lei de Mendel). Se apresentar duas classes com frequências altas ($>25\\%$, parentais) e duas classes com frequências baixas ($<25\\%$, recombinantes), trata-se de LINKAGE!'
+          ],
+          deepSections: [
+            {
+              title: 'Mapeamento Cromossômico por Cruzamento-Teste de Três Pontos (Three-Point Testcross)',
+              explanation: 'Problema clássico em segunda fase da FUVEST e vestibulares de alta seletividade: determinar a ordem linear e as distâncias físicas relativas entre três locos gênicos ligados ($A$, $B$ e $C$) a partir dos dados de frequência de descendentes em um cruzamento-teste ($AaBbCc \\times aabbcc$).',
+              bullets: [
+                '**Identificação das Classes Parentais e de Duplo Crossing-Over (DCO)**: Entre as 8 classes fenotípicas resultantes do cruzamento-teste: as duas classes mais frequentes correspondem aos **gametas parentais** (sem permuta); as duas classes com a menor frequência absoluta correspondem aos **duplos recombinantes (DCO)**, resultantes de quiasmas simultâneos nos dois intervalos adjacentes.',
+                '**Determinação Inequívoca da Ordem Gênica**: O alelo do loco que troca de posição em relação aos outros dois nas classes de duplo recombinante quando comparado com as classes parentais é OBRIGATORIAMENTE o loco central (ex.: se os parentais são $ABC$ e $abc$ e os duplos recombinantes são $AbC$ e $aBc$, o gene $B$ foi o único a permutar isoladamente, comprovando que a ordem física linear no cromossomo é $A - B - C$).',
+                '**Cálculo Rigoroso das Distâncias (cM / UR)**: A distância entre o gene inicial e o central é $d(A-B) = \\frac{\\text{SCO}_1 + \\text{DCO}}{\\text{Total}} \\times 100\\%$; a distância entre o central e o final é $d(B-C) = \\frac{\\text{SCO}_2 + \\text{DCO}}{\\text{Total}} \\times 100\\%$. Somando as distâncias parciais, obtém-se o mapa genético total $d(A-C) = d(A-B) + d(B-C)$.',
+                '**Coeficiente de Coincidência ($c$) e Interferência ($I$)**: A frequência teórica esperada de duplos crossing-overs é o produto das probabilidades independentes dos dois intervalos: $\\text{DCO}_{\\text{esp}} = \\text{FR}(A-B) \\times \\text{FR}(B-C)$. O **Coeficiente de Coincidência** é $c = \\frac{\\text{DCO}_{\\text{obs}}}{\\text{DCO}_{\\text{esp}}}$. A **Interferência Cromossômica** é dada por $I = 1 - c$. Se $I > 0$ (interferência positiva), a formação física de um quiasma em um segmento inibe mecanicamente a ocorrência de outro quiasma na vizinhança imediata.'
+              ]
+            },
+            {
+              title: 'Fundamentos Bioquímicos de Epistasias e Dedução Algébrica da Herança Quantitativa',
+              explanation: 'Compreensão aprofundada dos mecanismos enzimáticos que desviam as proporções mendelianas clássicas de $9:3:3:1$ e a dedução da distribuição binomial no Triângulo de Pascal.',
+              bullets: [
+                '**Vias Metabólicas Sequenciais e Epistasia Dupla Recessiva ($9:7$)**: Ocorre quando duas enzimas consecutivas codificadas por genes distintos são necessárias para sintetizar o produto final colorido: $\\text{Precursor incolor} \\xrightarrow{\\text{Enzima A}} \\text{Intermediário incolor} \\xrightarrow{\\text{Enzima B}} \\text{Pigmento ativo}$. Se o indivíduo for recessivo homozigoto para qualquer um dos locos ($aaB\\_$, $A\\_bb$ ou $aabb$), a via é bloqueada, gerando fenótipo albino/incolor. Assim, apenas a classe $A\\_B\\_$ ($9/16$) é pigmentada, enquanto as demais somam-se em $3 + 3 + 1 = 7/16$.',
+                '**Dedução das Frequências Poligiênicas via Binômio de Newton**: Em uma herança quantitativa controlada por $n$ pares de alelos aditivos, a proporção esperada de cada classe com $k$ alelos aditivos (maiúsculos) na descendência de heterozigotos é calculada pelo termo binomial do Triângulo de Pascal: $P(k) = \\binom{2n}{k} \\left(\\frac{1}{2}\\right)^{2n} = \\frac{(2n)!}{k!(2n - k)!} \\cdot \\frac{1}{4^n}$. As classes extremas (máxima e mínima) surgem na frequência de $\\frac{1}{4^n}$, demonstrando por que características poligênicas complexas (como altura ou pigmentação com 3 pares) geram uma curva em sino gaussiana contínua.'
+              ]
+            }
           ]
         },
         {

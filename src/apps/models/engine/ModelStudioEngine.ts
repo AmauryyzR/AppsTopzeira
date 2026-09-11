@@ -176,11 +176,14 @@ export class ModelStudioEngine {
 
     this.currentModelGroup.add(model);
     this.animatedModel = model;
+    const portraitLighting=model.userData.portraitLighting===true;
+    this.hemiLight.intensity=portraitLighting?1.65:.9;
+    this.fillLight.intensity=portraitLighting?1.2:.8;
     // Small detailed assets can opt into a tighter shadow volume (millimetre features).
     const shadowExtent = model.userData.studioShadowExtent ?? 10;
     Object.assign(this.keyLight.shadow.camera, {left:-shadowExtent,right:shadowExtent,top:shadowExtent,bottom:-shadowExtent});
     this.keyLight.shadow.normalBias = model.userData.studioShadowExtent ? .0015 : .025;
-    this.keyLight.shadow.bias = model.userData.studioShadowExtent ? -.00004 : -.0004;
+    this.keyLight.shadow.bias = portraitLighting ? .000015 : model.userData.studioShadowExtent ? -.00004 : -.0004;
     this.keyLight.shadow.camera.updateProjectionMatrix();
     if (model.animations.length) this.mixer = new THREE.AnimationMixer(model);
 
@@ -190,7 +193,7 @@ export class ModelStudioEngine {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         mesh.castShadow = this.settings.showShadows;
-        mesh.receiveShadow = this.settings.showShadows;
+        mesh.receiveShadow = this.settings.showShadows && !mesh.userData.softSkinLighting;
         this.originalMaterials.set(mesh, mesh.material);
       }
     });
@@ -207,6 +210,7 @@ export class ModelStudioEngine {
     if (frameCamera) {
       this.frameModel();
     }
+    if(model.userData.defaultAnimation)this.setAnimation(model.userData.defaultAnimation);
   }
 
   public getModelGroup(): THREE.Group {
@@ -236,7 +240,11 @@ export class ModelStudioEngine {
       if ((object as THREE.SkinnedMesh).isSkinnedMesh) (object as THREE.SkinnedMesh).skeleton.pose();
     });
     const clip = this.animatedModel?.animations.find(animation => animation.name === name);
-    if (clip && this.mixer) this.mixer.clipAction(clip).reset().play();
+    if (clip && this.mixer) {
+      const action=this.mixer.clipAction(clip).reset();
+      action.setLoop(name==='Jump'?THREE.LoopOnce:THREE.LoopRepeat,name==='Jump'?1:Infinity);
+      action.clampWhenFinished=name==='Jump';action.play();
+    }
   }
 
   public setSkeletonVisible(visible: boolean): void {
@@ -383,7 +391,7 @@ export class ModelStudioEngine {
     this.currentModelGroup.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         child.castShadow = visible;
-        child.receiveShadow = visible;
+        child.receiveShadow = visible && !child.userData.softSkinLighting;
       }
     });
   }

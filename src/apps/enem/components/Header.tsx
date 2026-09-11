@@ -7,7 +7,7 @@ interface HeaderProps {
   onToggleSidebar: () => void;
   activePath: BreadcrumbPath | null;
   selectedArea?: KnowledgeArea | null;
-  viewMode?: 'home' | 'summary' | 'topic';
+  viewMode?: 'home' | 'aprofundado-home' | 'summary' | 'topic';
   onGoHome?: () => void;
   onGoSummary?: () => void;
   onOpenSearch?: () => void;

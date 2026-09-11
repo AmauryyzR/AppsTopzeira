@@ -491,6 +491,25 @@ export const fisica: Discipline = {
           ],
           tips: [
             'Cálculo do chuveiro no ENEM: Um chuveiro de $5500\\text{ W}$ ($5,5\\text{ kW}$) utilizado por 4 pessoas em banhos de 15 minutos diários cada (total de 1 hora/dia) consome $5,5\\text{ kW} \\times 1\\text{ h} = 5,5\\text{ kWh}$ por dia. Em um mês de 30 dias: $5,5 \\times 30 = 165\\text{ kWh}$!'
+          ],
+          deepSections: [
+            {
+              title: 'Teorema da Máxima Transferência de Potência em Geradores Reais',
+              explanation: 'Em provas avançadas como FUVEST, ITA e UNICAMP, frequentemente cobra-se a otimização de circuitos reais. Quando um gerador de fem $\\mathcal{E}$ e resistência interna $r$ é conectado a um resistor de carga externa regulável $R$, qual deve ser o valor de $R$ para que a potência útil consumida pela carga seja máxima?',
+              bullets: [
+                '**Dedução por Função Quadrática da Potência Útil**: A potência entregue ao circuito externo é dada por $P_{\\text{útil}}(i) = U \\cdot i = (\\mathcal{E} - r \\cdot i) \\cdot i = -r \\cdot i^2 + \\mathcal{E} \\cdot i$. Trata-se de uma parábola com concavidade voltada para baixo ($a = -r < 0$). O valor de corrente que maximiza a função é a coordenada do vértice da parábola: $i_{\\text{ótima}} = -\\frac{b}{2a} = \\frac{\\mathcal{E}}{2r} = \\frac{1}{2} i_{cc}$.',
+                '**Casamento de Impedâncias Resistivas ($R = r$)**: Pela Lei de Pouillet, a corrente no circuito simples é $i = \\frac{\\mathcal{E}}{R + r}$. Igualando com $i_{\\text{ótima}} = \\frac{\\mathcal{E}}{2r}$, obtém-se imediatamente: $R + r = 2r \\implies R = r$. Portanto, a potência transferida ao resistor externo é MÁXIMA quando sua resistência é estritamente igual à resistência interna do gerador.',
+                '**Valor Máximo e Eficiência no Vértice**: Substituindo $i = \\frac{\\mathcal{E}}{2r}$, a potência máxima fornecida é $P_{\\text{máx}} = \\frac{\\mathcal{E}^2}{4r}$. O rendimento do gerador nessa condição é $\\eta = \\frac{U}{\\mathcal{E}} = \\frac{\\mathcal{E} - r(\\mathcal{E}/2r)}{\\mathcal{E}} = 50\\%$. Isso significa que metade de toda a energia elétrica produzida é inevitavelmente dissipada internamente em calor pelo efeito Joule dentro do próprio gerador.'
+              ]
+            },
+            {
+              title: 'Análise Nodal e Equilíbrio da Ponte de Wheatstone',
+              explanation: 'Em um circuito em ponte de quatro resistores alimentado por tensão contínua, a determinação de correntes exige a aplicação sistemática dos potenciais dos nós intermediários $V_C$ e $V_D$.',
+              bullets: [
+                '**Dedução do Equilíbrio Nodal**: Os ramos laterais formam dois divisores de tensão independentes. O potencial no nó $C$ é $V_C = U \\cdot \\frac{R_2}{R_1 + R_2}$ e no nó $D$ é $V_D = U \\cdot \\frac{R_4}{R_3 + R_4}$. Para que o galvanômetro central não registre corrente ($I_G = 0$), os potenciais devem ser iguais ($V_C = V_D$), o que conduz diretamente à igualdade algébrica dos produtos cruzados: $R_1 \\cdot R_4 = R_2 \\cdot R_3$.',
+                '**Ponte em Desequilíbrio**: Se $R_1 \\cdot R_4 \\neq R_2 \\cdot R_3$, o galvanômetro é percorrido por corrente cujo sentido revela qual dos dois nós possui maior potencial elétrico, sendo essa assimetria a base dos sensores de deformação (*strain gauges*) em pontes e túneis civis.'
+              ]
+            }
           ]
         },
         {

@@ -4,6 +4,7 @@ import { SidebarDrawer } from './components/SidebarDrawer';
 import { TopicContent } from './components/TopicContent';
 import { SearchPalette } from './components/SearchPalette';
 import { EnemHomeView } from './components/EnemHomeView';
+import { AprofundadoHomeView } from './components/AprofundadoHomeView';
 import { AreaSummaryView } from './components/AreaSummaryView';
 import { ENEM_CURRICULUM } from './data/curriculumData';
 import {
@@ -14,12 +15,13 @@ import {
   BreadcrumbPath,
 } from './types/curriculum';
 
-export type EnemViewMode = 'home' | 'summary' | 'topic';
+export type EnemViewMode = 'home' | 'aprofundado-home' | 'summary' | 'topic';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [viewMode, setViewMode] = useState<EnemViewMode>('home');
+  const [isAprofundado, setIsAprofundado] = useState<boolean>(false);
   const [selectedArea, setSelectedArea] = useState<KnowledgeArea | null>(null);
   const [selectedDisciplineId, setSelectedDisciplineId] = useState<string | null>(null);
 
@@ -42,10 +44,30 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // When clicking an Area from Home (Ciências da Natureza, etc.)
+  // When clicking an Area from standard Home (Ciências da Natureza, etc.)
   const handleSelectArea = (area: KnowledgeArea, disciplineId?: string) => {
+    setIsAprofundado(false);
     setSelectedArea(area);
     setSelectedDisciplineId(disciplineId || area.disciplines[0]?.id || '');
+    setViewMode('summary');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // When clicking the central "Aprofundado" widget from Home
+  const handleOpenAprofundado = () => {
+    setIsAprofundado(true);
+    setViewMode('aprofundado-home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // When clicking an individual discipline in Aprofundado mode
+  const handleSelectAprofundadoDiscipline = (
+    area: KnowledgeArea,
+    discipline: DisciplineItem
+  ) => {
+    setIsAprofundado(true);
+    setSelectedArea(area);
+    setSelectedDisciplineId(discipline.id);
     setViewMode('summary');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -65,6 +87,7 @@ export default function App() {
       discipline,
       topic,
       subtopic: sub,
+      isAprofundado,
     });
     setViewMode('topic');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -78,6 +101,7 @@ export default function App() {
             ...prev,
             topic,
             subtopic,
+            isAprofundado,
           }
         : null
     );
@@ -85,7 +109,17 @@ export default function App() {
   };
 
   const handleGoHome = () => {
+    setIsAprofundado(false);
     setViewMode('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackFromSummary = () => {
+    if (isAprofundado) {
+      setViewMode('aprofundado-home');
+    } else {
+      setViewMode('home');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -124,6 +158,15 @@ export default function App() {
           <EnemHomeView
             curriculum={ENEM_CURRICULUM}
             onSelectArea={handleSelectArea}
+            onSelectAprofundado={handleOpenAprofundado}
+          />
+        )}
+
+        {viewMode === 'aprofundado-home' && (
+          <AprofundadoHomeView
+            curriculum={ENEM_CURRICULUM}
+            onSelectDiscipline={handleSelectAprofundadoDiscipline}
+            onBackToHome={handleGoHome}
           />
         )}
 
@@ -132,8 +175,9 @@ export default function App() {
             area={selectedArea}
             selectedDisciplineId={selectedDisciplineId || selectedArea.disciplines[0]?.id || ''}
             onSelectDiscipline={(discId) => setSelectedDisciplineId(discId)}
-            onBackToHome={handleGoHome}
+            onBackToHome={handleBackFromSummary}
             onSelectSubtopic={handleSelectSubtopic}
+            isAprofundado={isAprofundado}
           />
         )}
 

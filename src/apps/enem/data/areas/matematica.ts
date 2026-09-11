@@ -537,6 +537,25 @@ export const matematica: KnowledgeArea = {
               ],
               tips: [
                 'Atenção com a diferença entre Raio e Diâmetro! O enunciado costuma informar o diâmetro da caixa d\'água ou do poço (ex.: $4 \\text{ m}$), mas as fórmulas de volume usam o raio ($r = d/2 = 2 \\text{ m}$). Lembre-se também da conversão universal: $1\\text{ m}^3 = 1.000\\text{ litros}$ e $1\\text{ cm}^3 = 1\\text{ mL}$.'
+              ],
+              deepSections: [
+                {
+                  title: 'Dedução Algébrica e Geométrica do Volume do Tronco de Pirâmide e de Cone',
+                  explanation: 'No nível FUVEST e vestibulares paulistas, a memorização mecânica é insuficiente: exige-se compreender a gênese da fórmula do tronco a partir da semelhança espacial e da álgebra de polinômios. Considere um sólido original de altura total $H$ seccionado por um plano paralelo à base a uma distância $h$. A ponta retirada possui altura $h_1 = H - h$ e área da base menor $A_b$, enquanto a base maior possui área $A_B$.',
+                  bullets: [
+                    '**Razão Homóloga Quadrática**: Pela semelhança tridimensional, a razão entre as áreas das seções transversais é proporcional ao quadrado da razão de suas distâncias ao vértice: $\\frac{A_b}{A_B} = \\left(\\frac{h_1}{H}\\right)^2 \\implies \\frac{\\sqrt{A_b}}{\\sqrt{A_B}} = \\frac{h_1}{h_1 + h}$. Isolando a altura $h_1$ da pirâmide superior: $h_1 = \\frac{h\\sqrt{A_b}}{\\sqrt{A_B} - \\sqrt{A_b}}$ e a altura total $H = \\frac{h\\sqrt{A_B}}{\\sqrt{A_B} - \\sqrt{A_b}}$.',
+                    '**Diferença de Volumes e Fatoração de Produtos Notáveis**: O volume do tronco é a subtração do sólido original pelo topo retirado: $V_{\\text{tronco}} = \\frac{1}{3} A_B H - \\frac{1}{3} A_b h_1 = \\frac{h}{3} \\cdot \\frac{A_B\\sqrt{A_B} - A_b\\sqrt{A_b}}{\\sqrt{A_B} - \\sqrt{A_b}}$. Fazendo $x = \\sqrt{A_B}$ e $y = \\sqrt{A_b}$, o numerador torna-se a diferença de cubos $x^3 - y^3 = (x - y)(x^2 + xy + y^2)$. Cancelando o fator $(x - y)$ do denominador, obtém-se com precisão analítica irrevogável: $V = \\frac{h}{3}(A_B + \\sqrt{A_B A_b} + A_b)$.',
+                    '**Especialização para o Cone Reto**: Para corpos de revolução circulares com $A_B = \\pi R^2$ e $A_b = \\pi r^2$, o termo intermediário geométrico $\\sqrt{A_B \\cdot A_b} = \\sqrt{\\pi^2 R^2 r^2} = \\pi R r$, gerando a expressão consagrada: $V_{\\text{tronco}} = \\frac{\\pi h}{3}(R^2 + Rr + r^2)$.'
+                  ]
+                },
+                {
+                  title: 'Problema Canônico da FUVEST: O Nível de Líquido em Recipientes Cônicos e Esféricos',
+                  explanation: 'Questões discursivas e de múltipla escolha da FUVEST exploram com frequência a não linearidade na subida de nível de líquidos em vasos cônicos com vértice para baixo alimentados por vazão constante ($Q = \\frac{\\Delta V}{\\Delta t}$).',
+                  bullets: [
+                    '**Variação Não-Linear de Volume**: Como o volume ocupado até a altura instantânea $h$ é proporcional a $h^3$ ($V(h) = V_{\\text{total}} \\cdot \\left(\\frac{h}{H}\\right)^3$), quando o recipiente atinge a METADE de sua capacidade total ($V = V_{\\text{total}}/2$), a altura correspondente do líquido é $h = \\frac{H}{\\sqrt[3]{2}} \\approx 0{,}794 \\cdot H$. Ou seja, com metade do volume, o líquido já ocupa quase $80\\%$ da altura do cone!',
+                    '**Esfera Inscrita e Circunscrita ao Cubo**: Se uma esfera de raio $R$ está perfeitamente inscrita em um cubo de aresta $a$, o diâmetro da esfera coincide com a aresta: $2R = a \\implies R = a/2$. Se a esfera circunscreve o cubo (passando por seus 8 vértices), o diâmetro da esfera é igual à diagonal espacial do cubo: $2R = a\\sqrt{3} \\implies R = \\frac{a\\sqrt{3}}{2}$.'
+                  ]
+                }
               ]
             },
             {

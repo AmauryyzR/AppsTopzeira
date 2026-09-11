@@ -66,15 +66,21 @@ export const TopicContent: React.FC<TopicContentProps> = ({
             aria-label="Breadcrumb"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] text-xs font-sans"
           >
+            {activePath.isAprofundado && (
+              <span className="font-semibold text-[#1d1d1f] mr-0.5">
+                (Aprofundado)
+              </span>
+            )}
+
             <button
               onClick={() => onBackToSummary?.(discipline.id)}
               className="font-medium text-[#6e6e73] hover:text-[#1d1d1f] hover:underline transition-colors cursor-pointer"
               title={`Ver sumário de ${cleanAreaName}`}
             >
-              {cleanAreaName}
+              {activePath.isAprofundado ? discipline.name : cleanAreaName}
             </button>
 
-            {!isSingleDiscipline && (
+            {!isSingleDiscipline && !activePath.isAprofundado && (
               <>
                 <ChevronRight className="w-3 h-3 text-[#86868b] shrink-0" />
                 <button
@@ -109,13 +115,21 @@ export const TopicContent: React.FC<TopicContentProps> = ({
         {/* Chapter Opening Header */}
         <header className="mb-12">
           <div className="flex items-center gap-2.5 text-xs font-sans text-neutral-500 uppercase tracking-wider mb-4">
+            {activePath.isAprofundado && (
+              <>
+                <span className="font-semibold text-neutral-900 tracking-wide normal-case bg-neutral-100 px-2.5 py-0.5 rounded-md border border-neutral-200/80">
+                  (Aprofundado)
+                </span>
+                <span className="text-neutral-300">•</span>
+              </>
+            )}
             <span className="font-medium text-[#6e6e73]">{discipline.name}</span>
             <span className="text-neutral-300">•</span>
             <span>{topic.title}</span>
             {subtopic?.enemWeight && (
               <>
                 <span className="text-neutral-300">•</span>
-                <span className="text-neutral-700 font-semibold">
+                <span className="text-neutral-400 font-normal">
                   Incidência no ENEM: {subtopic.enemWeight}
                 </span>
               </>
@@ -166,6 +180,45 @@ export const TopicContent: React.FC<TopicContentProps> = ({
             </ul>
           )}
         </section>
+
+        {/* Section: Aprofundamento Teórico (Nível FUVEST & Livro Didático Especial) */}
+        {subtopic?.deepSections && subtopic.deepSections.length > 0 && (
+          <section className="mt-14 space-y-8">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3 flex-wrap gap-2">
+              <h2 className="text-xl sm:text-2xl font-serif font-semibold text-neutral-950">
+                Aprofundamento Teórico & Nível FUVEST
+              </h2>
+              <span className="text-[11px] font-sans tracking-wide text-neutral-600 bg-neutral-100 px-3 py-1 rounded-full border border-neutral-200/80 font-medium">
+                Livro Didático Especial
+              </span>
+            </div>
+
+            <div className="space-y-6">
+              {subtopic.deepSections.map((sec, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#fafafc] rounded-2xl p-6 sm:p-8 border border-neutral-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.03)] space-y-4"
+                >
+                  <h3 className="text-lg sm:text-xl font-serif font-semibold text-neutral-900 leading-snug">
+                    {sec.title}
+                  </h3>
+                  <div className="text-base sm:text-lg leading-relaxed text-neutral-800 font-serif">
+                    <LatexRenderer content={sec.explanation} />
+                  </div>
+                  {sec.bullets && sec.bullets.length > 0 && (
+                    <ul className="space-y-3 pl-5 list-disc text-base sm:text-lg text-neutral-800 font-serif leading-relaxed marker:text-neutral-400">
+                      {sec.bullets.map((b, bIdx) => (
+                        <li key={bIdx}>
+                          <LatexRenderer content={b} />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Section: Mathematical & Scientific Formulas */}
         {subtopic?.formulas && subtopic.formulas.length > 0 && (

@@ -10,6 +10,12 @@ export interface FormulaItem {
 
 export type EnemWeight = 'Muito Alta' | 'Alta' | 'Média' | 'Baixa' | 'Contextual';
 
+export interface DeepSectionItem {
+  title: string;
+  explanation: string;
+  bullets?: string[];
+}
+
 export interface SubtopicItem {
   id: string;
   title: string;
@@ -18,6 +24,7 @@ export interface SubtopicItem {
   formulas?: FormulaItem[];
   keyConcepts?: string[];
   tips?: string[];
+  deepSections?: DeepSectionItem[];
 }
 
 export interface TopicItem {
@@ -51,4 +58,5 @@ export interface BreadcrumbPath {
   discipline: DisciplineItem;
   topic: TopicItem;
   subtopic?: SubtopicItem;
+  isAprofundado?: boolean;
 }

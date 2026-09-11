@@ -10,6 +10,8 @@ export default defineConfig({
     host: true,
     watch: {
       ignored: [
+        '**/output/playwright/**',
+        '**/.playwright-cli/**',
         '**/appmanimrender/server/temp_renders/**',
         '**/appmanimrender/media/**',
         '**/*.mp4',

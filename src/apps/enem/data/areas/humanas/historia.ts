@@ -39,6 +39,25 @@ export const historia: Discipline = {
           ],
           tips: [
             'Conceito crucial no ENEM: A Revolução Pernambucana de 1817 foi a única revolta colonial que conseguiu destituir o governador e instaurar uma República de fato. O paradoxo fundamental do movimento residia em defender o liberalismo iluminista com liberdade de imprensa e culto, mas MANTER A ESCRAVIDÃO para não alienar a elite agrária escravista nordestina.'
+          ],
+          deepSections: [
+            {
+              title: 'Historiografia FUVEST: A Interiorização da Metrópole e o Liberalismo Escravocrata de 1817',
+              explanation: 'Em questões analíticas da FUVEST, UNICAMP e USP, a Revolução de 1817 é compreendida à luz do conceito de "interiorização da metrópole" (Maria Odila Silva Dias) e das contradições materiais da elite letrada e agrária pernambucana.',
+              bullets: [
+                '**A "Interiorização da Metrópole" e a Exploração Regional**: A transferência da família real portuguesa para o Rio de Janeiro em 1808 não significou emancipação para o Nordeste, mas sim a substituição de Lisboa pelo Rio de Janeiro como novo centro espoliador. A criação do Banco do Brasil, a iluminação pública carioca e os luxos palacianos da Corte joanina eram sustentados por sucessivos aumentos de impostos incidentes sobre o açúcar e o algodão de Pernambuco, província atingida por violenta seca em 1816.',
+                '**Os Centros de Irradiação Ilustrada**: O Seminário de Olinda (fundado pelo Bispo Azeredo Coutinho) e a sociedade secreta Areópago de Itambé (criada pelo médico botânico Manuel Arruda da Câmara) articularam clérigos e letrados na disseminação do pensamento iluminista e do republicanismo revolucionário francês e norte-americano.',
+                '**O Paradoxo Estrutural da Lei Orgânica de 1817**: O governo republicano revolucionário aboliu impostos régios, garantiu liberdade de consciência e de imprensa e estabeleceu a tripartição de poderes. Contudo, em seu artigo fundante, reafirmou categoricamente a proteção à propriedade escrava, atestando o limite de classe do liberalismo brasileiro colonial: liberdade e soberania política para os proprietários brancos, submissão absoluta e cativeiro perpétuo para os escravizados.'
+              ]
+            },
+            {
+              title: 'Diplomacia Internacional e a Geopolítica Punitiva da Coroa Portuguesa',
+              explanation: 'A dimensão internacional da insurreição pernambucana e as retaliações territoriais que redesenharam a geografia política do Nordeste brasileiro.',
+              bullets: [
+                '**A Missão Diplomática aos Estados Unidos (Cabugá)**: Antecipando as táticas das independências hispano-americanas de Bolívar e San Martín, o governo provisório enviou Antônio Gonçalves da Cruz ("Cabugá") aos EUA com fundos para comprar armamento, obter reconhecimento formal do governo Monroe e até planejar o resgate de Napoleão Bonaparte de seu exílio na Ilha de Santa Helena para liderar as forças armadas republicanas.',
+                '**A Retaliação Territorial como Dispositivo de Poder**: Para enfraquecer o peso econômico e a liderança política de Pernambuco na região, D. João VI decretou o desmembramento da Comarca das Alagoas em 16 de setembro de 1817, elevando-a à capitania autônoma. Esse dispositivo punitivo de fragmentação territorial viria a ser repetido pela Coroa em 1824 na Confederação do Equador, quando D. Pedro I retirou de Pernambuco a Comarca do Rio São Francisco (anexada à Bahia).'
+              ]
+            }
           ]
         },
         {

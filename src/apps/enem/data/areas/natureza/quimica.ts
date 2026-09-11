@@ -142,6 +142,27 @@ export const quimica: Discipline = {
           ],
           tips: [
             'Pegadinha clássica do ENEM: O benzeno NÃO sofre reações de adição com facilidade porque isso destruiria sua nuvem aromática hiperestável por ressonância (energia de deslocalização aromática de 36 kcal/mol). Por isso, compostos aromáticos realizam predominantemente reações de SUBSTITUIÇÃO Eletrofílica, preservando intacto o anel!'
+          ],
+          deepSections: [
+            {
+              title: 'Mecanismo Detalhado de Adição Eletrofílica e Estabilidade de Carbocátions',
+              explanation: 'Em questões analíticas da FUVEST e segunda fase de vestibulares médicos, a Regra de Markovnikov não deve ser apenas memorizada como dogma, mas explicada pelo perfil de energia de ativação e estabilidade de intermediários reacionais.',
+              bullets: [
+                '**Etapa 1 (Lenta - Determinante da Velocidade)**: Os elétrons da ligação $\\pi$ do alceno atuam como nucleófilo atacando a espécie eletrofílica $H^+$ (ou o polo positivo do halogênio). A ruptura heterolítica gera um intermediário carbocátion de geometria trigonal plana ($sp^2$) com orbital $p$ vazio.',
+                '**Origem Física da Regra de Markovnikov**: A estabilidade de carbocátions obedece rigidamente à ordem: $\\text{Terciário} (3^\\circ) > \\text{Secundário} (2^\\circ) > \\text{Primário} (1^\\circ) > \\text{Metila}$. Grupos alquila vizinhos doam densidade eletrônica por efeito indutivo positivo ($+I$) e promovem deslocalização de carga por **hiperconjugação** (sobreposição dos orbitais $\\sigma_{C-H}$ com o orbital $p$ vazio do carbocátion). Portanto, o próton liga-se ao carbono com mais hidrogênios porque isso força a carga positiva a recair sobre o carbono mais substituído e termodinamicamente estável.',
+                '**Etapa 2 (Rápida)**: O ânion halogeneto ($X^-$) ou a água ataca o carbocátion planar por ambas as faces, consolidando a ligação covalente.',
+                '**Mecanismo Radicalar do Efeito Kharasch**: Exclusivo para $HBr$ em presença de peróxidos orgânicos ($R-O-O-R$). A clivagem homolítica térmica do peróxido gera o radical livre $RO^\\bullet$, que ataca o $HBr$ produzindo o radical bromo $Br^\\bullet$. O $Br^\\bullet$ ataca primeiramente a dupla ligação, ligando-se ao carbono menos impedido estericamente e gerando o radical carbônico terciário/secundário mais estável, invertendo a orientação clássica (Adição Anti-Markovnikov).'
+              ]
+            },
+            {
+              title: 'Mecanismo da Substituição Eletrofílica Aromática (SEAr) e o Complexo Sigma de Wheland',
+              explanation: 'A excepcional estabilidade termodinâmica do anel benzênico (36 kcal/mol de energia de ressonância) impede adições espontâneas que destruiriam a conjugação cíclica de Hückel ($4n + 2$ elétrons $\\pi$). A reação paradigmática é a Substituição Eletrofílica Aromática (SEAr).',
+              bullets: [
+                '**Geração do Eletrófilo Potente**: O anel aromático requer eletrófilos de altíssima reatividade produzidos in situ com ácidos de Lewis: 1) Na Nitração: $HNO_3 + 2 H_2SO_4 \\rightleftharpoons NO_2^+ \\text{ (íon nitrônio)} + H_3O^+ + 2 HSO_4^-$; 2) Em Friedel-Crafts: $R-Cl + AlCl_3 \\rightleftharpoons R^+ \\dots AlCl_4^-$.',
+                '**Formação do Complexo $\\sigma$ (Íon Arênio de Wheland)**: O par de elétrons $\\pi$ do anel ataca o eletrófilo $E^+$, gerando uma espécie intermediária não-aromática com carbono $sp^3$ tetraédrico. A carga positiva é deslocalizada por ressonância entre três formas canônicas que compartilham a deficiência eletrônica sobre as posições orto e para em relação ao sítio de ataque.',
+                '**Restauração da Aromaticidade**: A base conjugada presente no meio ($HSO_4^-$ ou $AlCl_4^-$) captura o próton ligado ao carbono $sp^3$, e o par de elétrons da ligação $C-H$ reentra na nuvem $\\pi$, restaurando o sexteto aromático e liberando o produto substituído com grande ganho termodinâmico.'
+              ]
+            }
           ]
         },
         {

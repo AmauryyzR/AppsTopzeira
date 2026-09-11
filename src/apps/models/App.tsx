@@ -27,6 +27,8 @@ export default function ModelsApp() {
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [stats, setStats] = useState<ModelStats | null>(null);
+  const [rigInfo,setRigInfo]=useState({clips:[] as string[],bindPose:'A-pose',defaultAnimation:'Rest'});
+  const updateRigInfo=(model:ReturnType<(typeof AVAILABLE_MODELS)[number]['create']>)=>setRigInfo({clips:model.animations.map(c=>c.name),bindPose:model.userData.bindPose??'A-pose',defaultAnimation:model.userData.defaultAnimation??'Rest'});
 
   const activeModel = AVAILABLE_MODELS.find((m) => m.id === selectedModelId) || AVAILABLE_MODELS[0];
 
@@ -44,6 +46,7 @@ export default function ModelsApp() {
       // Load initial model (Tree)
       const initialModelDef = AVAILABLE_MODELS.find((m) => m.id === selectedModelId) || AVAILABLE_MODELS[0];
       const modelObj = initialModelDef.create();
+      updateRigInfo(modelObj);
       engine.setModel(modelObj, true);
     }
 
@@ -70,6 +73,7 @@ export default function ModelsApp() {
     const modelDef = AVAILABLE_MODELS.find((m) => m.id === modelId);
     if (modelDef && engineRef.current) {
       const obj = modelDef.create();
+      updateRigInfo(obj);
       engineRef.current.setModel(obj, true);
     }
   }, []);
@@ -165,6 +169,7 @@ export default function ModelsApp() {
       {/* Bottom-Left Model Inspector */}
       <ModelInspector model={activeModel} stats={stats} />
       {!!stats?.bones && <ModelRigControls key={selectedModelId} boneCount={stats.bones}
+        {...rigInfo}
         onAnimation={name => engineRef.current?.setAnimation(name)}
         onSkeleton={visible => engineRef.current?.setSkeletonVisible(visible)} />}
 

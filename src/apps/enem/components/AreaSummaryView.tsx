@@ -19,6 +19,7 @@ interface AreaSummaryViewProps {
     topic: TopicItem,
     subtopic: SubtopicItem
   ) => void;
+  isAprofundado?: boolean;
 }
 
 function formatAreaTitle(name: string): string {
@@ -35,6 +36,7 @@ export const AreaSummaryView: React.FC<AreaSummaryViewProps> = ({
   onSelectDiscipline,
   onBackToHome,
   onSelectSubtopic,
+  isAprofundado,
 }) => {
   const [selectedDisciplineId, setSelectedDisciplineId] = useState<string>(
     initialDisciplineId || area.disciplines[0]?.id || ''
@@ -66,12 +68,12 @@ export const AreaSummaryView: React.FC<AreaSummaryViewProps> = ({
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-xs font-medium text-[#1d1d1f] shadow-[0_2px_10px_rgba(0,0,0,0.11),0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.18)] hover:scale-[1.02] transition-all cursor-pointer group"
           >
             <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-[#6e6e73]" />
-            <span>Voltar às Áreas</span>
+            <span>{isAprofundado ? 'Voltar às Matérias' : 'Voltar às Áreas'}</span>
           </button>
         </div>
 
         {/* Disciplines Navigation Tabs (Apple Pills with +30% shadow) */}
-        {area.disciplines.length > 1 && (
+        {!isAprofundado && area.disciplines.length > 1 && (
           <div className="flex items-center gap-2.5 mb-6 overflow-x-auto pb-1 no-scrollbar">
             {area.disciplines.map((disc) => {
               const isActive = disc.id === activeDiscipline?.id;
@@ -97,10 +99,15 @@ export const AreaSummaryView: React.FC<AreaSummaryViewProps> = ({
           {/* Header inside the book index */}
           <div className="mb-8 pb-5 border-b border-black/[0.06] flex flex-wrap items-baseline justify-between gap-3">
             <div>
+              {isAprofundado && (
+                <span className="text-xs font-sans text-[#86868b] block mb-1">
+                  (Aprofundado)
+                </span>
+              )}
               <h1 className="font-sans font-semibold text-3xl sm:text-4xl text-[#1d1d1f] tracking-tight">
-                {cleanTitle}
+                {isAprofundado && activeDiscipline ? activeDiscipline.name : cleanTitle}
               </h1>
-              {area.disciplines.length > 1 && activeDiscipline && (
+              {!isAprofundado && area.disciplines.length > 1 && activeDiscipline && (
                 <p className="text-sm sm:text-base font-medium text-[#86868b] mt-1.5">
                   {activeDiscipline.name}
                 </p>
