@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { KnowledgeArea, DisciplineItem } from '../types/curriculum';
@@ -62,7 +62,7 @@ export const AprofundadoHomeView: React.FC<AprofundadoHomeViewProps> = ({
   });
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 sm:px-10 py-10 md:py-16 select-none bg-[#f5f5f7]">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 sm:px-10 py-8 md:py-16 select-none bg-[#f5f5f7]">
       <div className="w-full max-w-5xl mx-auto">
         {/* Top Minimalist Back Navigation */}
         <div className="mb-6 flex items-center justify-between">

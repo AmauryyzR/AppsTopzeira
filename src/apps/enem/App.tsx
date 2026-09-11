@@ -28,6 +28,15 @@ export default function App() {
   // Active path when viewing a topic
   const [activePath, setActivePath] = useState<BreadcrumbPath | null>(null);
 
+  // Set body background to light theme for ENEM app
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = '#f5f5f7';
+    return () => {
+      document.body.style.backgroundColor = originalBg;
+    };
+  }, []);
+
   // Handle global keyboard shortcuts (Ctrl+K / Cmd+K, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -139,7 +148,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col antialiased selection:bg-[#1d1d1f] selection:text-white">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f5f5f7] text-[#1d1d1f] flex flex-col antialiased selection:bg-[#1d1d1f] selection:text-white">
       {/* Top Header */}
       <Header
         sidebarOpen={sidebarOpen}
@@ -153,7 +162,7 @@ export default function App() {
       />
 
       {/* Main Dynamic Viewport */}
-      <main className="flex-1 pb-16">
+      <main className="flex-1 pb-16 w-full max-w-full overflow-x-hidden min-w-0">
         {viewMode === 'home' && (
           <EnemHomeView
             curriculum={ENEM_CURRICULUM}

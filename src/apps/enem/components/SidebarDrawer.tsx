@@ -230,8 +230,8 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
       <aside
         id="curriculum-sidebar-drawer"
         aria-label="Sumário Curricular do ENEM"
-        className={`fixed inset-y-0 left-0 z-50 flex w-full max-w-md md:max-w-lg flex-col bg-white text-[#1d1d1f] shadow-[16px_0_48px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex w-full max-w-md md:max-w-lg flex-col bg-white text-[#1d1d1f] shadow-[16px_0_48px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : '-translate-x-full opacity-0 invisible pointer-events-none'
         }`}
       >
         {/* Drawer Header */}

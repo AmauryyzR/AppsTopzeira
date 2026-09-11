@@ -22,7 +22,7 @@ export const EnemHomeView: React.FC<EnemHomeViewProps> = ({
   onSelectAprofundado,
 }) => {
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center px-6 sm:px-10 py-12 md:py-16 select-none bg-[#f5f5f7]">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 sm:px-10 py-10 md:py-16 select-none bg-[#f5f5f7]">
       <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
         {/* 4 Large Widgets in 2x2 Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 w-full">

@@ -45,15 +45,15 @@ export const TopicContent: React.FC<TopicContentProps> = ({
       : null;
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] bg-[#f5f5f7] py-6 sm:py-10 px-4 sm:px-8">
+    <div className="w-full max-w-full overflow-x-hidden min-h-[calc(100vh-4rem)] bg-[#f5f5f7] py-6 sm:py-10 px-3.5 sm:px-8">
       {/* Top Breadcrumb & Chapter Navigation Bar */}
-      <div className="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 select-none">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 select-none w-full min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap max-w-full min-w-0">
           {/* Back to Summary button with Apple Shadow +30% */}
           {onBackToSummary && (
             <button
               onClick={() => onBackToSummary(discipline.id)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-[#1d1d1f] shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-all cursor-pointer text-xs font-medium group"
+              className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-[#1d1d1f] shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-all cursor-pointer text-xs font-medium group shrink-0"
               title={`Voltar ao sumário de ${discipline.name}`}
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-[#6e6e73]" />
@@ -64,17 +64,17 @@ export const TopicContent: React.FC<TopicContentProps> = ({
           {/* Elegant Apple Breadcrumb Trail */}
           <nav
             aria-label="Breadcrumb"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] text-xs font-sans"
+            className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] text-xs font-sans max-w-full min-w-0 break-words"
           >
             {activePath.isAprofundado && (
-              <span className="font-semibold text-[#1d1d1f] mr-0.5">
+              <span className="font-semibold text-[#1d1d1f] mr-0.5 shrink-0">
                 (Aprofundado)
               </span>
             )}
 
             <button
               onClick={() => onBackToSummary?.(discipline.id)}
-              className="font-medium text-[#6e6e73] hover:text-[#1d1d1f] hover:underline transition-colors cursor-pointer"
+              className="font-medium text-[#6e6e73] hover:text-[#1d1d1f] hover:underline transition-colors cursor-pointer truncate max-w-[130px] sm:max-w-none"
               title={`Ver sumário de ${cleanAreaName}`}
             >
               {activePath.isAprofundado ? discipline.name : cleanAreaName}
@@ -85,7 +85,7 @@ export const TopicContent: React.FC<TopicContentProps> = ({
                 <ChevronRight className="w-3 h-3 text-[#86868b] shrink-0" />
                 <button
                   onClick={() => onBackToSummary?.(discipline.id)}
-                  className="font-medium text-[#6e6e73] hover:text-[#1d1d1f] hover:underline transition-colors cursor-pointer"
+                  className="font-medium text-[#6e6e73] hover:text-[#1d1d1f] hover:underline transition-colors cursor-pointer truncate max-w-[130px] sm:max-w-none"
                   title={`Ir para sumário de ${discipline.name}`}
                 >
                   {discipline.name}
@@ -94,7 +94,7 @@ export const TopicContent: React.FC<TopicContentProps> = ({
             )}
 
             <ChevronRight className="w-3 h-3 text-[#86868b] shrink-0" />
-            <span className="text-[#1d1d1f] font-semibold truncate max-w-[200px] sm:max-w-[300px]">
+            <span className="text-[#1d1d1f] font-semibold truncate max-w-[140px] sm:max-w-[280px]">
               {topic.title}
             </span>
           </nav>
@@ -103,7 +103,7 @@ export const TopicContent: React.FC<TopicContentProps> = ({
         {/* General Sidebar Drawer Button with Apple Shadow +30% */}
         <button
           onClick={onOpenSidebar}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-xs font-medium text-[#1d1d1f] shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white text-xs font-medium text-[#1d1d1f] shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-all cursor-pointer shrink-0"
         >
           <Menu className="h-3.5 w-3.5 text-[#6e6e73]" />
           <span>Sumário Geral</span>
@@ -111,25 +111,25 @@ export const TopicContent: React.FC<TopicContentProps> = ({
       </div>
 
       {/* Main Content Reader Container (+30% Shadow) */}
-      <article className="max-w-4xl mx-auto bg-white rounded-[28px] p-6 sm:p-12 md:p-16 shadow-[0_10px_34px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] text-neutral-900 font-serif">
+      <article className="w-full max-w-4xl mx-auto bg-white rounded-[22px] sm:rounded-[28px] p-5 sm:p-12 md:p-16 shadow-[0_10px_34px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.05)] text-neutral-900 font-serif overflow-hidden">
         {/* Chapter Opening Header */}
-        <header className="mb-12">
-          <div className="flex items-center gap-2.5 text-xs font-sans text-neutral-500 uppercase tracking-wider mb-4">
+        <header className="mb-10 sm:mb-12 max-w-full">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 text-xs font-sans text-neutral-500 uppercase tracking-wider mb-4 max-w-full break-words">
             {activePath.isAprofundado && (
               <>
-                <span className="font-semibold text-neutral-900 tracking-wide normal-case bg-neutral-100 px-2.5 py-0.5 rounded-md border border-neutral-200/80">
+                <span className="font-semibold text-neutral-900 tracking-wide normal-case bg-neutral-100 px-2.5 py-0.5 rounded-md border border-neutral-200/80 shrink-0">
                   (Aprofundado)
                 </span>
                 <span className="text-neutral-300">•</span>
               </>
             )}
-            <span className="font-medium text-[#6e6e73]">{discipline.name}</span>
+            <span className="font-medium text-[#6e6e73] break-words">{discipline.name}</span>
             <span className="text-neutral-300">•</span>
-            <span>{topic.title}</span>
+            <span className="break-words">{topic.title}</span>
             {subtopic?.enemWeight && (
               <>
                 <span className="text-neutral-300">•</span>
-                <span className="text-neutral-400 font-normal">
+                <span className="text-neutral-400 font-normal break-words">
                   Incidência no ENEM: {subtopic.enemWeight}
                 </span>
               </>
@@ -137,12 +137,12 @@ export const TopicContent: React.FC<TopicContentProps> = ({
           </div>
 
           {/* Prominent Chapter Title */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-normal tracking-tight text-neutral-950 leading-tight">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-normal tracking-tight text-neutral-950 leading-tight break-words">
             {subtopic ? subtopic.title : topic.title}
           </h1>
 
           {topic.description && (
-            <p className="mt-4 text-base sm:text-lg text-neutral-600 font-serif italic leading-relaxed">
+            <p className="mt-4 text-base sm:text-lg text-neutral-600 font-serif italic leading-relaxed break-words">
               {topic.description}
             </p>
           )}
@@ -295,19 +295,19 @@ export const TopicContent: React.FC<TopicContentProps> = ({
         )}
 
         {/* Chapter Footer Navigation */}
-        <footer className="mt-16 pt-8 border-t border-neutral-100 flex items-center justify-between text-xs font-sans text-neutral-500">
-          <div>
+        <footer className="mt-16 pt-8 border-t border-neutral-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-xs font-sans text-neutral-500 w-full">
+          <div className="w-full sm:w-auto">
             {prevSubtopic && (
               <button
                 onClick={() => onNavigateToSubtopic(topic, prevSubtopic)}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)] hover:scale-[1.01] transition-all cursor-pointer group text-left"
+                className="w-full sm:w-auto flex items-center gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)] hover:scale-[1.01] transition-all cursor-pointer group text-left min-w-0"
               >
-                <ArrowLeft className="h-4 w-4 text-[#86868b] group-hover:text-[#1d1d1f] group-hover:-translate-x-0.5 transition-transform" />
-                <div>
+                <ArrowLeft className="h-4 w-4 text-[#86868b] group-hover:text-[#1d1d1f] group-hover:-translate-x-0.5 transition-transform shrink-0" />
+                <div className="min-w-0">
                   <span className="text-[10px] text-[#86868b] block uppercase tracking-wider">
                     Anterior
                   </span>
-                  <span className="font-serif font-medium text-sm text-neutral-800 group-hover:text-neutral-950 truncate max-w-[200px] block">
+                  <span className="font-serif font-medium text-sm text-neutral-800 group-hover:text-neutral-950 truncate max-w-[200px] sm:max-w-[240px] block">
                     {prevSubtopic.title}
                   </span>
                 </div>
@@ -315,21 +315,21 @@ export const TopicContent: React.FC<TopicContentProps> = ({
             )}
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto flex justify-end">
             {nextSubtopic && (
               <button
                 onClick={() => onNavigateToSubtopic(topic, nextSubtopic)}
-                className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)] hover:scale-[1.01] transition-all cursor-pointer group text-right"
+                className="w-full sm:w-auto flex items-center justify-end gap-3 px-4 sm:px-5 py-3 rounded-2xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.09),0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.16)] hover:scale-[1.01] transition-all cursor-pointer group text-right min-w-0"
               >
-                <div>
+                <div className="min-w-0">
                   <span className="text-[10px] text-[#86868b] block uppercase tracking-wider">
                     Próximo
                   </span>
-                  <span className="font-serif font-medium text-sm text-neutral-800 group-hover:text-neutral-950 truncate max-w-[200px] block">
+                  <span className="font-serif font-medium text-sm text-neutral-800 group-hover:text-neutral-950 truncate max-w-[200px] sm:max-w-[240px] block">
                     {nextSubtopic.title}
                   </span>
                 </div>
-                <ArrowRight className="h-4 w-4 text-[#86868b] group-hover:text-[#1d1d1f] group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="h-4 w-4 text-[#86868b] group-hover:text-[#1d1d1f] group-hover:translate-x-0.5 transition-transform shrink-0" />
               </button>
             )}
           </div>
